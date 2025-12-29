@@ -1563,12 +1563,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     shape: BoxShape.circle,
                   ),
                 ),
-              Text(
-                text,
-                style: GoogleFonts.poppins(
-                  color: isActive ? const Color(0xFF1F2937) : Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      color: isActive ? const Color(0xFF1F2937) : Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
             ],
