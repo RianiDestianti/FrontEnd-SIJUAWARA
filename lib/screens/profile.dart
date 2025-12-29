@@ -154,7 +154,6 @@ Future<void> _loadProfile() async {
       ProfileField(label: 'NIP', icon: Icons.badge_outlined, key: 'nip'),
       ProfileField(label: 'Username', icon: Icons.person_outline, key: 'username'),
       ProfileField(label: 'Email', icon: Icons.email_outlined, key: 'email'),
-      ProfileField(label: 'Menjabat Sejak', icon: Icons.calendar_today_outlined, key: 'joinDate'),
     ];
   }
 }
