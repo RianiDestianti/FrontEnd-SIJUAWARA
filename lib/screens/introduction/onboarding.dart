@@ -595,7 +595,7 @@ class _SkipButton extends StatelessWidget {
             ],
           ),
           child: Text(
-            'Skip',
+            'Lewati',
             style: GoogleFonts.poppins(
               fontSize: isWeb ? 16 : 14,
               fontWeight: FontWeight.w500,
@@ -749,7 +749,7 @@ void _handleLogin() async {
         _showSnackBar(context, "Role tidak dikenali");
       }
     } else {
-      _showSnackBar(context, data['message'] ?? 'Login gagal');
+      _showSnackBar(context, data['message'] ?? 'Gagal masuk');
     }
   } catch (e) {
     _showSnackBar(context, "Terjadi kesalahan: $e");
@@ -858,7 +858,7 @@ void _handleLogin() async {
                         ),
                         icon: const Icon(Icons.fingerprint, size: 20),
                         label: Text(
-                          'Login dengan Sidik Jari',
+                          'Masuk dengan Sidik Jari',
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w700,
                             fontSize: isWeb ? 15 : 14,
@@ -869,7 +869,7 @@ void _handleLogin() async {
                     ),
                   SizedBox(height: isWeb ? 20 : 16),
                   _GradientButton(
-                    text: 'Login',
+                    text: 'Masuk',
                     onTap: _handleLogin,
                     isWeb: isWeb,
                   ),

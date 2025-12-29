@@ -23,7 +23,7 @@ class _WalikelasNavigationState extends State<WalikelasNavigation> {
       index: 0,
       icon: Icons.home_outlined,
       activeIcon: Icons.home,
-      label: 'Home',
+      label: 'Beranda',
     ),
     NavigationItemData(
       index: 1,

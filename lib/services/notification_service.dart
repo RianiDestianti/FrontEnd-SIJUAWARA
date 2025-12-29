@@ -12,7 +12,7 @@ class NotificationService {
   static const AndroidNotificationDetails _androidDetails =
       AndroidNotificationDetails(
     'sp_ph_channel',
-    'SP/PH Notifications',
+    'Notifikasi SP/PH',
     channelDescription: 'Notifikasi SP dan PH',
     importance: Importance.max,
     priority: Priority.high,
@@ -21,7 +21,7 @@ class NotificationService {
   static const AndroidNotificationDetails _downloadAndroidDetails =
       AndroidNotificationDetails(
     'download_channel',
-    'Download Notifications',
+    'Notifikasi Unduhan',
     channelDescription: 'Notifikasi unduhan laporan',
     importance: Importance.defaultImportance,
     priority: Priority.defaultPriority,

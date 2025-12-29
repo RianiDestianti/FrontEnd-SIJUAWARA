@@ -491,7 +491,7 @@ Future<void> _loadUserData() async {
       });
     } catch (e) {
       setState(() {
-        errorMessageViolations = 'Error: $e';
+        errorMessageViolations = 'Terjadi kesalahan: $e';
         isLoadingViolations = false;
       });
     }

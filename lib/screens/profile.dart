@@ -152,7 +152,11 @@ Future<void> _loadProfile() async {
   List<ProfileField> _getProfileFields(String role) {
     return [
       ProfileField(label: 'NIP', icon: Icons.badge_outlined, key: 'nip'),
-      ProfileField(label: 'Username', icon: Icons.person_outline, key: 'username'),
+      ProfileField(
+        label: 'Nama Pengguna',
+        icon: Icons.person_outline,
+        key: 'username',
+      ),
       ProfileField(label: 'Email', icon: Icons.email_outlined, key: 'email'),
     ];
   }
@@ -629,7 +633,7 @@ class LogoutButton extends StatelessWidget {
                             color: const Color(0xFFFF6B6B), size: iconSize * 1.3),
                         SizedBox(width: padding * 0.3),
                         Text(
-                          'Logout',
+                          'Keluar',
                           style: GoogleFonts.poppins(
                             fontSize: fontSize,
                             fontWeight: FontWeight.w600,
@@ -694,11 +698,17 @@ Future<void> _logout() async {
         await prefs.clear();
         widget.onLogout();
       } else {
-        _showErrorSnackbar(widget.parentContext, data['message'] ?? 'Logout gagal.');
+        _showErrorSnackbar(
+          widget.parentContext,
+          data['message'] ?? 'Gagal keluar.',
+        );
       }
     } else {
       final data = json.decode(response.body);
-      _showErrorSnackbar(widget.parentContext, data['message'] ?? 'Gagal logout.');
+      _showErrorSnackbar(
+        widget.parentContext,
+        data['message'] ?? 'Gagal keluar.',
+      );
     }
   } catch (e) {
     print('Logout error: $e');
@@ -717,7 +727,7 @@ Future<void> _logout() async {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Konfirmasi Logout',
+      title: Text('Konfirmasi Keluar',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
       content: Text('Apakah Anda yakin ingin keluar?',
           style: GoogleFonts.poppins()),
@@ -733,7 +743,7 @@ Future<void> _logout() async {
           child: _isLoggingOut
               ? const SizedBox(
                   width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text('Logout',
+              : Text('Keluar',
                   style: GoogleFonts.poppins(color: Colors.white)),
         ),
       ],

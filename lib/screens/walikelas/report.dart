@@ -1295,8 +1295,8 @@ class _LaporanScreenState extends State<LaporanScreen>
                                         _buildViewButton('Rekap', 'Rekap'),
                                         const SizedBox(width: 10),
                                         _buildViewButton(
-                                          'FAQ Point',
-                                          'FAQ Point',
+                                          'FAQ Poin',
+                                          'FAQ Poin',
                                         ),
                                       ],
                                     ),
@@ -1588,7 +1588,7 @@ class _LaporanScreenState extends State<LaporanScreen>
                     shape: BoxShape.circle,
                   ),
                 ),
-              if (isActive && view == 'FAQ Point')
+              if (isActive && view == 'FAQ Poin')
                 Container(
                   width: 8,
                   height: 8,
