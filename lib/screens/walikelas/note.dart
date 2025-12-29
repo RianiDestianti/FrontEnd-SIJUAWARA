@@ -70,12 +70,12 @@ class NoteUtils {
             title: judulCatatan,
           );
 
-          _showSuccessSnackBar(context, 'Catatan BK berhasil ditambahkan');
+          _showSuccessSnackBar(context, 'Penanganan berhasil ditambahkan');
           return noteData;
         } else {
           _showErrorSnackBar(
             context,
-            responseData['message'] ?? 'Gagal menambahkan catatan',
+            responseData['message'] ?? 'Gagal menambahkan penanganan',
           );
           return null;
         }
@@ -380,7 +380,7 @@ class FormSection extends StatelessWidget {
           const SizedBox(height: 16),
           CustomTextField(
             controller: titleController,
-            hint: 'Judul Catatan',
+            hint: 'Judul Penanganan',
             icon: Icons.title,
           ),
           const SizedBox(height: 16),
@@ -394,7 +394,7 @@ class FormSection extends StatelessWidget {
           const SizedBox(height: 16),
           CustomTextField(
             controller: noteController,
-            hint: 'Catatan untuk BK (perilaku, kondisi psikologi, dll)',
+            hint: 'Penanganan (perilaku, kondisi psikologi, dll)',
             icon: Icons.edit_note,
             maxLines: 4,
             fillColor: const Color(0xFFFEF2F2),
@@ -448,7 +448,7 @@ class HeaderSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Catatan untuk BK',
+                  'Penanganan',
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -456,7 +456,7 @@ class HeaderSection extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Catat hal penting untuk konseling',
+                  'Catat hal penting untuk penanganan',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.white.withOpacity(0.8),
@@ -584,7 +584,7 @@ class InfoCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Catatan ini akan diteruskan ke guru BK untuk tindak lanjut konseling',
+              'Penanganan ini akan diteruskan ke guru BK untuk tindak lanjut konseling',
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: const Color(0xFF991B1B),
