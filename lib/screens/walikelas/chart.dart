@@ -1278,8 +1278,8 @@ class _GrafikScreenState extends State<GrafikScreen>
                 Text(
                   widget.chartType == 'apresiasi'
                       ? isIncreasing
-                          ? 'Tren positif! Pertahankan program apresiasi yang sedang berjalan dan tingkatkan variasi reward untuk memotivasi siswa.'
-                          : 'Perlu peningkatan program apresiasi. Pertimbangkan untuk menambah kegiatan motivasi dan sistem reward yang lebih menarik.'
+                          ? 'Tren positif! Pertahankan program apresiasi yang sedang berjalan dan tingkatkan variasi penghargaan untuk memotivasi siswa.'
+                          : 'Perlu peningkatan program apresiasi. Pertimbangkan untuk menambah kegiatan motivasi dan sistem penghargaan yang lebih menarik.'
                       : isIncreasing
                       ? 'Perlu perhatian khusus! Tingkatkan pengawasan dan buat program pencegahan pelanggaran yang lebih efektif.'
                       : 'Tren menurun sangat baik! Pertahankan sistem pengawasan dan terus tingkatkan program kedisiplinan.',

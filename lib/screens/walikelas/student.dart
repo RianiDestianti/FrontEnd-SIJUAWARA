@@ -687,9 +687,9 @@ Future<void> fetchSiswa() async {
                                       children: [
                                         _buildActionButton('Akumulasi', 0),
                                         const SizedBox(width: 10),
-                                        _buildActionButton('Reward', 1),
+                                        _buildActionButton('Penghargaan', 1),
                                         const SizedBox(width: 10),
-                                        _buildActionButton('Punishment', 2),
+                                        _buildActionButton('Pelanggaran', 2),
                                       ],
                                     ),
                                   ],
@@ -921,8 +921,8 @@ Future<void> fetchSiswa() async {
     }
 
     String _getPointLabel() {
-      if (_selectedFilter == 1) return 'Reward';
-      if (_selectedFilter == 2) return 'Punishment';
+      if (_selectedFilter == 1) return 'Penghargaan';
+      if (_selectedFilter == 2) return 'Pelanggaran';
       return 'Poin';
     }
 

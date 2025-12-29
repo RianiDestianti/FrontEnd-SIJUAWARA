@@ -711,9 +711,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   children: [
                                     _buildActionButton('Umum', 0),
                                     const SizedBox(width: 10),
-                                    _buildActionButton('Reward', 2),
+                                    _buildActionButton('Penghargaan', 2),
                                     const SizedBox(width: 10),
-                                    _buildActionButton('Punishment', 3),
+                                    _buildActionButton('Pelanggaran', 3),
                                   ],
                                 ),
                               ],
@@ -970,7 +970,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Reward',
+                        'Penghargaan',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -1074,7 +1074,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Punishment',
+                        'Pelanggaran',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -1082,7 +1082,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       Text(
-                        'Siswa dengan punishment/pelanggaran terberat',
+                        'Siswa dengan pelanggaran terberat',
                         style: GoogleFonts.poppins(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 12,
