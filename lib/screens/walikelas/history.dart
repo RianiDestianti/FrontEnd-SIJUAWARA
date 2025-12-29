@@ -335,195 +335,198 @@ class _HistoryScreenState extends State<HistoryScreen>
   void _showFilterBottomSheet() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setBottomSheetState) {
-            return Container(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE5E7EB),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Filter Riwayat',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1F2937),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Jenis Data',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF374151),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    children:
-                        ['Semua', 'Apresiasi', 'Pelanggaran'].map((filter) {
-                          bool isSelected = _selectedFilter == filter;
-                          return GestureDetector(
-                            onTap: () {
-                              setBottomSheetState(() {
-                                _selectedFilter = filter;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    isSelected
-                                        ? const Color(0xFF0083EE)
-                                        : const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color:
-                                      isSelected
-                                          ? const Color(0xFF0083EE)
-                                          : const Color(0xFFE5E7EB),
-                                ),
-                              ),
-                              child: Text(
-                                filter,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      isSelected
-                                          ? Colors.white
-                                          : const Color(0xFF6B7280),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Periode Waktu',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF374151),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children:
-                        ['Semua', '7 Hari', '30 Hari', '3 Bulan'].map((filter) {
-                          bool isSelected = _selectedTimeFilter == filter;
-                          return GestureDetector(
-                            onTap: () {
-                              setBottomSheetState(() {
-                                _selectedTimeFilter = filter;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    isSelected
-                                        ? const Color(0xFF0083EE)
-                                        : const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color:
-                                      isSelected
-                                          ? const Color(0xFF0083EE)
-                                          : const Color(0xFFE5E7EB),
-                                ),
-                              ),
-                              child: Text(
-                                filter,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      isSelected
-                                          ? Colors.white
-                                          : const Color(0xFF6B7280),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Hanya Data Terbaru',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF374151),
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5E7EB),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      Switch(
-                        value: _showOnlyNew,
-                        onChanged: (value) {
-                          setBottomSheetState(() {
-                            _showOnlyNew = value;
-                          });
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Filter Riwayat',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Jenis Data',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children:
+                          ['Semua', 'Apresiasi', 'Pelanggaran'].map((filter) {
+                            bool isSelected = _selectedFilter == filter;
+                            return GestureDetector(
+                              onTap: () {
+                                setBottomSheetState(() {
+                                  _selectedFilter = filter;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? const Color(0xFF0083EE)
+                                          : const Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? const Color(0xFF0083EE)
+                                            : const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                child: Text(
+                                  filter,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        isSelected
+                                            ? Colors.white
+                                            : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Periode Waktu',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF374151),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          ['Semua', '7 Hari', '30 Hari', '3 Bulan'].map((filter) {
+                            bool isSelected = _selectedTimeFilter == filter;
+                            return GestureDetector(
+                              onTap: () {
+                                setBottomSheetState(() {
+                                  _selectedTimeFilter = filter;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? const Color(0xFF0083EE)
+                                          : const Color(0xFFF3F4F6),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? const Color(0xFF0083EE)
+                                            : const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                child: Text(
+                                  filter,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        isSelected
+                                            ? Colors.white
+                                            : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Hanya Data Terbaru',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF374151),
+                          ),
+                        ),
+                        Switch(
+                          value: _showOnlyNew,
+                          onChanged: (value) {
+                            setBottomSheetState(() {
+                              _showOnlyNew = value;
+                            });
+                          },
+                          activeColor: const Color(0xFF0083EE),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {});
+                          Navigator.pop(context);
                         },
-                        activeColor: const Color(0xFF0083EE),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {});
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0083EE),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0083EE),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        'Terapkan Filter',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                        child: Text(
+                          'Terapkan Filter',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
