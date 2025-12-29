@@ -557,9 +557,10 @@ class PointDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.9;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
-      constraints: const BoxConstraints(maxWidth: 420),
+      constraints: BoxConstraints(maxWidth: 420, maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -571,33 +572,38 @@ class PointDialogContent extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HeaderSection(onClose: onClose),
-          FormSection(
-            nameController: nameController,
-            nisController: nisController,
-            classController: classController,
-          dateController: dateController,
-          idPenilaianController: idPenilaianController,
-          selectedPointType: selectedPointType,
-          selectedCategory: selectedCategory,
-          aspekPenilaian: aspekPenilaian,
-          categorySearchController: categorySearchController,
-          onCategorySearchChanged: onCategorySearchChanged,
-          onPointTypeChanged: onPointTypeChanged,
-          onCategoryChanged: onCategoryChanged,
-          onDateTap: onDateTap,
-          isLoadingCategories: isLoadingCategories,
-          errorMessageCategories: errorMessageCategories,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HeaderSection(onClose: onClose),
+              FormSection(
+                nameController: nameController,
+                nisController: nisController,
+                classController: classController,
+                dateController: dateController,
+                idPenilaianController: idPenilaianController,
+                selectedPointType: selectedPointType,
+                selectedCategory: selectedCategory,
+                aspekPenilaian: aspekPenilaian,
+                categorySearchController: categorySearchController,
+                onCategorySearchChanged: onCategorySearchChanged,
+                onPointTypeChanged: onPointTypeChanged,
+                onCategoryChanged: onCategoryChanged,
+                onDateTap: onDateTap,
+                isLoadingCategories: isLoadingCategories,
+                errorMessageCategories: errorMessageCategories,
+              ),
+              ActionButtons(
+                isSubmitting: isSubmitting,
+                onCancel: onClose,
+                onSubmit: onSubmit,
+              ),
+            ],
           ),
-          ActionButtons(
-            isSubmitting: isSubmitting,
-            onCancel: onClose,
-            onSubmit: onSubmit,
-          ),
-        ],
+        ),
       ),
     );
   }
