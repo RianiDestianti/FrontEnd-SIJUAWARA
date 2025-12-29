@@ -69,7 +69,6 @@ class ApiAppreciation {
 
 class Student {
   final String name;
-  final String status;
   final String nis;
   final String programKeahlian;
   final String kelas;
@@ -81,7 +80,6 @@ class Student {
 
   Student({
     required this.name,
-    required this.status,
     required this.nis,
     required this.programKeahlian,
     required this.kelas,
@@ -144,7 +142,6 @@ class AccumulationHistory {
   final int pelanggaran;
   final int apresiasi;
   final int total;
-  final String status;
   final String date;
 
   AccumulationHistory({
@@ -152,7 +149,6 @@ class AccumulationHistory {
     required this.pelanggaran,
     required this.apresiasi,
     required this.total,
-    required this.status,
     required this.date,
   });
 }
@@ -247,7 +243,6 @@ Future<void> _loadUserData() async {
 
       detailedStudent = Student(
         name: data['name'] ?? 'Unknown',
-        status: data['status'] ?? 'Unknown',
         nis: data['nis'] ?? '0',
         programKeahlian: data['programKeahlian'] ?? data['kelas'] ?? 'Unknown',
         kelas: data['kelas'] ?? 'Unknown',
@@ -509,15 +504,6 @@ Future<void> _loadUserData() async {
 
       final totalPoints = totalApresiasiPoints - totalPelanggaranPoints;
 
-      String status;
-      if (totalPoints >= 0) {
-        status = 'Aman';
-      } else if (totalPoints >= -20) {
-        status = 'Bermasalah';
-      } else {
-        status = 'Prioritas';
-      }
-
       setState(() {
         akumulasiHistory = [
           AccumulationHistory(
@@ -525,7 +511,6 @@ Future<void> _loadUserData() async {
             pelanggaran: totalPelanggaranPoints,
             apresiasi: totalApresiasiPoints,
             total: totalPoints,
-            status: status,
             date: 'Sampai ${DateFormat('dd MMM yyyy').format(DateTime.now())}',
           ),
         ];
@@ -542,35 +527,6 @@ Future<void> _loadUserData() async {
   void dispose() {
     _animationController.dispose();
     super.dispose();
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Aman':
-        return const Color(0xFF10B981);
-      case 'Bermasalah':
-        return const Color(0xFFEA580C);
-      case 'Prioritas':
-        return const Color(0xFFFF6B6D);
-      default:
-        return const Color(0xFF0083EE);
-    }
-  }
-
-  List<Color> _getBackgroundGradient(String status) {
-    if (status == 'Aman') {
-      return [const Color(0xFF61B8FF), const Color(0xFF0083EE)];
-    } else {
-      return [const Color(0xFFFF6B6D), const Color(0xFFEA580C)];
-    }
-  }
-
-  Color _getBackgroundShadowColor(String status) {
-    if (status == 'Aman') {
-      return const Color(0x200083EE);
-    } else {
-      return const Color(0x20FF6B6D);
-    }
   }
 
   @override
@@ -599,8 +555,8 @@ Future<void> _loadUserData() async {
       );
     }
 
-    final backgroundGradient = _getBackgroundGradient(detailedStudent.status);
-    final shadowColor = _getBackgroundShadowColor(detailedStudent.status);
+    const backgroundGradient = [Color(0xFF61B8FF), Color(0xFF0083EE)];
+    const shadowColor = Color(0x200083EE);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -649,22 +605,6 @@ Future<void> _loadUserData() async {
                               children: [
                                 SizedBox(
                                   height: MediaQuery.of(context).padding.top,
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const SizedBox(width: 40, height: 40),
-                                    Text(
-                                      'Profil Siswa',
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 40),
-                                  ],
                                 ),
                                 const SizedBox(height: 32),
                                 SlideTransition(
@@ -859,7 +799,7 @@ Future<void> _loadUserData() async {
                                                         width: 8,
                                                       ),
                                                       Text(
-                                                        'Catatan BK',
+                                                        'Penanganan',
                                                         style:
                                                             GoogleFonts.poppins(
                                                               fontSize: 14,
@@ -1339,7 +1279,7 @@ Future<void> _loadUserData() async {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _getStatusColor(item.status).withOpacity(0.2),
+          color: const Color(0xFFE5E7EB),
           width: 2,
         ),
         boxShadow: [
@@ -1378,24 +1318,6 @@ Future<void> _loadUserData() async {
                       ),
                     ),
                   ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(item.status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  item.status,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: _getStatusColor(item.status),
-                  ),
                 ),
               ),
             ],

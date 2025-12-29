@@ -1393,101 +1393,145 @@ class _LaporanScreenState extends State<LaporanScreen>
                                         ),
                                       ],
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'Hasil Akumulasi',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w700,
-                                            color: const Color(0xFF1F2937),
-                                          ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            GestureDetector(
-                                              onTap: _showFilterBottomSheet,
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 16,
-                                                      vertical: 8,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(
-                                                    0xFFF3F4F6,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(20),
-                                                  border: Border.all(
-                                                    color: const Color(
-                                                      0xFFE5E7EB,
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final isCompact =
+                                            constraints.maxWidth < 360;
+                                        final filterLabel =
+                                            _selectedFilter == 'Negatif'
+                                                ? 'Nilai Negatif'
+                                                : _selectedFilter == '101+'
+                                                ? '101 ke atas'
+                                                : _selectedFilter;
+                                        final filterButton = GestureDetector(
+                                          onTap: _showFilterBottomSheet,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF3F4F6),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: const Color(0xFFE5E7EB),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    filterLabel,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: const Color(
+                                                        0xFF374151,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      _selectedFilter ==
-                                                              'Negatif'
-                                                          ? 'Nilai Negatif'
-                                                          : _selectedFilter ==
-                                                              '101+'
-                                                          ? '101 ke atas'
-                                                          : _selectedFilter,
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                            fontSize: 13,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            color: const Color(
-                                                              0xFF374151,
-                                                            ),
-                                                          ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    const Icon(
-                                                      Icons.keyboard_arrow_down,
-                                                      size: 16,
-                                                      color: Color(0xFF6B7280),
-                                                    ),
-                                                  ],
+                                                const SizedBox(width: 8),
+                                                const Icon(
+                                                  Icons.keyboard_arrow_down,
+                                                  size: 16,
+                                                  color: Color(0xFF6B7280),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                        final downloadButton = GestureDetector(
+                                          onTap: _showExportDialog,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF3F4F6),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: const Color(0xFFE5E7EB),
+                                              ),
+                                            ),
+                                            child: const Icon(
+                                              Icons.download_rounded,
+                                              color: Color(0xFF374151),
+                                              size: 20,
+                                            ),
+                                          ),
+                                        );
+
+                                        if (isCompact) {
+                                          return Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Hasil Akumulasi',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: const Color(
+                                                    0xFF1F2937,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: filterButton,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  downloadButton,
+                                                ],
+                                              ),
+                                            ],
+                                          );
+                                        }
+
+                                        return Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                'Hasil Akumulasi',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: const Color(
+                                                    0xFF1F2937,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
-                                            GestureDetector(
-                                              onTap: _showExportDialog,
-                                              child: Container(
-                                                padding: const EdgeInsets.all(
-                                                  8,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(
-                                                    0xFFF3F4F6,
+                                            const SizedBox(width: 12),
+                                            Row(
+                                              children: [
+                                                ConstrainedBox(
+                                                  constraints: BoxConstraints(
+                                                    maxWidth:
+                                                        constraints.maxWidth *
+                                                            0.5,
                                                   ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  border: Border.all(
-                                                    color: const Color(
-                                                      0xFFE5E7EB,
-                                                    ),
-                                                  ),
+                                                  child: filterButton,
                                                 ),
-                                                child: const Icon(
-                                                  Icons.download_rounded,
-                                                  color: Color(0xFF374151),
-                                                  size: 20,
-                                                ),
-                                              ),
+                                                const SizedBox(width: 8),
+                                                downloadButton,
+                                              ],
                                             ),
                                           ],
-                                        ),
-                                      ],
+                                        );
+                                      },
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -1695,22 +1739,29 @@ class _LaporanScreenState extends State<LaporanScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F2937),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
                 ),
               ),
-              Text(
-                percentage,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1F2937),
+              const SizedBox(width: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  percentage,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1F2937),
+                  ),
                 ),
               ),
             ],
