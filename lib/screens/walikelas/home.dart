@@ -23,6 +23,8 @@ class Student {
   final int rank;
   final String status;
   final int nis;
+  final String? spLevel;
+  final String? phLevel;
 
   Student({
     required this.name,
@@ -34,6 +36,8 @@ class Student {
     required this.rank,
     required this.status,
     required this.nis,
+    this.spLevel,
+    this.phLevel,
   });
 }
 
@@ -188,6 +192,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     try {
       Map<String, dynamic>? penghargaanJson;
       Map<String, dynamic>? pelanggaranJson;
+      Map<String, String> kelasMap = {};
+      Map<String, String> jurusanMap = {};
 
       final kelasResponse = await http.get(
         Uri.parse('http://sijuwara.student.smkn11bdg.sch.id/api/kelas'),
@@ -195,72 +201,99 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (kelasResponse.statusCode == 200) {
         final kelasJson = jsonDecode(kelasResponse.body);
         _kelasData = List<Map<String, dynamic>>.from(kelasJson['data']);
+        kelasMap = {
+          for (var kelas in _kelasData)
+            kelas['id_kelas'].toString(): kelas['nama_kelas'].toString(),
+        };
+        jurusanMap = {
+          for (var kelas in _kelasData)
+            kelas['id_kelas'].toString(): kelas['jurusan'].toString(),
+        };
       }
 
-      final akumulasiResponse = await http.get(
-        Uri.parse('http://sijuwara.student.smkn11bdg.sch.id/api/akumulasi'),
-      );
-      if (akumulasiResponse.statusCode == 200) {
-        final akumulasiJson = jsonDecode(akumulasiResponse.body);
-        final siswaData = List<Map<String, dynamic>>.from(
-          akumulasiJson['data']['data'],
+      if (_walikelasId.isNotEmpty && _teacherClassId.isNotEmpty) {
+        final siswaResponse = await http.get(
+          Uri.parse(
+            'http://sijuwara.student.smkn11bdg.sch.id/api/siswa?nip=$_walikelasId&id_kelas=$_teacherClassId',
+          ),
         );
+        if (siswaResponse.statusCode == 200) {
+          final siswaJson = jsonDecode(siswaResponse.body);
+          final siswaData = List<Map<String, dynamic>>.from(
+            siswaJson['data'] ?? [],
+          );
 
-        final kelasMap = {
-          for (var kelas in _kelasData) kelas['id_kelas']: kelas['nama_kelas'],
-        };
+          final classStudents =
+              siswaData.map((siswa) {
+                final idKelas = siswa['id_kelas']?.toString() ?? '';
+                final poin = int.tryParse(
+                      siswa['poin_total']?.toString() ?? '',
+                    ) ??
+                    0;
+                final spLevel = _resolveSpLevel(
+                  poin,
+                  siswa['sp_level']?.toString(),
+                );
+                final phLevel = _resolvePhLevel(
+                  poin,
+                  siswa['ph_level']?.toString(),
+                );
+                final status =
+                    poin >= 0
+                        ? 'Aman'
+                        : (poin <= -20 ? 'Prioritas' : 'Bermasalah');
 
-        final allStudents =
-            siswaData.asMap().entries.map((entry) {
-              int index = entry.key;
-              var siswa = entry.value;
-              String kelas = kelasMap[siswa['id_kelas']] ?? 'Unknown';
-              int poin = siswa['poin_total'] != null ? siswa['poin_total'] : 0;
-          String prestasi =
-              poin >= 0
-                  ? 'Peringkat ${index + 1}'
-                  : 'Peringkat ${index + 1}';
-              String status =
-                  poin >= 0
-                      ? 'Aman'
-                      : (poin <= -20 ? 'Prioritas' : 'Bermasalah');
+                return Student(
+                  name: siswa['nama_siswa']?.toString() ?? 'Unknown',
+                  kelas: kelasMap[idKelas] ?? idKelas,
+                  programKeahlian:
+                      jurusanMap[idKelas] ??
+                      siswa['program_keahlian']?.toString() ??
+                      'Unknown',
+                  poin: poin,
+                  prestasi: '-',
+                  avatar: Icons.person,
+                  rank: 0,
+                  status: status,
+                  nis: int.tryParse(siswa['nis']?.toString() ?? '') ?? 0,
+                  spLevel: spLevel,
+                  phLevel: phLevel,
+                );
+              }).toList();
 
-              return Student(
-                name: siswa['nama_siswa'],
-                kelas: kelas,
-                poin: poin,
-                programKeahlian: siswa['program_keahlian'] ?? 'Unknown',
-                prestasi: prestasi,
-                avatar: Icons.person,
-                rank: index + 1,
-                status: status,
-                nis: siswa['nis'],
-              );
-            }).toList();
+          final phStudents =
+              classStudents
+                  .where((s) => s.phLevel != null)
+                  .toList()
+                ..sort((a, b) => b.poin.compareTo(a.poin));
+          final spStudents =
+              classStudents
+                  .where((s) => s.spLevel != null)
+                  .toList()
+                ..sort((a, b) => a.poin.compareTo(b.poin));
 
-        final classStudents =
-            allStudents
-                .where((s) => s.kelas == kelasMap[_teacherClassId])
-                .toList();
+          _siswaTerbaik = _rankAndLabel(phStudents, isPh: true);
+          _siswaBerat = _rankAndLabel(spStudents, isPh: false);
 
-        _siswaTerbaik =
-            classStudents.where((s) => s.poin >= 0).toList()
-              ..sort((a, b) => b.poin.compareTo(a.poin));
-        _siswaBerat =
-            classStudents.where((s) => s.poin < 0).toList()
-              ..sort((a, b) => a.poin.compareTo(b.poin));
+          _filteredSiswaTerbaik = _siswaTerbaik;
+          _filteredSiswaBerat = _siswaBerat;
 
-        _siswaTerbaik = _siswaTerbaik.take(4).toList();
-        _siswaBerat = _siswaBerat.take(4).toList();
-
-        _filteredSiswaTerbaik = _siswaTerbaik;
-        _filteredSiswaBerat = _siswaBerat;
-
-        await _addLocalActivity(
-          'Sistem',
-          'Data Diperbarui',
-          'Melakukan refresh data siswa dan kelas',
-        );
+          await _addLocalActivity(
+            'Sistem',
+            'Data Diperbarui',
+            'Melakukan refresh data siswa dan kelas',
+          );
+        } else {
+          _siswaTerbaik = [];
+          _siswaBerat = [];
+          _filteredSiswaTerbaik = [];
+          _filteredSiswaBerat = [];
+        }
+      } else {
+        _siswaTerbaik = [];
+        _siswaBerat = [];
+        _filteredSiswaTerbaik = [];
+        _filteredSiswaBerat = [];
       }
 
       if (_walikelasId.isNotEmpty && _teacherClassId.isNotEmpty) {
@@ -711,9 +744,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   children: [
                                     _buildActionButton('Umum', 0),
                                     const SizedBox(width: 10),
-                                    _buildActionButton('Penghargaan', 2),
+                                    _buildActionButton('PH', 2),
                                     const SizedBox(width: 10),
-                                    _buildActionButton('Pelanggaran', 3),
+                                    _buildActionButton('SP', 3),
                                   ],
                                 ),
                               ],
@@ -970,7 +1003,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Penghargaan',
+                        'PH (Penghargaan)',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -978,7 +1011,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       Text(
-                        'Siswa dengan penghargaan tertinggi',
+                        'Siswa dengan status PH1–PH3',
                         style: GoogleFonts.poppins(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 12,
@@ -1074,7 +1107,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Pelanggaran',
+                        'SP (Pelanggaran)',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -1082,7 +1115,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                       Text(
-                        'Siswa dengan pelanggaran terberat',
+                        'Siswa dengan status SP1–SP3',
                         style: GoogleFonts.poppins(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 12,
@@ -1484,6 +1517,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       default:
         return const Color(0xFF0083EE);
     }
+  }
+
+  String? _resolvePhLevel(int points, String? rawLevel) {
+    if (points <= -25) return null;
+    final ph = rawLevel?.trim();
+    if (ph != null && ph.isNotEmpty && ph != '-') {
+      return ph;
+    }
+    if (points >= 151) return 'PH3';
+    if (points >= 126) return 'PH2';
+    if (points >= 100) return 'PH1';
+    return null;
+  }
+
+  String? _resolveSpLevel(int points, String? rawLevel) {
+    final sp = rawLevel?.trim();
+    if (sp != null && sp.isNotEmpty && sp != '-') {
+      return sp;
+    }
+    if (points <= -76) return 'SP3';
+    if (points <= -51) return 'SP2';
+    if (points <= -25) return 'SP1';
+    return null;
+  }
+
+  List<Student> _rankAndLabel(
+    List<Student> students, {
+    required bool isPh,
+  }) {
+    return students.asMap().entries.map((entry) {
+      final siswa = entry.value;
+      final level = isPh ? siswa.phLevel : siswa.spLevel;
+      return Student(
+        name: siswa.name,
+        kelas: siswa.kelas,
+        programKeahlian: siswa.programKeahlian,
+        poin: siswa.poin,
+        prestasi: level != null ? 'Level $level' : siswa.prestasi,
+        avatar: siswa.avatar,
+        rank: entry.key + 1,
+        status: siswa.status,
+        nis: siswa.nis,
+        spLevel: siswa.spLevel,
+        phLevel: siswa.phLevel,
+      );
+    }).toList();
   }
 
   IconData _getRankIcon(int rank) {
