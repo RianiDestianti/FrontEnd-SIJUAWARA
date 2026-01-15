@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:skoring/config/api_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FcmTokenService {
@@ -61,7 +62,7 @@ class FcmTokenService {
 
     try {
       await http.post(
-        Uri.parse('http://sijuwara.student.smkn11bdg.sch.id/api/fcm-token'),
+        Uri.parse('${ApiConfig.baseUrl}/fcm-token'),
         headers: {'Accept': 'application/json'},
         body: {
           'nip': nip,

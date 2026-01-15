@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:skoring/services/fcm_token_service.dart';
 
+import 'package:skoring/config/api_config.dart';
+
 class IntroductionScreen extends StatefulWidget {
   const IntroductionScreen({super.key});
 
@@ -702,7 +704,7 @@ void _handleLogin() async {
   }
   try {
     final response = await http.post(
-      Uri.parse("http://sijuwara.student.smkn11bdg.sch.id/api/login"),
+      Uri.parse('${ApiConfig.baseUrl}/login'),
       body: {"nip": nip, "password": password},
     );
     final data = jsonDecode(response.body);

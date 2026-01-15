@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:skoring/config/api_config.dart';
+
 class HistoryItem {
   final String id;
   final String type;
@@ -60,7 +62,6 @@ class _HistoryScreenState extends State<HistoryScreen>
   bool isLoading = true;
   String? errorMessage;
   List<dynamic> aspekPenilaianData = [];
-  final String _baseUrl = 'http://sijuwara.student.smkn11bdg.sch.id/api';
 
   String _nipWalikelas = '';
   String _idKelas = '';
@@ -110,7 +111,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     });
     try {
       final uri = Uri.parse(
-        '$_baseUrl/aspekpenilaian?nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/aspekpenilaian?nip=$_nipWalikelas&id_kelas=$_idKelas',
       );
       final response = await http.get(
         uri,
@@ -151,17 +152,17 @@ class _HistoryScreenState extends State<HistoryScreen>
     });
     try {
       final skoringPenghargaanUri = Uri.parse(
-        '$_baseUrl/skoring_penghargaan?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/skoring_penghargaan?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
       );
       var skoringPelanggaranUri = Uri.parse(
-        '$_baseUrl/skoring_pelanggaran?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/skoring_pelanggaran?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
       );
 
       final skoringPenghargaanResponse = await http.get(skoringPenghargaanUri, headers: {'Accept': 'application/json'});
       var skoringPelanggaranResponse = await http.get(skoringPelanggaranUri, headers: {'Accept': 'application/json'});
       if (skoringPelanggaranResponse.statusCode != 200) {
         skoringPelanggaranUri = Uri.parse(
-          '$_baseUrl/skoring_2pelanggaran?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
+          '${ApiConfig.baseUrl}/skoring_2pelanggaran?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
         );
         skoringPelanggaranResponse = await http.get(skoringPelanggaranUri, headers: {'Accept': 'application/json'});
       }

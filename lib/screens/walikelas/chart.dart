@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:skoring/config/api_config.dart';
+
 class ChartDataItem {
   final double value;
   final String label;
@@ -117,9 +119,9 @@ class _GrafikScreenState extends State<GrafikScreen>
           isApresiasi ? null : 'skoring_2pelanggaran';
 
       Future<http.Response> _doRequest(String endpoint) {
-        final uri = Uri.parse(
-          'http://sijuwara.student.smkn11bdg.sch.id/api/$endpoint?nip=$_nipWalikelas&id_kelas=$_teacherClassId',
-        );
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/$endpoint?nip=$_nipWalikelas&id_kelas=$_teacherClassId',
+      );
         return http.get(uri, headers: {'Accept': 'application/json'});
       }
 

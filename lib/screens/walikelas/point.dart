@@ -1,9 +1,12 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skoring/models/point.dart';
+
+import 'package:skoring/config/api_config.dart';
 
 class PointUtils {
   static Future<Point?> submitPoint({
@@ -46,8 +49,8 @@ class PointUtils {
       }
 
       final endpoint = type == 'Apresiasi'
-          ? 'http://sijuwara.student.smkn11bdg.sch.id/api/skoring_penghargaan?nip=$nip&id_kelas=$idKelas'
-          : 'http://sijuwara.student.smkn11bdg.sch.id/api/skoring_pelanggaran?nip=$nip&id_kelas=$idKelas';
+          ? '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$nip&id_kelas=$idKelas'
+          : '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$nip&id_kelas=$idKelas';
 
       print('Sending POST request to $endpoint');
       print(
@@ -305,7 +308,7 @@ Future<void> fetchAspekPenilaian() async {
     }
 
     final uri = Uri.parse(
-      'http://sijuwara.student.smkn11bdg.sch.id/api/aspekpenilaian?nip=$nip&id_kelas=$idKelas',
+      '${ApiConfig.baseUrl}/aspekpenilaian?nip=$nip&id_kelas=$idKelas',
     );
 
     final response = await http.get(uri, headers: {'Accept': 'application/json'});

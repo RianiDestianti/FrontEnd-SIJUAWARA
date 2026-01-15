@@ -5,6 +5,8 @@ import 'package:skoring/models/note.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:skoring/config/api_config.dart';
+
 class NoteUtils {
   static Future<Note?> submitNote({
     required String nis,
@@ -35,7 +37,7 @@ class NoteUtils {
       }
 
       final url = Uri.parse(
-        'http://sijuwara.student.smkn11bdg.sch.id/api/AddCatatan/$nis?nip=$nip&id_kelas=$idKelas',
+        '${ApiConfig.baseUrl}/AddCatatan/$nis?nip=$nip&id_kelas=$idKelas',
       );
 
       print('Sending POST request to $url');

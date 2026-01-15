@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:skoring/config/api_config.dart';
 import 'package:skoring/models/profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -684,7 +685,7 @@ Future<void> _logout() async {
 
   try {
     final response = await http.post(
-      Uri.parse('http://sijuwara.student.smkn11bdg.sch.id/api/logout?nip=$nip'),
+      Uri.parse('${ApiConfig.baseUrl}/logout?nip=$nip'),
       headers: {
         'Accept': 'application/json',
       },

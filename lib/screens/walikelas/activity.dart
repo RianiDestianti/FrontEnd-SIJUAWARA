@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:skoring/config/api_config.dart';
+
 class Activity {
   final int id;
   final String type;
@@ -153,8 +155,6 @@ class _ActivityScreenState extends State<ActivityScreen>
   String _teacherClassId = '';
   String _walikelasId = '';
   String? _errorMessage;
-  final String _baseUrl = 'http://sijuwara.student.smkn11bdg.sch.id/api';
-
   final List<String> _filterOptions = [
     'Semua',
     'Apresiasi',
@@ -229,7 +229,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     final activities = <Activity>[];
 
     final apresiasiUrl =
-        '$_baseUrl/skoring_penghargaan?nip=$_walikelasId&id_kelas=$_teacherClassId';
+        '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$_walikelasId&id_kelas=$_teacherClassId';
     final apresiasiResponse = await http.get(Uri.parse(apresiasiUrl));
     if (apresiasiResponse.statusCode == 200) {
       final jsonData = jsonDecode(apresiasiResponse.body);
@@ -262,11 +262,11 @@ class _ActivityScreenState extends State<ActivityScreen>
 
     try {
       await loadPelanggaran(
-        '$_baseUrl/skoring_pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
+        '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
       );
     } catch (_) {
       await loadPelanggaran(
-        '$_baseUrl/skoring_2pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
+        '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
       );
     }
 

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:skoring/config/api_config.dart';
+
 import 'detail.dart';
 import 'package:skoring/screens/walikelas/notification.dart';
 import 'package:skoring/screens/profile.dart';
@@ -163,7 +165,7 @@ Future<void> fetchKelas() async {
 
   try {
     final uri = Uri.parse(
-      'http://sijuwara.student.smkn11bdg.sch.id/api/kelas?nip=$walikelasId&id_kelas=$idKelas',
+      '${ApiConfig.baseUrl}/kelas?nip=$walikelasId&id_kelas=$idKelas',
     );
 
     final response = await http.get(
@@ -231,7 +233,7 @@ Future<void> fetchSiswa() async {
 
   try {
     final uri = Uri.parse(
-      'http://sijuwara.student.smkn11bdg.sch.id/api/siswa?nip=$walikelasId&id_kelas=$idKelas',
+      '${ApiConfig.baseUrl}/siswa?nip=$walikelasId&id_kelas=$idKelas',
     );
 
     final response = await http.get(

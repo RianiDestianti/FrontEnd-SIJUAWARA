@@ -5,6 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+
+import 'package:skoring/config/api_config.dart';
+
 import 'point.dart';
 import 'note.dart';
 import 'history.dart';
@@ -179,8 +182,6 @@ class _DetailScreenState extends State<DetailScreen>
   String? errorMessageViolations;
   String? errorMessageStudent;
   List<dynamic> aspekPenilaianData = [];
-  final String _baseUrl = 'http://sijuwara.student.smkn11bdg.sch.id/api';
-
   String _nipWalikelas = '';
   String _idKelas = '';
 
@@ -293,7 +294,7 @@ Future<void> _loadUserData() async {
     });
     try {
       final uri = Uri.parse(
-        '$_baseUrl/aspekpenilaian?nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/aspekpenilaian?nip=$_nipWalikelas&id_kelas=$_idKelas',
       );
       final response = await http.get(
         uri,
@@ -330,7 +331,7 @@ Future<void> _loadUserData() async {
     });
     try {
       final uri = Uri.parse(
-        '$_baseUrl/skoring_penghargaan?nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$_nipWalikelas&id_kelas=$_idKelas',
       );
       final response = await http.get(uri, headers: {'Accept': 'application/json'});
 
@@ -409,7 +410,7 @@ Future<void> _loadUserData() async {
       Future<http.Response> loadPelanggaran() {
         return http.get(
           Uri.parse(
-            '$_baseUrl/skoring_pelanggaran?nip=$_nipWalikelas&id_kelas=$_idKelas',
+            '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$_nipWalikelas&id_kelas=$_idKelas',
           ),
           headers: {'Accept': 'application/json'},
         );
@@ -419,7 +420,7 @@ Future<void> _loadUserData() async {
       if (response.statusCode != 200) {
         response = await http.get(
           Uri.parse(
-            '$_baseUrl/skoring_2pelanggaran?nip=$_nipWalikelas&id_kelas=$_idKelas',
+            '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$_nipWalikelas&id_kelas=$_idKelas',
           ),
           headers: {'Accept': 'application/json'},
         );

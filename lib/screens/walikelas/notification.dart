@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:skoring/config/api_config.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'detail.dart';
@@ -69,7 +72,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
 
       final response = await http.get(
         Uri.parse(
-          'http://sijuwara.student.smkn11bdg.sch.id/api/notifikasi?nip=$_walikelasId&id_kelas=$_teacherClassId',
+          '${ApiConfig.baseUrl}/notifikasi?nip=$_walikelasId&id_kelas=$_teacherClassId',
         ),
       );
       if (response.statusCode == 200) {

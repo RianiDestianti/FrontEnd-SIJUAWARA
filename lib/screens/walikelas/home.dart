@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:skoring/config/api_config.dart';
+
 import '../../navigation/walikelas.dart';
 import 'student.dart';
 import 'report.dart';
@@ -196,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       Map<String, String> jurusanMap = {};
 
       final kelasResponse = await http.get(
-        Uri.parse('http://sijuwara.student.smkn11bdg.sch.id/api/kelas'),
+        Uri.parse('${ApiConfig.baseUrl}/kelas'),
       );
       if (kelasResponse.statusCode == 200) {
         final kelasJson = jsonDecode(kelasResponse.body);
@@ -214,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (_walikelasId.isNotEmpty && _teacherClassId.isNotEmpty) {
         final siswaResponse = await http.get(
           Uri.parse(
-            'http://sijuwara.student.smkn11bdg.sch.id/api/siswa?nip=$_walikelasId&id_kelas=$_teacherClassId',
+            '${ApiConfig.baseUrl}/siswa?nip=$_walikelasId&id_kelas=$_teacherClassId',
           ),
         );
         if (siswaResponse.statusCode == 200) {
@@ -299,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (_walikelasId.isNotEmpty && _teacherClassId.isNotEmpty) {
         final penghargaanResponse = await http.get(
           Uri.parse(
-            'http://sijuwara.student.smkn11bdg.sch.id/api/skoring_penghargaan?nip=$_walikelasId&id_kelas=$_teacherClassId',
+            '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$_walikelasId&id_kelas=$_teacherClassId',
           ),
         );
         if (penghargaanResponse.statusCode == 200) {
@@ -324,13 +327,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         var pelanggaranResponse = await http.get(
           Uri.parse(
-            'http://sijuwara.student.smkn11bdg.sch.id/api/skoring_pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
+            '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
           ),
         );
         if (pelanggaranResponse.statusCode != 200) {
           pelanggaranResponse = await http.get(
             Uri.parse(
-              'http://sijuwara.student.smkn11bdg.sch.id/api/skoring_2pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
+              '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
             ),
           );
         }
