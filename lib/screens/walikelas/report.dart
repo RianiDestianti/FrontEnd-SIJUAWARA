@@ -13,134 +13,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:skoring/config/api_config.dart';
+import 'package:skoring/models/walikelas/reportmodels.dart';
 
 import 'dart:io';
-
-class FAQItem {
-  final String title;
-  final String jenisPoin;
-  final List<Map<String, String>> items;
-
-  FAQItem({
-    required this.title,
-    required this.jenisPoin,
-    required this.items,
-  });
-
-  factory FAQItem.fromJson(Map<String, dynamic> json) {
-    return FAQItem(
-      title: json['kategori'] ?? 'Unknown',
-      jenisPoin: json['jenis_poin']?.toString() ?? '',
-      items: [
-        {
-          'text': json['uraian'] ?? 'No description',
-          'points': '${json['indikator_poin'] ?? 0} poin',
-        },
-      ],
-    );
-  }
-}
-
-class StudentScore {
-  final String keterangan;
-  final String tanggal;
-  final int poin;
-  final String type;
-
-  StudentScore({
-    required this.keterangan,
-    required this.tanggal,
-    required this.poin,
-    required this.type,
-  });
-
-  factory StudentScore.fromPenghargaan(Map<String, dynamic> json, int poin) {
-    return StudentScore(
-      keterangan: json['alasan']?.toString() ?? 'Unknown',
-      tanggal: json['tanggal_penghargaan']?.toString() ?? 'Unknown',
-      poin: poin,
-      type: 'apresiasi',
-    );
-  }
-
-  factory StudentScore.fromPeringatan(Map<String, dynamic> json, int poin) {
-    return StudentScore(
-      keterangan: json['alasan']?.toString() ?? 'Unknown',
-      tanggal: json['tanggal_sp']?.toString() ?? 'Unknown',
-      poin: poin,
-      type: 'pelanggaran',
-    );
-  }
-}
-
-class Student {
-  final String nis;
-  final String name;
-  final int totalPoin;
-  final int apresiasi;
-  final int pelanggaran;
-  final bool isPositive;
-  final Color color;
-  final String avatar;
-  final List<StudentScore> scores;
-  final String idKelas;
-
-  Student({
-    required this.nis,
-    required this.name,
-    required this.totalPoin,
-    required this.apresiasi,
-    required this.pelanggaran,
-    required this.isPositive,
-    required this.color,
-    required this.avatar,
-    required this.scores,
-    required this.idKelas,
-  });
-
-  factory Student.fromJson(
-    Map<String, dynamic> json,
-    List<StudentScore> scores,
-  ) {
-    final totalPoin =
-        int.tryParse(json['poin_total']?.toString() ?? '') ?? 0;
-    return Student(
-      nis: json['nis']?.toString() ?? '',
-      name: json['nama_siswa']?.toString() ?? 'Unknown',
-      totalPoin: totalPoin,
-      apresiasi:
-          int.tryParse(json['poin_apresiasi']?.toString() ?? '') ?? 0,
-      pelanggaran:
-          int.tryParse(json['poin_pelanggaran']?.toString() ?? '') ?? 0,
-      isPositive: totalPoin >= 0,
-      color: totalPoin >= 0 ? const Color(0xFF10B981) : const Color(0xFFFF6B6D),
-      avatar:
-          (json['nama_siswa']?.toString() ?? 'U').substring(0, 2).toUpperCase(),
-      scores: scores,
-      idKelas: json['id_kelas']?.toString() ?? '',
-    );
-  }
-}
-
-class Kelas {
-  final String idKelas;
-  final String namaKelas;
-  final String jurusan;
-
-  Kelas({
-    required this.idKelas,
-    required this.namaKelas,
-    required this.jurusan,
-  });
-
-  factory Kelas.fromJson(Map<String, dynamic> json) {
-    return Kelas(
-      idKelas: json['id_kelas']?.toString() ?? '',
-      namaKelas: json['nama_kelas']?.toString() ?? 'Unknown',
-      jurusan: json['jurusan']?.toString() ?? 'Unknown',
-    );
-  }
-}
 
 class LaporanScreen extends StatefulWidget {
   const LaporanScreen({Key? key}) : super(key: key);
@@ -388,7 +263,6 @@ class _LaporanScreenState extends State<LaporanScreen>
     }
   }
 
-
   Future<bool> _ensureStoragePermission() async {
     if (!Platform.isAndroid) return true;
 
@@ -512,10 +386,7 @@ class _LaporanScreenState extends State<LaporanScreen>
           List<dynamic> data = jsonData['data'];
           final students =
               data
-                  .map(
-                    (studentJson) =>
-                        Student.fromJson(studentJson, const []),
-                  )
+                  .map((studentJson) => Student.fromJson(studentJson, const []))
                   .toList();
           _safeSetState(() {
             studentsList = students;
@@ -753,16 +624,14 @@ class _LaporanScreenState extends State<LaporanScreen>
 
   double get _apresiasiPercentage {
     if (_filteredAndSortedStudents.isEmpty) return 0;
-    final totalApresiasi =
-        _filteredAndSortedStudents.fold<int>(
-          0,
-          (sum, student) => sum + student.apresiasi,
-        );
-    final totalPelanggaran =
-        _filteredAndSortedStudents.fold<int>(
-          0,
-          (sum, student) => sum + student.pelanggaran.abs(),
-        );
+    final totalApresiasi = _filteredAndSortedStudents.fold<int>(
+      0,
+      (sum, student) => sum + student.apresiasi,
+    );
+    final totalPelanggaran = _filteredAndSortedStudents.fold<int>(
+      0,
+      (sum, student) => sum + student.pelanggaran.abs(),
+    );
     final total = totalApresiasi + totalPelanggaran;
     if (total == 0) return 0;
     return totalApresiasi / total;
@@ -770,16 +639,14 @@ class _LaporanScreenState extends State<LaporanScreen>
 
   double get _pelanggaranPercentage {
     if (_filteredAndSortedStudents.isEmpty) return 0;
-    final totalApresiasi =
-        _filteredAndSortedStudents.fold<int>(
-          0,
-          (sum, student) => sum + student.apresiasi,
-        );
-    final totalPelanggaran =
-        _filteredAndSortedStudents.fold<int>(
-          0,
-          (sum, student) => sum + student.pelanggaran.abs(),
-        );
+    final totalApresiasi = _filteredAndSortedStudents.fold<int>(
+      0,
+      (sum, student) => sum + student.apresiasi,
+    );
+    final totalPelanggaran = _filteredAndSortedStudents.fold<int>(
+      0,
+      (sum, student) => sum + student.pelanggaran.abs(),
+    );
     final total = totalApresiasi + totalPelanggaran;
     if (total == 0) return 0;
     return totalPelanggaran / total;
@@ -1093,404 +960,468 @@ class _LaporanScreenState extends State<LaporanScreen>
                         physics: const AlwaysScrollableScrollPhysics(),
                         child: Column(
                           children: [
-                          Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(32),
-                                bottomRight: Radius.circular(32),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color(0x200083EE),
-                                  blurRadius: 20,
-                                  offset: Offset(0, 10),
+                            Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(0xFF61B8FF),
+                                    Color(0xFF0083EE),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                24,
-                                MediaQuery.of(context).padding.top + 20,
-                                24,
-                                32,
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(32),
+                                  bottomRight: Radius.circular(32),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0x200083EE),
+                                    blurRadius: 20,
+                                    offset: Offset(0, 10),
+                                  ),
+                                ],
                               ),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const SizedBox(width: 40, height: 40),
-                                      Row(
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (context) =>
-                                                          const NotifikasiScreen(),
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  24,
+                                  MediaQuery.of(context).padding.top + 20,
+                                  24,
+                                  32,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const SizedBox(width: 40, height: 40),
+                                        Row(
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            const NotifikasiScreen(),
+                                                  ),
+                                                );
+                                              },
+                                              child: Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
                                                 ),
-                                              );
-                                            },
-                                            child: Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(
-                                                  0.2,
+                                                child: const Icon(
+                                                  Icons.notifications_rounded,
+                                                  color: Colors.white,
+                                                  size: 24,
                                                 ),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: const Icon(
-                                                Icons.notifications_rounded,
-                                                color: Colors.white,
-                                                size: 24,
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          GestureDetector(
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (context) =>
-                                                          const ProfileScreen(),
+                                            const SizedBox(width: 8),
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            const ProfileScreen(),
+                                                  ),
+                                                );
+                                              },
+                                              child: Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(30),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(0.1),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              );
-                                            },
-                                            child: Container(
-                                              width: 40,
-                                              height: 40,
+                                                child: const Icon(
+                                                  Icons.person_rounded,
+                                                  color: Color(0xFF0083EE),
+                                                  size: 24,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: _buildHeaderContent(),
+                                    ),
+                                    if (!isLoading && !hasError) ...[
+                                      const SizedBox(height: 24),
+                                      Container(
+                                        height: 50,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            25,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.08,
+                                              ),
+                                              blurRadius: 15,
+                                              offset: const Offset(0, 5),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
                                               decoration: BoxDecoration(
-                                                color: Colors.white,
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFF61B8FF),
+                                                    Color(0xFF0083EE),
+                                                  ],
+                                                ),
                                                 borderRadius:
                                                     BorderRadius.circular(30),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withOpacity(0.1),
-                                                    blurRadius: 8,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
                                               ),
                                               child: const Icon(
-                                                Icons.person_rounded,
-                                                color: Color(0xFF0083EE),
-                                                size: 24,
+                                                Icons.search,
+                                                color: Colors.white,
+                                                size: 18,
                                               ),
                                             ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: TextField(
+                                                controller: _searchController,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    _searchQuery = value;
+                                                  });
+                                                },
+                                                decoration: InputDecoration(
+                                                  hintText:
+                                                      _selectedView == 'Rekap'
+                                                          ? 'Cari nama murid...'
+                                                          : 'Cari aturan atau poin...',
+                                                  hintStyle:
+                                                      GoogleFonts.poppins(
+                                                        color: const Color(
+                                                          0xFF9CA3AF,
+                                                        ),
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.w400,
+                                                      ),
+                                                  border: InputBorder.none,
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                ),
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 15,
+                                                  color: const Color(
+                                                    0xFF1F2937,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            if (_searchQuery.isNotEmpty)
+                                              GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _searchController.clear();
+                                                    _searchQuery = '';
+                                                  });
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(
+                                                    4,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.clear,
+                                                    color: Color(0xFF9CA3AF),
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+                                      Row(
+                                        children: [
+                                          _buildViewButton('Rekap', 'Rekap'),
+                                          const SizedBox(width: 10),
+                                          _buildViewButton(
+                                            'FAQ Poin',
+                                            'FAQ Poin',
                                           ),
                                         ],
                                       ),
                                     ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: _buildHeaderContent(),
-                                  ),
-                                  if (!isLoading && !hasError) ...[
-                                    const SizedBox(height: 24),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (hasError)
+                                    _buildErrorState()
+                                  else if (isLoading)
+                                    _buildLoadingState()
+                                  else if (_selectedView == 'Rekap') ...[
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildStatCard(
+                                            '${_filteredAndSortedStudents.length}',
+                                            'Total Siswa',
+                                            Icons.people_outline,
+                                            const LinearGradient(
+                                              colors: [
+                                                Color(0xFF61B8FF),
+                                                Color(0xFF0083EE),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: _buildStatCard(
+                                            '${_averageApresiasi.toInt()}',
+                                            'Rata-rata\nApresiasi',
+                                            Icons.check_circle_outline,
+                                            const LinearGradient(
+                                              colors: [
+                                                Color(0xFF10B981),
+                                                Color(0xFF34D399),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildProgressCard(
+                                            'Apresiasi',
+                                            '${(_apresiasiPercentage * 100).toInt()}%',
+                                            _apresiasiPercentage,
+                                            const LinearGradient(
+                                              colors: [
+                                                Color(0xFF10B981),
+                                                Color(0xFF34D399),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: _buildProgressCard(
+                                            'Pelanggaran',
+                                            '${(_pelanggaranPercentage * 100).toInt()}%',
+                                            _pelanggaranPercentage,
+                                            const LinearGradient(
+                                              colors: [
+                                                Color(0xFFFF6B6D),
+                                                Color(0xFFFF8E8F),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 20),
                                     Container(
-                                      height: 50,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                      ),
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(20),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.circular(25),
+                                        borderRadius: BorderRadius.circular(20),
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.black.withOpacity(
-                                              0.08,
+                                              0.06,
                                             ),
                                             blurRadius: 15,
                                             offset: const Offset(0, 5),
                                           ),
                                         ],
                                       ),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              gradient: const LinearGradient(
-                                                colors: [
-                                                  Color(0xFF61B8FF),
-                                                  Color(0xFF0083EE),
+                                      child: LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final isCompact =
+                                              constraints.maxWidth < 360;
+                                          final filterLabel =
+                                              _selectedFilter == 'Negatif'
+                                                  ? 'Nilai Negatif'
+                                                  : _selectedFilter == '101+'
+                                                  ? '101 ke atas'
+                                                  : _selectedFilter;
+                                          final filterButton = GestureDetector(
+                                            onTap: _showFilterBottomSheet,
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 16,
+                                                    vertical: 8,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF3F4F6),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0xFFE5E7EB,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      filterLabel,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                            fontSize: 13,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: const Color(
+                                                              0xFF374151,
+                                                            ),
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  const Icon(
+                                                    Icons.keyboard_arrow_down,
+                                                    size: 16,
+                                                    color: Color(0xFF6B7280),
+                                                  ),
                                                 ],
                                               ),
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
                                             ),
-                                            child: const Icon(
-                                              Icons.search,
-                                              color: Colors.white,
-                                              size: 18,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: TextField(
-                                              controller: _searchController,
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  _searchQuery = value;
-                                                });
-                                              },
-                                              decoration: InputDecoration(
-                                                hintText:
-                                                    _selectedView == 'Rekap'
-                                                        ? 'Cari nama murid...'
-                                                        : 'Cari aturan atau poin...',
-                                                hintStyle: GoogleFonts.poppins(
-                                                  color: const Color(
-                                                    0xFF9CA3AF,
+                                          );
+                                          final downloadButton =
+                                              GestureDetector(
+                                                onTap: _showExportDialog,
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(
+                                                    8,
                                                   ),
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w400,
-                                                ),
-                                                border: InputBorder.none,
-                                                contentPadding: EdgeInsets.zero,
-                                              ),
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 15,
-                                                color: const Color(0xFF1F2937),
-                                              ),
-                                            ),
-                                          ),
-                                          if (_searchQuery.isNotEmpty)
-                                            GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  _searchController.clear();
-                                                  _searchQuery = '';
-                                                });
-                                              },
-                                              child: Container(
-                                                padding: const EdgeInsets.all(
-                                                  4,
-                                                ),
-                                                child: const Icon(
-                                                  Icons.clear,
-                                                  color: Color(0xFF9CA3AF),
-                                                  size: 20,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Row(
-                                      children: [
-                                        _buildViewButton('Rekap', 'Rekap'),
-                                        const SizedBox(width: 10),
-                                        _buildViewButton(
-                                          'FAQ Poin',
-                                          'FAQ Poin',
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (hasError)
-                                  _buildErrorState()
-                                else if (isLoading)
-                                  _buildLoadingState()
-                                else if (_selectedView == 'Rekap') ...[
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildStatCard(
-                                          '${_filteredAndSortedStudents.length}',
-                                          'Total Siswa',
-                                          Icons.people_outline,
-                                          const LinearGradient(
-                                            colors: [
-                                              Color(0xFF61B8FF),
-                                              Color(0xFF0083EE),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _buildStatCard(
-                                          '${_averageApresiasi.toInt()}',
-                                          'Rata-rata\nApresiasi',
-                                          Icons.check_circle_outline,
-                                          const LinearGradient(
-                                            colors: [
-                                              Color(0xFF10B981),
-                                              Color(0xFF34D399),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildProgressCard(
-                                          'Apresiasi',
-                                          '${(_apresiasiPercentage * 100).toInt()}%',
-                                          _apresiasiPercentage,
-                                          const LinearGradient(
-                                            colors: [
-                                              Color(0xFF10B981),
-                                              Color(0xFF34D399),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _buildProgressCard(
-                                          'Pelanggaran',
-                                          '${(_pelanggaranPercentage * 100).toInt()}%',
-                                          _pelanggaranPercentage,
-                                          const LinearGradient(
-                                            colors: [
-                                              Color(0xFFFF6B6D),
-                                              Color(0xFFFF8E8F),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.06),
-                                          blurRadius: 15,
-                                          offset: const Offset(0, 5),
-                                        ),
-                                      ],
-                                    ),
-                                    child: LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final isCompact =
-                                            constraints.maxWidth < 360;
-                                        final filterLabel =
-                                            _selectedFilter == 'Negatif'
-                                                ? 'Nilai Negatif'
-                                                : _selectedFilter == '101+'
-                                                ? '101 ke atas'
-                                                : _selectedFilter;
-                                        final filterButton = GestureDetector(
-                                          onTap: _showFilterBottomSheet,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 8,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF3F4F6),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              border: Border.all(
-                                                color: const Color(0xFFE5E7EB),
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Flexible(
-                                                  child: Text(
-                                                    filterLabel,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: GoogleFonts.poppins(
-                                                      fontSize: 13,
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                      0xFFF3F4F6,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
                                                       color: const Color(
-                                                        0xFF374151,
+                                                        0xFFE5E7EB,
                                                       ),
                                                     ),
                                                   ),
+                                                  child: const Icon(
+                                                    Icons.download_rounded,
+                                                    color: Color(0xFF374151),
+                                                    size: 20,
+                                                  ),
                                                 ),
-                                                const SizedBox(width: 8),
-                                                const Icon(
-                                                  Icons.keyboard_arrow_down,
-                                                  size: 16,
-                                                  color: Color(0xFF6B7280),
+                                              );
+
+                                          if (isCompact) {
+                                            return Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Hasil Akumulasi',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: const Color(
+                                                      0xFF1F2937,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 12),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: filterButton,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    downloadButton,
+                                                  ],
                                                 ),
                                               ],
-                                            ),
-                                          ),
-                                        );
-                                        final downloadButton = GestureDetector(
-                                          onTap: _showExportDialog,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF3F4F6),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: const Color(0xFFE5E7EB),
-                                              ),
-                                            ),
-                                            child: const Icon(
-                                              Icons.download_rounded,
-                                              color: Color(0xFF374151),
-                                              size: 20,
-                                            ),
-                                          ),
-                                        );
+                                            );
+                                          }
 
-                                        if (isCompact) {
-                                          return Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                          return Row(
                                             children: [
-                                              Text(
-                                                'Hasil Akumulasi',
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: const Color(
-                                                    0xFF1F2937,
+                                              Expanded(
+                                                child: Text(
+                                                  'Hasil Akumulasi',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: const Color(
+                                                      0xFF1F2937,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                              const SizedBox(height: 12),
+                                              const SizedBox(width: 12),
                                               Row(
                                                 children: [
-                                                  Expanded(
+                                                  ConstrainedBox(
+                                                    constraints: BoxConstraints(
+                                                      maxWidth:
+                                                          constraints.maxWidth *
+                                                          0.5,
+                                                    ),
                                                     child: filterButton,
                                                   ),
                                                   const SizedBox(width: 8),
@@ -1499,85 +1430,50 @@ class _LaporanScreenState extends State<LaporanScreen>
                                               ),
                                             ],
                                           );
-                                        }
-
-                                        return Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                'Hasil Akumulasi',
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: const Color(
-                                                    0xFF1F2937,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Row(
-                                              children: [
-                                                ConstrainedBox(
-                                                  constraints: BoxConstraints(
-                                                    maxWidth:
-                                                        constraints.maxWidth *
-                                                            0.5,
-                                                  ),
-                                                  child: filterButton,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                downloadButton,
-                                              ],
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  if (_filteredAndSortedStudents.isEmpty &&
-                                      _searchQuery.isNotEmpty)
-                                    _buildEmptyState(
-                                      'Tidak ada siswa ditemukan',
-                                      'Coba ubah kata kunci pencarian atau filter',
-                                    )
-                                  else if (_filteredAndSortedStudents.isEmpty)
-                                    _buildEmptyState(
-                                      'Tidak ada siswa dalam range ini',
-                                      'Coba pilih filter lain',
-                                    )
-                                  else
-                                    ...List.generate(
-                                      _filteredAndSortedStudents.length,
-                                      (index) => _buildStudentCard(
-                                        _filteredAndSortedStudents[index],
-                                        index,
+                                        },
                                       ),
                                     ),
-                                ] else ...[
-                                  FaqWidget(
-                                    faqData: faqData.map(
-                                      (key, value) => MapEntry(key, {
-                                        'title': value.title,
-                                        'type': value.jenisPoin,
-                                        'items': value.items,
-                                      }),
+                                    const SizedBox(height: 16),
+                                    if (_filteredAndSortedStudents.isEmpty &&
+                                        _searchQuery.isNotEmpty)
+                                      _buildEmptyState(
+                                        'Tidak ada siswa ditemukan',
+                                        'Coba ubah kata kunci pencarian atau filter',
+                                      )
+                                    else if (_filteredAndSortedStudents.isEmpty)
+                                      _buildEmptyState(
+                                        'Tidak ada siswa dalam range ini',
+                                        'Coba pilih filter lain',
+                                      )
+                                    else
+                                      ...List.generate(
+                                        _filteredAndSortedStudents.length,
+                                        (index) => _buildStudentCard(
+                                          _filteredAndSortedStudents[index],
+                                          index,
+                                        ),
+                                      ),
+                                  ] else ...[
+                                    FaqWidget(
+                                      faqData: faqData.map(
+                                        (key, value) => MapEntry(key, {
+                                          'title': value.title,
+                                          'type': value.jenisPoin,
+                                          'items': value.items,
+                                        }),
+                                      ),
+                                      expandedSections: _expandedSections,
+                                      searchQuery: _searchQuery,
+                                      onExpansionChanged: (code, expanded) {
+                                        setState(() {
+                                          _expandedSections[code] = expanded;
+                                        });
+                                      },
                                     ),
-                                    expandedSections: _expandedSections,
-                                    searchQuery: _searchQuery,
-                                    onExpansionChanged: (code, expanded) {
-                                      setState(() {
-                                        _expandedSections[code] = expanded;
-                                      });
-                                    },
-                                  ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
-                          ),
                           ],
                         ),
                       ),

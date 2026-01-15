@@ -7,18 +7,7 @@ import 'dart:math' as math;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:skoring/config/api_config.dart';
-
-class ChartDataItem {
-  final double value;
-  final String label;
-  final String detail;
-
-  ChartDataItem({
-    required this.value,
-    required this.label,
-    required this.detail,
-  });
-}
+import 'package:skoring/models/walikelas/chartdataitem.dart';
 
 class GrafikScreen extends StatefulWidget {
   final String chartType;
@@ -115,13 +104,12 @@ class _GrafikScreenState extends State<GrafikScreen>
       final isApresiasi = widget.chartType == 'apresiasi';
       final primaryEndpoint =
           isApresiasi ? 'skoring_penghargaan' : 'skoring_pelanggaran';
-      final fallbackEndpoint =
-          isApresiasi ? null : 'skoring_2pelanggaran';
+      final fallbackEndpoint = isApresiasi ? null : 'skoring_2pelanggaran';
 
       Future<http.Response> _doRequest(String endpoint) {
-      final uri = Uri.parse(
-        '${ApiConfig.baseUrl}/$endpoint?nip=$_nipWalikelas&id_kelas=$_teacherClassId',
-      );
+        final uri = Uri.parse(
+          '${ApiConfig.baseUrl}/$endpoint?nip=$_nipWalikelas&id_kelas=$_teacherClassId',
+        );
         return http.get(uri, headers: {'Accept': 'application/json'});
       }
 
@@ -150,15 +138,16 @@ class _GrafikScreenState extends State<GrafikScreen>
           return;
         }
 
-        final penilaianData = penilaianDataRaw
-            .where(
-              (item) => siswaData.any(
-                (s) =>
-                    s['nis'].toString() == item['nis'].toString() &&
-                    s['id_kelas'].toString() == _teacherClassId,
-              ),
-            )
-            .toList();
+        final penilaianData =
+            penilaianDataRaw
+                .where(
+                  (item) => siswaData.any(
+                    (s) =>
+                        s['nis'].toString() == item['nis'].toString() &&
+                        s['id_kelas'].toString() == _teacherClassId,
+                  ),
+                )
+                .toList();
 
         Map<String, double> weeklyData = {};
         Map<String, double> monthlyData = {};
@@ -170,8 +159,10 @@ class _GrafikScreenState extends State<GrafikScreen>
           final date = DateTime.tryParse(createdAt.toString());
           if (date == null) continue;
 
-          final weekKey = '${date.year}-W${((date.day + 6) / 7).ceil().toString().padLeft(2, '0')}';
-          final monthKey = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+          final weekKey =
+              '${date.year}-W${((date.day + 6) / 7).ceil().toString().padLeft(2, '0')}';
+          final monthKey =
+              '${date.year}-${date.month.toString().padLeft(2, '0')}';
           final yearKey = date.year.toString();
 
           weeklyData[weekKey] = (weeklyData[weekKey] ?? 0) + 1;
@@ -181,41 +172,47 @@ class _GrafikScreenState extends State<GrafikScreen>
 
         setState(() {
           if (_selectedPeriod == 0) {
-            final weekly = weeklyData.entries.toList()
-              ..sort((a, b) => a.key.compareTo(b.key));
-            _chartData = weekly
-                .map(
-                  (e) => ChartDataItem(
-                    value: e.value,
-                    label: e.key.split('-W')[1],
-                    detail: 'Total: ${e.value.toInt()} kasus',
-                  ),
-                )
-                .toList();
+            final weekly =
+                weeklyData.entries.toList()
+                  ..sort((a, b) => a.key.compareTo(b.key));
+            _chartData =
+                weekly
+                    .map(
+                      (e) => ChartDataItem(
+                        value: e.value,
+                        label: e.key.split('-W')[1],
+                        detail: 'Total: ${e.value.toInt()} kasus',
+                      ),
+                    )
+                    .toList();
           } else if (_selectedPeriod == 1) {
-            final monthly = monthlyData.entries.toList()
-              ..sort((a, b) => a.key.compareTo(b.key));
-            _chartData = monthly
-                .map(
-                  (e) => ChartDataItem(
-                    value: e.value,
-                    label: _getMonthName(int.parse(e.key.split('-')[1])),
-                    detail: 'Total: ${e.value.toInt()} kasus',
-                  ),
-                )
-                .toList();
+            final monthly =
+                monthlyData.entries.toList()
+                  ..sort((a, b) => a.key.compareTo(b.key));
+            _chartData =
+                monthly
+                    .map(
+                      (e) => ChartDataItem(
+                        value: e.value,
+                        label: _getMonthName(int.parse(e.key.split('-')[1])),
+                        detail: 'Total: ${e.value.toInt()} kasus',
+                      ),
+                    )
+                    .toList();
           } else {
-            final yearly = yearlyData.entries.toList()
-              ..sort((a, b) => a.key.compareTo(b.key));
-            _chartData = yearly
-                .map(
-                  (e) => ChartDataItem(
-                    value: e.value,
-                    label: e.key,
-                    detail: 'Total: ${e.value.toInt()} kasus',
-                  ),
-                )
-                .toList();
+            final yearly =
+                yearlyData.entries.toList()
+                  ..sort((a, b) => a.key.compareTo(b.key));
+            _chartData =
+                yearly
+                    .map(
+                      (e) => ChartDataItem(
+                        value: e.value,
+                        label: e.key,
+                        detail: 'Total: ${e.value.toInt()} kasus',
+                      ),
+                    )
+                    .toList();
           }
 
           isLoading = false;
@@ -244,8 +241,18 @@ class _GrafikScreenState extends State<GrafikScreen>
 
   String _getMonthName(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return months[month - 1];
   }
@@ -253,7 +260,6 @@ class _GrafikScreenState extends State<GrafikScreen>
   String _getPeriodLabel() {
     return ['Minggu Ini', 'Bulan Ini', 'Tahun Ini'][_selectedPeriod];
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1473,10 +1479,11 @@ class LineChartPainter extends CustomPainter {
         pointCount > 1 ? size.width / (pointCount - 1) : size.width;
     final double safeMax = maxValue <= 0 ? 1 : maxValue;
 
-    final gridPaint = Paint()
-      ..color = const Color(0xFFE5E7EB)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+    final gridPaint =
+        Paint()
+          ..color = const Color(0xFFE5E7EB)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1;
 
     for (int i = 0; i <= 4; i++) {
       final double y = topPadding + (chartHeight / 4 * i);
@@ -1487,40 +1494,45 @@ class LineChartPainter extends CustomPainter {
     for (int i = 0; i < pointCount; i++) {
       final value = data[i].value;
       final double x = stepX * i;
-      final double y = topPadding + chartHeight - (value / safeMax * chartHeight);
+      final double y =
+          topPadding + chartHeight - (value / safeMax * chartHeight);
       points.add(Offset(x, y));
     }
 
-    final fillPath = Path()..moveTo(points.first.dx, size.height - bottomPadding);
+    final fillPath =
+        Path()..moveTo(points.first.dx, size.height - bottomPadding);
     for (final p in points) {
       fillPath.lineTo(p.dx, p.dy);
     }
     fillPath.lineTo(points.last.dx, size.height - bottomPadding);
     fillPath.close();
 
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [fillColor, Colors.transparent],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..style = PaintingStyle.fill;
+    final fillPaint =
+        Paint()
+          ..shader = LinearGradient(
+            colors: [fillColor, Colors.transparent],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+          ..style = PaintingStyle.fill;
     canvas.drawPath(fillPath, fillPaint);
 
     final linePath = Path()..moveTo(points.first.dx, points.first.dy);
     for (final p in points.skip(1)) {
       linePath.lineTo(p.dx, p.dy);
     }
-    final linePaint = Paint()
-      ..color = lineColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
+    final linePaint =
+        Paint()
+          ..color = lineColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3
+          ..strokeCap = StrokeCap.round;
     canvas.drawPath(linePath, linePaint);
 
-    final pointPaint = Paint()
-      ..color = pointColor
-      ..style = PaintingStyle.fill;
+    final pointPaint =
+        Paint()
+          ..color = pointColor
+          ..style = PaintingStyle.fill;
     for (final p in points) {
       canvas.drawCircle(p, 4, pointPaint);
       canvas.drawCircle(

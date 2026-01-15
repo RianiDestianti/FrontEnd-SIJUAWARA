@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:skoring/config/api_config.dart';
+import 'package:skoring/models/walikelas/homestudent.dart';
 
 import '../../navigation/walikelas.dart';
 import 'student.dart';
@@ -15,34 +16,6 @@ import 'package:skoring/screens/walikelas/chart.dart';
 import 'package:skoring/screens/walikelas/activity.dart';
 import 'detail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class Student {
-  final String name;
-  final String kelas;
-  final String programKeahlian;
-  final int poin;
-  final String prestasi;
-  final IconData avatar;
-  final int rank;
-  final String status;
-  final int nis;
-  final String? spLevel;
-  final String? phLevel;
-
-  Student({
-    required this.name,
-    required this.kelas,
-    required this.programKeahlian, 
-    required this.poin,
-    required this.prestasi,
-    required this.avatar,
-    required this.rank,
-    required this.status,
-    required this.nis,
-    this.spLevel,
-    this.phLevel,
-  });
-}
 
 class WalikelasMainScreen extends StatefulWidget {
   const WalikelasMainScreen({Key? key}) : super(key: key);
@@ -187,8 +160,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     String type,
     String title,
     String subtitle,
-  ) async {
-  }
+  ) async {}
 
   Future<void> _fetchData({bool force = false}) async {
     if (_isRefreshing && !force) return;
@@ -229,10 +201,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           final classStudents =
               siswaData.map((siswa) {
                 final idKelas = siswa['id_kelas']?.toString() ?? '';
-                final poin = int.tryParse(
-                      siswa['poin_total']?.toString() ?? '',
-                    ) ??
-                    0;
+                final poin =
+                    int.tryParse(siswa['poin_total']?.toString() ?? '') ?? 0;
                 final spLevel = _resolveSpLevel(
                   poin,
                   siswa['sp_level']?.toString(),
@@ -265,14 +235,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               }).toList();
 
           final phStudents =
-              classStudents
-                  .where((s) => s.phLevel != null)
-                  .toList()
+              classStudents.where((s) => s.phLevel != null).toList()
                 ..sort((a, b) => b.poin.compareTo(a.poin));
           final spStudents =
-              classStudents
-                  .where((s) => s.spLevel != null)
-                  .toList()
+              classStudents.where((s) => s.spLevel != null).toList()
                 ..sort((a, b) => a.poin.compareTo(b.poin));
 
           _siswaTerbaik = _rankAndLabel(phStudents, isPh: true);
@@ -391,7 +357,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final rawDate = item[dateField];
       if (rawDate == null) continue;
       DateTime date = DateTime.parse(rawDate.toString());
-      String weekKey = '${date.year}-W${((date.day + 6) / 7).ceil().toString().padLeft(2, '0')}';
+      String weekKey =
+          '${date.year}-W${((date.day + 6) / 7).ceil().toString().padLeft(2, '0')}';
       String monthKey = '${date.year}-${date.month.toString().padLeft(2, '0')}';
 
       weeklyData[weekKey] = (weeklyData[weekKey] ?? 0) + 1;
@@ -399,20 +366,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     if (selectedTab == 0) {
-      final weeklyEntries = weeklyData.entries.toList()
-        ..sort((a, b) => a.key.compareTo(b.key));
+      final weeklyEntries =
+          weeklyData.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
       return weeklyEntries
-          .map(
-            (e) => {
-              'label': e.key.split('-W')[1],
-              'value': e.value,
-            },
-          )
+          .map((e) => {'label': e.key.split('-W')[1], 'value': e.value})
           .toList();
     }
 
-    final monthlyEntries = monthlyData.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
+    final monthlyEntries =
+        monthlyData.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
     return monthlyEntries
         .map(
           (e) => {
@@ -425,8 +387,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   String _getMonthName(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
 
     return months[month - 1];
@@ -478,30 +450,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _navigateToDetailScreen(Student siswa) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => DetailScreen(
-        student: {
-          'name': siswa.name,
-          'status': siswa.status,
-          'nis': siswa.nis.toString(),
-          'kelas': siswa.kelas,
-          'programKeahlian': siswa.kelas,
-          'poinApresiasi': siswa.poin > 0 ? siswa.poin : 0,
-          'poinPelanggaran': siswa.poin < 0 ? siswa.poin.abs() : 0,
-          'points': siswa.poin,
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => DetailScreen(
+              student: {
+                'name': siswa.name,
+                'status': siswa.status,
+                'nis': siswa.nis.toString(),
+                'kelas': siswa.kelas,
+                'programKeahlian': siswa.kelas,
+                'poinApresiasi': siswa.poin > 0 ? siswa.poin : 0,
+                'poinPelanggaran': siswa.poin < 0 ? siswa.poin.abs() : 0,
+                'points': siswa.poin,
+              },
+            ),
       ),
-    ),
-  ).then((_) {
-    _addLocalActivity(
-      'Navigasi',
-      'Detail Siswa',
-      'Mengakses detail siswa: ${siswa.name}',
-    );
-  });
-}
+    ).then((_) {
+      _addLocalActivity(
+        'Navigasi',
+        'Detail Siswa',
+        'Mengakses detail siswa: ${siswa.name}',
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -536,414 +509,431 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
                         children: [
-                        Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(32),
-                              bottomRight: Radius.circular(32),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0x200083EE),
-                                blurRadius: 20,
-                                offset: Offset(0, 10),
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              24,
-                              MediaQuery.of(context).padding.top + 20,
-                              24,
-                              32,
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(32),
+                                bottomRight: Radius.circular(32),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0x200083EE),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 10),
+                                ),
+                              ],
                             ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const SizedBox(width: 40, height: 40),
-                                    Row(
-                                      children: [
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (context) =>
-                                                        const NotifikasiScreen(),
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                24,
+                                MediaQuery.of(context).padding.top + 20,
+                                24,
+                                32,
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const SizedBox(width: 40, height: 40),
+                                      Row(
+                                        children: [
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (context) =>
+                                                          const NotifikasiScreen(),
+                                                ),
+                                              ).then((_) {
+                                                _addLocalActivity(
+                                                  'Navigasi',
+                                                  'Notifikasi',
+                                                  'Mengakses halaman notifikasi',
+                                                );
+                                              });
+                                            },
+                                            child: Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(
+                                                  0.2,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                               ),
-                                            ).then((_) {
-                                              _addLocalActivity(
-                                                'Navigasi',
-                                                'Notifikasi',
-                                                'Mengakses halaman notifikasi',
-                                              );
-                                            });
-                                          },
-                                          child: Container(
-                                            width: 40,
-                                            height: 40,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(
-                                                0.2,
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.notifications_rounded,
+                                                  color: Colors.white,
+                                                  size: 24,
+                                                ),
                                               ),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
                                             ),
-                                            child: const Center(
-                                              child: Icon(
-                                                Icons.notifications_rounded,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (context) =>
+                                                          const ProfileScreen(),
+                                                ),
+                                              ).then((_) {
+                                                _addLocalActivity(
+                                                  'Navigasi',
+                                                  'Profil',
+                                                  'Mengakses halaman profil',
+                                                );
+                                              });
+                                            },
+                                            child: Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
                                                 color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(30),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: const Icon(
+                                                Icons.person_rounded,
+                                                color: Color(0xFF0083EE),
                                                 size: 24,
                                               ),
                                             ),
                                           ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Hello, $_teacherName! 👋',
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white,
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.2,
+                                          ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (context) =>
-                                                        const ProfileScreen(),
-                                              ),
-                                            ).then((_) {
-                                              _addLocalActivity(
-                                                'Navigasi',
-                                                'Profil',
-                                                'Mengakses halaman profil',
-                                              );
-                                            });
-                                          },
-                                          child: Container(
-                                            width: 40,
-                                            height: 40,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(0.1),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 2),
-                                                ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Semoga harimu penuh berkah dan menyenangkan',
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white.withOpacity(
+                                              0.9,
+                                            ),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Container(
+                                    height: 50,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(25),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.08),
+                                          blurRadius: 15,
+                                          offset: const Offset(0, 5),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [
+                                                Color(0xFF61B8FF),
+                                                Color(0xFF0083EE),
                                               ],
                                             ),
-                                            child: const Icon(
-                                              Icons.person_rounded,
-                                              color: Color(0xFF0083EE),
-                                              size: 24,
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.search,
+                                            color: Colors.white,
+                                            size: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: TextField(
+                                            onChanged: _filterSiswa,
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  'Cari siswa, kelas, atau aktivitas...',
+                                              hintStyle: GoogleFonts.poppins(
+                                                color: const Color(0xFF9CA3AF),
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                              border: InputBorder.none,
+                                              contentPadding: EdgeInsets.zero,
+                                            ),
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 15,
+                                              color: const Color(0xFF1F2937),
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Row(
                                     children: [
-                                      Text(
-                                        'Hello, $_teacherName! 👋',
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.white,
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.2,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Semoga harimu penuh berkah dan menyenangkan',
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.white.withOpacity(0.9),
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w400,
-                                        ),
-                                      ),
+                                      _buildActionButton('Umum', 0),
+                                      const SizedBox(width: 10),
+                                      _buildActionButton('PH', 2),
+                                      const SizedBox(width: 10),
+                                      _buildActionButton('SP', 3),
                                     ],
                                   ),
-                                ),
-                                const SizedBox(height: 24),
-                                Container(
-                                  height: 50,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(25),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.08),
-                                        blurRadius: 15,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Color(0xFF61B8FF),
-                                              Color(0xFF0083EE),
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            30,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.search,
-                                          color: Colors.white,
-                                          size: 18,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: TextField(
-                                          onChanged: _filterSiswa,
-                                          decoration: InputDecoration(
-                                            hintText:
-                                                'Cari siswa, kelas, atau aktivitas...',
-                                            hintStyle: GoogleFonts.poppins(
-                                              color: const Color(0xFF9CA3AF),
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                            border: InputBorder.none,
-                                            contentPadding: EdgeInsets.zero,
-                                          ),
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 15,
-                                            color: const Color(0xFF1F2937),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    _buildActionButton('Umum', 0),
-                                    const SizedBox(width: 10),
-                                    _buildActionButton('PH', 2),
-                                    const SizedBox(width: 10),
-                                    _buildActionButton('SP', 3),
-                                  ],
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              if (_selectedTab == 2) ...[
-                                _buildSiswaTerbaikSection(),
-                                const SizedBox(height: 20),
-                              ] else if (_selectedTab == 3) ...[
-                                _buildSiswaBeratSection(),
-                                const SizedBox(height: 20),
-                              ] else ...[
-                                _buildEnhancedChartCard(
-                                  'Grafik Apresiasi Siswa',
-                                  'Pencapaian positif minggu ini',
-                                  Icons.trending_up,
-                                  const LinearGradient(
-                                    colors: [
-                                      Color(0xFF61B8FF),
-                                      Color(0xFF0083EE),
-                                    ],
-                                  ),
-                                  _buildBarChart(
-                                    apresiasiChartData,
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                if (_selectedTab == 2) ...[
+                                  _buildSiswaTerbaikSection(),
+                                  const SizedBox(height: 20),
+                                ] else if (_selectedTab == 3) ...[
+                                  _buildSiswaBeratSection(),
+                                  const SizedBox(height: 20),
+                                ] else ...[
+                                  _buildEnhancedChartCard(
+                                    'Grafik Apresiasi Siswa',
+                                    'Pencapaian positif minggu ini',
+                                    Icons.trending_up,
                                     const LinearGradient(
                                       colors: [
                                         Color(0xFF61B8FF),
                                         Color(0xFF0083EE),
                                       ],
                                     ),
+                                    _buildBarChart(
+                                      apresiasiChartData,
+                                      const LinearGradient(
+                                        colors: [
+                                          Color(0xFF61B8FF),
+                                          Color(0xFF0083EE),
+                                        ],
+                                      ),
+                                    ),
+                                    _apresiasiChartTab,
+                                    (index) => setState(
+                                      () => _apresiasiChartTab = index,
+                                    ),
+                                    true,
                                   ),
-                                  _apresiasiChartTab,
-                                  (index) => setState(
-                                    () => _apresiasiChartTab = index,
-                                  ),
-                                  true,
-                                ),
-                                const SizedBox(height: 20),
-                                _buildEnhancedChartCard(
-                                  'Grafik Pelanggaran Siswa',
-                                  'Monitoring pelanggaran minggu ini',
-                                  Icons.warning_amber_rounded,
-                                  const LinearGradient(
-                                    colors: [
-                                      Color(0xFFF2D6D7),
-                                      Color(0xFFFF6B6D),
-                                    ],
-                                  ),
-                                  _buildBarChart(
-                                    pelanggaranChartData,
+                                  const SizedBox(height: 20),
+                                  _buildEnhancedChartCard(
+                                    'Grafik Pelanggaran Siswa',
+                                    'Monitoring pelanggaran minggu ini',
+                                    Icons.warning_amber_rounded,
                                     const LinearGradient(
                                       colors: [
+                                        Color(0xFFF2D6D7),
                                         Color(0xFFFF6B6D),
-                                        Color(0xFFFF8E8F),
                                       ],
                                     ),
-                                  ),
-                                  _pelanggaranChartTab,
-                                  (index) => setState(
-                                    () => _pelanggaranChartTab = index,
-                                  ),
-                                  false,
-                                ),
-                                const SizedBox(height: 20),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => const ActivityScreen(),
+                                    _buildBarChart(
+                                      pelanggaranChartData,
+                                      const LinearGradient(
+                                        colors: [
+                                          Color(0xFFFF6B6D),
+                                          Color(0xFFFF8E8F),
+                                        ],
                                       ),
-                                    ).then((_) {
-                                      _addLocalActivity(
-                                        'Navigasi',
-                                        'Aktivitas',
-                                        'Mengakses halaman aktivitas',
-                                      );
-                                    });
-                                  },
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(24),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.06),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 5),
-                                        ),
-                                      ],
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                gradient: const LinearGradient(
-                                                  colors: [
-                                                    Color(0xFF61B8FF),
-                                                    Color(0xFF0083EE),
+                                    _pelanggaranChartTab,
+                                    (index) => setState(
+                                      () => _pelanggaranChartTab = index,
+                                    ),
+                                    false,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  const ActivityScreen(),
+                                        ),
+                                      ).then((_) {
+                                        _addLocalActivity(
+                                          'Navigasi',
+                                          'Aktivitas',
+                                          'Mengakses halaman aktivitas',
+                                        );
+                                      });
+                                    },
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(20),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.06,
+                                            ),
+                                            blurRadius: 20,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  12,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  gradient:
+                                                      const LinearGradient(
+                                                        colors: [
+                                                          Color(0xFF61B8FF),
+                                                          Color(0xFF0083EE),
+                                                        ],
+                                                      ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.history,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Aktivitas Terkini',
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                            fontSize: 18,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color: Color(
+                                                              0xFF1F2937,
+                                                            ),
+                                                          ),
+                                                    ),
+                                                    Text(
+                                                      'Update terbaru dari aktivitas skoring',
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                            fontSize: 12,
+                                                            color: Color(
+                                                              0xFF6B7280,
+                                                            ),
+                                                          ),
+                                                    ),
                                                   ],
                                                 ),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
                                               ),
-                                              child: const Icon(
-                                                Icons.history,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    'Aktivitas Terkini',
-                                                    style: GoogleFonts.poppins(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      color: Color(0xFF1F2937),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    'Update terbaru dari aktivitas skoring',
-                                                    style: GoogleFonts.poppins(
-                                                      fontSize: 12,
-                                                      color: Color(0xFF6B7280),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.all(8),
-                                              decoration: BoxDecoration(
-                                                color: Color(0xFFF8FAFC),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: const Icon(
-                                                Icons.arrow_forward_ios,
-                                                size: 14,
-                                                color: Color(0xFF9CA3AF),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 24),
-                                        if (_activityData.isEmpty)
-                                          Text(
-                                            'Belum ada aktivitas skoring.',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 13,
-                                              color: const Color(0xFF9CA3AF),
-                                            ),
-                                          )
-                                        else
-                                          ..._activityData
-                                              .take(3)
-                                              .map(
-                                                (activity) => Padding(
-                                                  padding: const EdgeInsets.only(
-                                                    bottom: 16,
-                                                  ),
-                                                  child:
-                                                      _buildEnhancedActivityItem(
-                                                        activity,
-                                                      ),
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Color(0xFFF8FAFC),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.arrow_forward_ios,
+                                                  size: 14,
+                                                  color: Color(0xFF9CA3AF),
                                                 ),
                                               ),
-                                      ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 24),
+                                          if (_activityData.isEmpty)
+                                            Text(
+                                              'Belum ada aktivitas skoring.',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 13,
+                                                color: const Color(0xFF9CA3AF),
+                                              ),
+                                            )
+                                          else
+                                            ..._activityData
+                                                .take(3)
+                                                .map(
+                                                  (activity) => Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          bottom: 16,
+                                                        ),
+                                                    child:
+                                                        _buildEnhancedActivityItem(
+                                                          activity,
+                                                        ),
+                                                  ),
+                                                ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
                         ],
                       ),
                     ),
@@ -1545,10 +1535,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return null;
   }
 
-  List<Student> _rankAndLabel(
-    List<Student> students, {
-    required bool isPh,
-  }) {
+  List<Student> _rankAndLabel(List<Student> students, {required bool isPh}) {
     return students.asMap().entries.map((entry) {
       final siswa = entry.value;
       final level = isPh ? siswa.phLevel : siswa.spLevel;

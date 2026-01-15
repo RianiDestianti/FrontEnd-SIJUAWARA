@@ -6,42 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:skoring/config/api_config.dart';
-
-class HistoryItem {
-  final String id;
-  final String type;
-  final String description;
-  final String date;
-  final String time;
-  final int points;
-  final IconData icon;
-  final Color color;
-  final String? pemberi;
-  final String? pelapor;
-  final bool isNew;
-  final bool isPelanggaran;
-  final DateTime createdAt;
-  final String? pelanggaranKe;
-  final String kategori;
-
-  HistoryItem({
-    required this.id,
-    required this.type,
-    required this.description,
-    required this.date,
-    required this.time,
-    required this.points,
-    required this.icon,
-    required this.color,
-    this.pemberi,
-    this.pelapor,
-    required this.isNew,
-    required this.isPelanggaran,
-    required this.createdAt,
-    this.pelanggaranKe,
-    required this.kategori,
-  });
-}
+import 'package:skoring/models/walikelas/historyitem.dart';
 
 class HistoryScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -127,7 +92,8 @@ class _HistoryScreenState extends State<HistoryScreen>
           await fetchHistory(widget.student['nis']);
         } else {
           setState(() {
-            errorMessage = jsonData['message'] ?? 'Gagal mengambil aspek penilaian';
+            errorMessage =
+                jsonData['message'] ?? 'Gagal mengambil aspek penilaian';
             isLoading = false;
           });
         }
@@ -158,21 +124,32 @@ class _HistoryScreenState extends State<HistoryScreen>
         '${ApiConfig.baseUrl}/skoring_pelanggaran?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
       );
 
-      final skoringPenghargaanResponse = await http.get(skoringPenghargaanUri, headers: {'Accept': 'application/json'});
-      var skoringPelanggaranResponse = await http.get(skoringPelanggaranUri, headers: {'Accept': 'application/json'});
+      final skoringPenghargaanResponse = await http.get(
+        skoringPenghargaanUri,
+        headers: {'Accept': 'application/json'},
+      );
+      var skoringPelanggaranResponse = await http.get(
+        skoringPelanggaranUri,
+        headers: {'Accept': 'application/json'},
+      );
       if (skoringPelanggaranResponse.statusCode != 200) {
         skoringPelanggaranUri = Uri.parse(
           '${ApiConfig.baseUrl}/skoring_2pelanggaran?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
         );
-        skoringPelanggaranResponse = await http.get(skoringPelanggaranUri, headers: {'Accept': 'application/json'});
+        skoringPelanggaranResponse = await http.get(
+          skoringPelanggaranUri,
+          headers: {'Accept': 'application/json'},
+        );
       }
 
       if (skoringPenghargaanResponse.statusCode == 200 &&
           skoringPelanggaranResponse.statusCode == 200) {
-        final skoringPenghargaanData =
-            jsonDecode(skoringPenghargaanResponse.body);
-        final skoringPelanggaranData =
-            jsonDecode(skoringPelanggaranResponse.body);
+        final skoringPenghargaanData = jsonDecode(
+          skoringPenghargaanResponse.body,
+        );
+        final skoringPelanggaranData = jsonDecode(
+          skoringPelanggaranResponse.body,
+        );
 
         List<HistoryItem> historyList = [];
 
@@ -194,7 +171,8 @@ class _HistoryScreenState extends State<HistoryScreen>
               DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
           historyList.add(
             HistoryItem(
-              id: 'apr_${eval['id_penilaian'] ?? createdAt.millisecondsSinceEpoch}',
+              id:
+                  'apr_${eval['id_penilaian'] ?? createdAt.millisecondsSinceEpoch}',
               type: (aspek['kategori'] ?? 'Apresiasi').toString(),
               description: aspek['uraian']?.toString() ?? 'Apresiasi',
               date: createdAt.toIso8601String().substring(0, 10),
@@ -202,13 +180,14 @@ class _HistoryScreenState extends State<HistoryScreen>
               points: ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
               icon: Icons.star,
               color: const Color(0xFF10B981),
-              pemberi: eval['nip_wakasek'] != null
-                  ? 'Wakasek'
-                  : eval['nip_walikelas'] != null
+              pemberi:
+                  eval['nip_wakasek'] != null
+                      ? 'Wakasek'
+                      : eval['nip_walikelas'] != null
                       ? 'Walikelas'
                       : eval['nip_bk'] != null
-                          ? 'BK'
-                          : 'Tidak diketahui',
+                      ? 'BK'
+                      : 'Tidak diketahui',
               isNew: DateTime.now().difference(createdAt).inDays < 7,
               isPelanggaran: false,
               createdAt: createdAt,
@@ -236,7 +215,8 @@ class _HistoryScreenState extends State<HistoryScreen>
               DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
           historyList.add(
             HistoryItem(
-              id: 'pel_${eval['id_penilaian'] ?? createdAt.millisecondsSinceEpoch}',
+              id:
+                  'pel_${eval['id_penilaian'] ?? createdAt.millisecondsSinceEpoch}',
               type: (aspek['kategori'] ?? 'Pelanggaran').toString(),
               description: aspek['uraian']?.toString() ?? 'Pelanggaran',
               date: createdAt.toIso8601String().substring(0, 10),
@@ -244,13 +224,14 @@ class _HistoryScreenState extends State<HistoryScreen>
               points: ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
               icon: Icons.warning,
               color: const Color(0xFFFF6B6D),
-              pelapor: eval['nip_wakasek'] != null
-                  ? 'Wakasek'
-                  : eval['nip_walikelas'] != null
+              pelapor:
+                  eval['nip_wakasek'] != null
+                      ? 'Wakasek'
+                      : eval['nip_walikelas'] != null
                       ? 'Walikelas'
                       : eval['nip_bk'] != null
-                          ? 'BK'
-                          : 'Tidak diketahui',
+                      ? 'BK'
+                      : 'Tidak diketahui',
               isNew: DateTime.now().difference(createdAt).inDays < 7,
               isPelanggaran: true,
               createdAt: createdAt,
@@ -283,7 +264,6 @@ class _HistoryScreenState extends State<HistoryScreen>
   Future<void> _refreshData() async {
     await fetchAspekPenilaian();
   }
-
 
   void _sortHistory() {
     allHistory.sort((a, b) {
@@ -437,7 +417,9 @@ class _HistoryScreenState extends State<HistoryScreen>
                       spacing: 8,
                       runSpacing: 8,
                       children:
-                          ['Semua', '7 Hari', '30 Hari', '3 Bulan'].map((filter) {
+                          ['Semua', '7 Hari', '30 Hari', '3 Bulan'].map((
+                            filter,
+                          ) {
                             bool isSelected = _selectedTimeFilter == filter;
                             return GestureDetector(
                               onTap: () {
@@ -1075,219 +1057,239 @@ class _HistoryScreenState extends State<HistoryScreen>
                                           CrossAxisAlignment.start,
                                       children: [
                                         if (newItems.isNotEmpty) ...[
-                                        Container(
-                                          margin: const EdgeInsets.only(
-                                            bottom: 16,
-                                          ),
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF0EA5E9),
-                                                Color(0xFF0284C7),
+                                          Container(
+                                            margin: const EdgeInsets.only(
+                                              bottom: 16,
+                                            ),
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFF0EA5E9),
+                                                  Color(0xFF0284C7),
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                  color: Color(0x200EA5E9),
+                                                  blurRadius: 15,
+                                                  offset: Offset(0, 5),
+                                                ),
                                               ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
                                             ),
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                            boxShadow: const [
-                                              BoxShadow(
-                                                color: Color(0x200EA5E9),
-                                                blurRadius: 15,
-                                                offset: Offset(0, 5),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(
-                                                  8,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white
-                                                      .withOpacity(0.2),
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.fiber_new_rounded,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Data Terbaru',
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                            fontSize: 16,
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                            color: Colors.white,
-                                                          ),
-                                                    ),
-                                                    Text(
-                                                      '${newItems.length} item baru tersedia',
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                  0.8,
-                                                                ),
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 6,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white
-                                                      .withOpacity(0.2),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                child: Text(
-                                                  '${newItems.length}',
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w700,
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(
+                                                    8,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.fiber_new_rounded,
                                                     color: Colors.white,
+                                                    size: 20,
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        ...newItems
-                                            .map(
-                                              (item) => _buildHistoryCard(item),
-                                            )
-                                            .toList(),
-                                      ],
-                                      if (oldItems.isNotEmpty) ...[
-                                        if (newItems.isNotEmpty)
-                                          const SizedBox(height: 24),
-                                        Container(
-                                          margin: const EdgeInsets.only(
-                                            bottom: 16,
-                                          ),
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF64748B),
-                                                Color(0xFF475569),
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                            boxShadow: const [
-                                              BoxShadow(
-                                                color: Color(0x2064748B),
-                                                blurRadius: 15,
-                                                offset: Offset(0, 5),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(
-                                                  8,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white
-                                                      .withOpacity(0.2),
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.history_rounded,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Data Sebelumnya',
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                            fontSize: 16,
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                            color: Colors.white,
-                                                          ),
-                                                    ),
-                                                    Text(
-                                                      'Riwayat data yang sudah tersimpan',
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                  0.8,
-                                                                ),
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 6,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white
-                                                      .withOpacity(0.2),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                child: Text(
-                                                  '${oldItems.length}',
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: Colors.white,
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'Data Terbaru',
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                              fontSize: 16,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                      ),
+                                                      Text(
+                                                        '${newItems.length} item baru tersedia',
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                              fontSize: 12,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: Colors
+                                                                  .white
+                                                                  .withOpacity(
+                                                                    0.8,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
-                                              ),
-                                            ],
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 6,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    '${newItems.length}',
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        ...oldItems
-                                            .map(
-                                              (item) => _buildHistoryCard(item),
-                                            )
-                                            .toList(),
-                                      ],
+                                          ...newItems
+                                              .map(
+                                                (item) =>
+                                                    _buildHistoryCard(item),
+                                              )
+                                              .toList(),
+                                        ],
+                                        if (oldItems.isNotEmpty) ...[
+                                          if (newItems.isNotEmpty)
+                                            const SizedBox(height: 24),
+                                          Container(
+                                            margin: const EdgeInsets.only(
+                                              bottom: 16,
+                                            ),
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFF64748B),
+                                                  Color(0xFF475569),
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                  color: Color(0x2064748B),
+                                                  blurRadius: 15,
+                                                  offset: Offset(0, 5),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(
+                                                    8,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          10,
+                                                        ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.history_rounded,
+                                                    color: Colors.white,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'Data Sebelumnya',
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                              fontSize: 16,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                      ),
+                                                      Text(
+                                                        'Riwayat data yang sudah tersimpan',
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                              fontSize: 12,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: Colors
+                                                                  .white
+                                                                  .withOpacity(
+                                                                    0.8,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 6,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    '${oldItems.length}',
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          ...oldItems
+                                              .map(
+                                                (item) =>
+                                                    _buildHistoryCard(item),
+                                              )
+                                              .toList(),
+                                        ],
                                       ],
                                     ),
                                   ),

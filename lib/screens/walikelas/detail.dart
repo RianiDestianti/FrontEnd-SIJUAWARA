@@ -7,154 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import 'package:skoring/config/api_config.dart';
+import 'package:skoring/models/walikelas/detailmodels.dart';
 
 import 'point.dart';
 import 'note.dart';
 import 'history.dart';
-
-class ApiViolation {
-  final int idSp;
-  final String tanggalSp;
-  final String levelSp;
-  final String alasan;
-  final String? createdAt;
-  final String? updatedAt;
-
-  ApiViolation({
-    required this.idSp,
-    required this.tanggalSp,
-    required this.levelSp,
-    required this.alasan,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory ApiViolation.fromJson(Map<String, dynamic> json) {
-    return ApiViolation(
-      idSp: json['id_sp'],
-      tanggalSp: json['tanggal_sp'],
-      levelSp: json['level_sp'],
-      alasan: json['alasan'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-    );
-  }
-}
-
-class ApiAppreciation {
-  final int idPenghargaan;
-  final String tanggalPenghargaan;
-  final String levelPenghargaan;
-  final String alasan;
-  final String? createdAt;
-  final String? updatedAt;
-
-  ApiAppreciation({
-    required this.idPenghargaan,
-    required this.tanggalPenghargaan,
-    required this.levelPenghargaan,
-    required this.alasan,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory ApiAppreciation.fromJson(Map<String, dynamic> json) {
-    return ApiAppreciation(
-      idPenghargaan: json['id_penghargaan'],
-      tanggalPenghargaan: json['tanggal_penghargaan'],
-      levelPenghargaan: json['level_penghargaan'],
-      alasan: json['alasan'],
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
-    );
-  }
-}
-
-class Student {
-  final String name;
-  final String nis;
-  final String programKeahlian;
-  final String kelas;
-  final int poinApresiasi;
-  final int poinPelanggaran;
-  final int poinTotal;
-  final String spLevel;
-  final String phLevel;
-
-  Student({
-    required this.name,
-    required this.nis,
-    required this.programKeahlian,
-    required this.kelas,
-    required this.poinApresiasi,
-    required this.poinPelanggaran,
-    required this.poinTotal,
-    required this.spLevel,
-    required this.phLevel,
-  });
-}
-
-class ViolationHistory {
-  final String type;
-  final String description;
-  final String date;
-  final String time;
-  final int points;
-  final IconData icon;
-  final Color color;
-  final String? pelanggaranKe;
-  final String kategori;
-
-  ViolationHistory({
-    required this.type,
-    required this.description,
-    required this.date,
-    required this.time,
-    required this.points,
-    required this.icon,
-    required this.color,
-    this.pelanggaranKe,
-    required this.kategori,
-  });
-}
-
-class AppreciationHistory {
-  final String type;
-  final String description;
-  final String date;
-  final String time;
-  final int points;
-  final IconData icon;
-  final Color color;
-  final String kategori;
-
-  AppreciationHistory({
-    required this.type,
-    required this.description,
-    required this.date,
-    required this.time,
-    required this.points,
-    required this.icon,
-    required this.color,
-    required this.kategori,
-  });
-}
-
-class AccumulationHistory {
-  final String periode;
-  final int pelanggaran;
-  final int apresiasi;
-  final int total;
-  final String date;
-
-  AccumulationHistory({
-    required this.periode,
-    required this.pelanggaran,
-    required this.apresiasi,
-    required this.total,
-    required this.date,
-  });
-}
 
 class DetailScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -205,24 +62,24 @@ class _DetailScreenState extends State<DetailScreen>
     _loadUserData();
   }
 
-Future<void> _loadUserData() async {
-  final prefs = await SharedPreferences.getInstance();
-  setState(() {
-    _nipWalikelas = prefs.getString('walikelas_id') ?? '';
-    _idKelas = prefs.getString('id_kelas') ?? '';
-  });
-
-  if (_nipWalikelas.isEmpty || _idKelas.isEmpty) {
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      errorMessageStudent = 'Data guru tidak lengkap. Silakan login ulang.';
-      isLoadingStudent = false;
+      _nipWalikelas = prefs.getString('walikelas_id') ?? '';
+      _idKelas = prefs.getString('id_kelas') ?? '';
     });
-    return;
-  }
 
-  await fetchAspekPenilaian();
-  initializeStudentData();
-}
+    if (_nipWalikelas.isEmpty || _idKelas.isEmpty) {
+      setState(() {
+        errorMessageStudent = 'Data guru tidak lengkap. Silakan login ulang.';
+        isLoadingStudent = false;
+      });
+      return;
+    }
+
+    await fetchAspekPenilaian();
+    initializeStudentData();
+  }
 
   Future<void> _refreshData() async {
     await _loadUserData();
@@ -257,11 +114,11 @@ Future<void> _loadUserData() async {
       setState(() => isLoadingStudent = false);
       fetchAppreciations(data['nis']);
       fetchViolations(data['nis']);
-  } catch (e) {
-    setState(() {
-      errorMessageStudent = 'Gagal memuat detail siswa: $e';
-      isLoadingStudent = false;
-    });
+    } catch (e) {
+      setState(() {
+        errorMessageStudent = 'Gagal memuat detail siswa: $e';
+        isLoadingStudent = false;
+      });
     }
   }
 
@@ -309,7 +166,8 @@ Future<void> _loadUserData() async {
           });
         } else {
           setState(() {
-            errorMessageStudent = jsonData['message'] ?? 'Gagal memuat aspek penilaian';
+            errorMessageStudent =
+                jsonData['message'] ?? 'Gagal memuat aspek penilaian';
           });
         }
       } else {
@@ -333,7 +191,10 @@ Future<void> _loadUserData() async {
       final uri = Uri.parse(
         '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$_nipWalikelas&id_kelas=$_idKelas',
       );
-      final response = await http.get(uri, headers: {'Accept': 'application/json'});
+      final response = await http.get(
+        uri,
+        headers: {'Accept': 'application/json'},
+      );
 
       if (response.statusCode != 200) {
         setState(() {
@@ -350,45 +211,50 @@ Future<void> _loadUserData() async {
               .where((e) => e['nis'].toString() == nis)
               .toList();
 
-      final historiesWithDate = evaluations.map<Map<String, dynamic>>((eval) {
-        final aspek = aspekPenilaianData.firstWhere(
-          (a) =>
-              a['id_aspekpenilaian'].toString() ==
-              eval['id_aspekpenilaian'].toString(),
-          orElse: () => {
-            'uraian': 'Apresiasi',
-            'indikator_poin': 0,
-            'kategori': 'Umum',
-            'jenis_poin': 'Apresiasi',
-          },
-        );
-        final createdAt =
-            DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
-        return {
-          'createdAt': createdAt,
-          'history': AppreciationHistory(
-            type: aspek['kategori']?.toString() ?? 'Apresiasi',
-            description: aspek['uraian']?.toString() ?? 'Apresiasi',
-            date: DateFormat('dd MMM yyyy').format(createdAt),
-            time: DateFormat('HH:mm').format(createdAt),
-            points: ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
-            icon: Icons.star,
-            color: const Color(0xFF10B981),
-            kategori: aspek['kategori'] ?? 'Umum',
-          ),
-        };
-      }).toList()
-        ..sort(
-          (a, b) =>
-              (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime),
-        );
+      final historiesWithDate =
+          evaluations.map<Map<String, dynamic>>((eval) {
+              final aspek = aspekPenilaianData.firstWhere(
+                (a) =>
+                    a['id_aspekpenilaian'].toString() ==
+                    eval['id_aspekpenilaian'].toString(),
+                orElse:
+                    () => {
+                      'uraian': 'Apresiasi',
+                      'indikator_poin': 0,
+                      'kategori': 'Umum',
+                      'jenis_poin': 'Apresiasi',
+                    },
+              );
+              final createdAt =
+                  DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
+              return {
+                'createdAt': createdAt,
+                'history': AppreciationHistory(
+                  type: aspek['kategori']?.toString() ?? 'Apresiasi',
+                  description: aspek['uraian']?.toString() ?? 'Apresiasi',
+                  date: DateFormat('dd MMM yyyy').format(createdAt),
+                  time: DateFormat('HH:mm').format(createdAt),
+                  points:
+                      ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
+                  icon: Icons.star,
+                  color: const Color(0xFF10B981),
+                  kategori: aspek['kategori'] ?? 'Umum',
+                ),
+              };
+            }).toList()
+            ..sort(
+              (a, b) => (b['createdAt'] as DateTime).compareTo(
+                a['createdAt'] as DateTime,
+              ),
+            );
 
       setState(() {
-        apresiasiHistory = historiesWithDate
-            .map<AppreciationHistory>(
-              (e) => e['history'] as AppreciationHistory,
-            )
-            .toList();
+        apresiasiHistory =
+            historiesWithDate
+                .map<AppreciationHistory>(
+                  (e) => e['history'] as AppreciationHistory,
+                )
+                .toList();
         isLoadingAppreciations = false;
         calculateAccumulations();
       });
@@ -441,47 +307,50 @@ Future<void> _loadUserData() async {
               .where((e) => e['nis'].toString() == nis)
               .toList();
 
-      final historiesWithDate = evaluations.map<Map<String, dynamic>>((eval) {
-        final aspek = aspekPenilaianData.firstWhere(
-          (a) =>
-              a['id_aspekpenilaian'].toString() ==
-              eval['id_aspekpenilaian'].toString(),
-          orElse: () => {
-            'uraian': 'Pelanggaran',
-            'indikator_poin': 0,
-            'kategori': 'Umum',
-            'jenis_poin': 'Pelanggaran',
-          },
-        );
+      final historiesWithDate =
+          evaluations.map<Map<String, dynamic>>((eval) {
+              final aspek = aspekPenilaianData.firstWhere(
+                (a) =>
+                    a['id_aspekpenilaian'].toString() ==
+                    eval['id_aspekpenilaian'].toString(),
+                orElse:
+                    () => {
+                      'uraian': 'Pelanggaran',
+                      'indikator_poin': 0,
+                      'kategori': 'Umum',
+                      'jenis_poin': 'Pelanggaran',
+                    },
+              );
 
-        final createdAt =
-            DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
-        return {
-          'createdAt': createdAt,
-          'history': ViolationHistory(
-            type: aspek['kategori']?.toString() ?? 'Pelanggaran',
-          description: aspek['uraian']?.toString() ?? 'Pelanggaran',
-          date: DateFormat('dd MMM yyyy').format(createdAt),
-          time: DateFormat('HH:mm').format(createdAt),
-          points: ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
-          icon: Icons.warning,
-          color: const Color(0xFFFF6B6D),
-          pelanggaranKe: null,
-          kategori: aspek['kategori'] ?? 'Umum',
-        ),
-        };
-      }).toList()
-        ..sort(
-          (a, b) =>
-              (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime),
-        );
+              final createdAt =
+                  DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
+              return {
+                'createdAt': createdAt,
+                'history': ViolationHistory(
+                  type: aspek['kategori']?.toString() ?? 'Pelanggaran',
+                  description: aspek['uraian']?.toString() ?? 'Pelanggaran',
+                  date: DateFormat('dd MMM yyyy').format(createdAt),
+                  time: DateFormat('HH:mm').format(createdAt),
+                  points:
+                      ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
+                  icon: Icons.warning,
+                  color: const Color(0xFFFF6B6D),
+                  pelanggaranKe: null,
+                  kategori: aspek['kategori'] ?? 'Umum',
+                ),
+              };
+            }).toList()
+            ..sort(
+              (a, b) => (b['createdAt'] as DateTime).compareTo(
+                a['createdAt'] as DateTime,
+              ),
+            );
 
       setState(() {
-        pelanggaranHistory = historiesWithDate
-            .map<ViolationHistory>(
-              (e) => e['history'] as ViolationHistory,
-            )
-            .toList();
+        pelanggaranHistory =
+            historiesWithDate
+                .map<ViolationHistory>((e) => e['history'] as ViolationHistory)
+                .toList();
         isLoadingViolations = false;
         calculateAccumulations();
       });
@@ -492,6 +361,7 @@ Future<void> _loadUserData() async {
       });
     }
   }
+
   void calculateAccumulations() {
     try {
       final totalApresiasiPoints = apresiasiHistory.fold<int>(
@@ -581,351 +451,360 @@ Future<void> _loadUserData() async {
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
                         children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: backgroundGradient,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: const BorderRadius.only(
-                              bottomLeft: Radius.circular(32),
-                              bottomRight: Radius.circular(32),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: shadowColor,
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: backgroundGradient,
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                            child: Column(
-                              children: [
-                                SizedBox(
-                                  height: MediaQuery.of(context).padding.top,
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(32),
+                                bottomRight: Radius.circular(32),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: shadowColor,
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
                                 ),
-                                const SizedBox(height: 32),
-                                SlideTransition(
-                                  position: _slideAnimation,
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(24),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(24),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 8),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          width: 80,
-                                          height: 80,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFFEDBCC),
-                                            borderRadius: BorderRadius.circular(
-                                              24,
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                              child: Column(
+                                children: [
+                                  SizedBox(
+                                    height: MediaQuery.of(context).padding.top,
+                                  ),
+                                  const SizedBox(height: 32),
+                                  SlideTransition(
+                                    position: _slideAnimation,
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(24),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.1,
                                             ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(
-                                                  0xFFEA580C,
-                                                ).withOpacity(0.2),
-                                                blurRadius: 15,
-                                                offset: const Offset(0, 5),
+                                            blurRadius: 20,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            width: 80,
+                                            height: 80,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFEDBCC),
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(
+                                                    0xFFEA580C,
+                                                  ).withOpacity(0.2),
+                                                  blurRadius: 15,
+                                                  offset: const Offset(0, 5),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                detailedStudent.name[0]
+                                                    .toUpperCase(),
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 32,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: const Color(
+                                                    0xFFEA580C,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          Text(
+                                            detailedStudent.name,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF1F2937),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            '${detailedStudent.kelas} - ${detailedStudent.programKeahlian}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF374151),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          const SizedBox(height: 16),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    showPointPopup(
+                                                      context,
+                                                      detailedStudent.name,
+                                                      detailedStudent.nis,
+                                                      detailedStudent.kelas,
+                                                    );
+                                                  },
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 14,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      gradient:
+                                                          const LinearGradient(
+                                                            colors: [
+                                                              Color(0xFF61B8FF),
+                                                              Color(0xFF0083EE),
+                                                            ],
+                                                          ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: const Color(
+                                                            0xFF0083EE,
+                                                          ).withOpacity(0.3),
+                                                          blurRadius: 8,
+                                                          offset: const Offset(
+                                                            0,
+                                                            4,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.star_outline,
+                                                          color: Colors.white,
+                                                          size: 18,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Berikan Poin',
+                                                          style:
+                                                              GoogleFonts.poppins(
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color:
+                                                                    Colors
+                                                                        .white,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    showBKNotePopup(
+                                                      context,
+                                                      detailedStudent.name,
+                                                      detailedStudent.nis,
+                                                      detailedStudent.kelas,
+                                                    );
+                                                  },
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 14,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      gradient:
+                                                          const LinearGradient(
+                                                            colors: [
+                                                              Color(0xFFFF6B6D),
+                                                              Color(0xFFEA580C),
+                                                            ],
+                                                          ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: const Color(
+                                                            0xFFFF6B6D,
+                                                          ).withOpacity(0.3),
+                                                          blurRadius: 8,
+                                                          offset: const Offset(
+                                                            0,
+                                                            4,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        const Icon(
+                                                          Icons
+                                                              .note_add_outlined,
+                                                          color: Colors.white,
+                                                          size: 18,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 8,
+                                                        ),
+                                                        Text(
+                                                          'Penanganan',
+                                                          style:
+                                                              GoogleFonts.poppins(
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color:
+                                                                    Colors
+                                                                        .white,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
                                               ),
                                             ],
                                           ),
-                                          child: Center(
-                                            child: Text(
-                                              detailedStudent.name[0]
-                                                  .toUpperCase(),
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 32,
-                                                fontWeight: FontWeight.w800,
-                                                color: const Color(0xFFEA580C),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Text(
-                                          detailedStudent.name,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w700,
-                                            color: const Color(0xFF1F2937),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          '${detailedStudent.kelas} - ${detailedStudent.programKeahlian}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF374151),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  showPointPopup(
-                                                    context,
-                                                    detailedStudent.name,
-                                                    detailedStudent.nis,
-                                                    detailedStudent.kelas,
-                                                  );
-                                                },
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        vertical: 14,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    gradient:
-                                                        const LinearGradient(
-                                                          colors: [
-                                                            Color(0xFF61B8FF),
-                                                            Color(0xFF0083EE),
-                                                          ],
-                                                        ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          16,
-                                                        ),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: const Color(
-                                                          0xFF0083EE,
-                                                        ).withOpacity(0.3),
-                                                        blurRadius: 8,
-                                                        offset: const Offset(
-                                                          0,
-                                                          4,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      const Icon(
-                                                        Icons.star_outline,
-                                                        color: Colors.white,
-                                                        size: 18,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        'Berikan Poin',
-                                                        style:
-                                                            GoogleFonts.poppins(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  showBKNotePopup(
-                                                    context,
-                                                    detailedStudent.name,
-                                                    detailedStudent.nis,
-                                                    detailedStudent.kelas,
-                                                  );
-                                                },
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        vertical: 14,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    gradient:
-                                                        const LinearGradient(
-                                                          colors: [
-                                                            Color(0xFFFF6B6D),
-                                                            Color(0xFFEA580C),
-                                                          ],
-                                                        ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          16,
-                                                        ),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: const Color(
-                                                          0xFFFF6B6D,
-                                                        ).withOpacity(0.3),
-                                                        blurRadius: 8,
-                                                        offset: const Offset(
-                                                          0,
-                                                          4,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment.center,
-                                                    children: [
-                                                      const Icon(
-                                                        Icons.note_add_outlined,
-                                                        color: Colors.white,
-                                                        size: 18,
-                                                      ),
-                                                      const SizedBox(
-                                                        width: 8,
-                                                      ),
-                                                      Text(
-                                                        'Penanganan',
-                                                        style:
-                                                            GoogleFonts.poppins(
-                                                              fontSize: 14,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Container(
-                            width: double.infinity,
+                          Padding(
                             padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Biodata Siswa',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF1F2937),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
                                   ),
-                                ),
-                                const SizedBox(height: 16),
-                                _buildBiodataRow(
-                                  'NIS',
-                                  detailedStudent.nis,
-                                  Icons.badge,
-                                ),
-                                _buildBiodataRow(
-                                  'Program Keahlian',
-                                  detailedStudent.programKeahlian,
-                                  Icons.school,
-                                ),
-                                _buildBiodataRow(
-                                  'Kelas',
-                                  detailedStudent.kelas,
-                                  Icons.class_,
-                                ),
-                                _buildBiodataRow(
-                                  'Poin Apresiasi',
-                                  '+${detailedStudent.poinApresiasi}',
-                                  Icons.star,
-                                ),
-                                _buildBiodataRow(
-                                  'Poin Pelanggaran',
-                                  '-${detailedStudent.poinPelanggaran.abs()}',
-                                  Icons.warning,
-                                ),
-                                _buildBiodataRow(
-                                  'Poin Total',
-                                  '${detailedStudent.poinTotal > 0 ? '+' : ''}${detailedStudent.poinTotal}',
-                                  Icons.calculate,
-                                ),
-                                _buildBiodataRow(
-                                  'Status SP',
-                                  detailedStudent.spLevel,
-                                  Icons.report,
-                                ),
-                                _buildBiodataRow(
-                                  'Status PH',
-                                  detailedStudent.phLevel,
-                                  Icons.emoji_events,
-                                ),
-                              ],
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Biodata Siswa',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF1F2937),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildBiodataRow(
+                                    'NIS',
+                                    detailedStudent.nis,
+                                    Icons.badge,
+                                  ),
+                                  _buildBiodataRow(
+                                    'Program Keahlian',
+                                    detailedStudent.programKeahlian,
+                                    Icons.school,
+                                  ),
+                                  _buildBiodataRow(
+                                    'Kelas',
+                                    detailedStudent.kelas,
+                                    Icons.class_,
+                                  ),
+                                  _buildBiodataRow(
+                                    'Poin Apresiasi',
+                                    '+${detailedStudent.poinApresiasi}',
+                                    Icons.star,
+                                  ),
+                                  _buildBiodataRow(
+                                    'Poin Pelanggaran',
+                                    '-${detailedStudent.poinPelanggaran.abs()}',
+                                    Icons.warning,
+                                  ),
+                                  _buildBiodataRow(
+                                    'Poin Total',
+                                    '${detailedStudent.poinTotal > 0 ? '+' : ''}${detailedStudent.poinTotal}',
+                                    Icons.calculate,
+                                  ),
+                                  _buildBiodataRow(
+                                    'Status SP',
+                                    detailedStudent.spLevel,
+                                    Icons.report,
+                                  ),
+                                  _buildBiodataRow(
+                                    'Status PH',
+                                    detailedStudent.phLevel,
+                                    Icons.emoji_events,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Container(
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(25),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                _buildTabButton('Pelanggaran', 0),
-                                _buildTabButton('Apresiasi', 1),
-                                _buildTabButton('Akumulasi', 2),
-                              ],
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Container(
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(25),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  _buildTabButton('Pelanggaran', 0),
+                                  _buildTabButton('Apresiasi', 1),
+                                  _buildTabButton('Akumulasi', 2),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: _buildTabContent(),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: _buildTabContent(),
+                          ),
                         ],
                       ),
                     ),
@@ -1047,13 +926,13 @@ Future<void> _loadUserData() async {
           _buildEmptyState(errorMessageViolations!, Icons.error)
         else if (pelanggaranHistory.isEmpty)
           _buildEmptyState('Belum ada riwayat pelanggaran', Icons.warning)
-        else
-          ...[
-            ...displayed
-                .map((item) => _buildHistoryCard(item, isPelanggaran: true)),
-            if (pelanggaranHistory.length > _maxHistoryPreview)
-              _buildSeeAllButton(),
-          ],
+        else ...[
+          ...displayed.map(
+            (item) => _buildHistoryCard(item, isPelanggaran: true),
+          ),
+          if (pelanggaranHistory.length > _maxHistoryPreview)
+            _buildSeeAllButton(),
+        ],
       ],
     );
   }
@@ -1081,13 +960,13 @@ Future<void> _loadUserData() async {
           _buildEmptyState(errorMessageAppreciations!, Icons.error)
         else if (apresiasiHistory.isEmpty)
           _buildEmptyState('Belum ada riwayat apresiasi', Icons.star)
-        else
-          ...[
-            ...displayed
-                .map((item) => _buildHistoryCard(item, isPelanggaran: false)),
-            if (apresiasiHistory.length > _maxHistoryPreview)
-              _buildSeeAllButton(),
-          ],
+        else ...[
+          ...displayed.map(
+            (item) => _buildHistoryCard(item, isPelanggaran: false),
+          ),
+          if (apresiasiHistory.length > _maxHistoryPreview)
+            _buildSeeAllButton(),
+        ],
       ],
     );
   }
@@ -1265,7 +1144,9 @@ Future<void> _loadUserData() async {
           ),
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: Color(0xFF0083EE)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       ),
@@ -1279,10 +1160,7 @@ Future<void> _loadUserData() async {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 2,
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),

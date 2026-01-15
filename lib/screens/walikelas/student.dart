@@ -4,93 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:skoring/config/api_config.dart';
+import 'package:skoring/models/walikelas/classstudent.dart';
 
 import 'detail.dart';
 import 'package:skoring/screens/walikelas/notification.dart';
 import 'package:skoring/screens/profile.dart';
 import 'package:skoring/models/api/api_kelas.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class Student {
-  final int nis;
-  final String idKelas;
-  final String namaSiswa;
-  final int? poinApresiasi;
-  final int? poinPelanggaran;
-  final int? poinTotal;
-  final String createdAt;
-  final String updatedAt;
-  final String? spLevel;
-  final String? phLevel;
-
-  Student({
-    required this.nis,
-    required this.idKelas,
-    required this.namaSiswa,
-    this.poinApresiasi,
-    this.poinPelanggaran,
-    this.poinTotal,
-    required this.createdAt,
-    required this.updatedAt,
-    this.spLevel,
-    this.phLevel,
-  });
-
-  factory Student.fromJson(Map<String, dynamic> json) {
-    return Student(
-      nis: int.tryParse(json['nis']?.toString() ?? '') ?? 0,
-      idKelas: json['id_kelas']?.toString() ?? '',
-      namaSiswa: json['nama_siswa']?.toString() ?? '',
-      poinApresiasi:
-          int.tryParse(json['poin_apresiasi']?.toString() ?? ''),
-      poinPelanggaran:
-          int.tryParse(json['poin_pelanggaran']?.toString() ?? ''),
-      poinTotal: int.tryParse(json['poin_total']?.toString() ?? ''),
-      createdAt: json['created_at']?.toString() ?? '',
-      updatedAt: json['updated_at']?.toString() ?? '',
-      spLevel: json['sp_level']?.toString(),
-      phLevel: json['ph_level']?.toString(),
-    );
-  }
-
-  String get status {
-    int totalPoints = poinTotal ?? 0;
-    if (totalPoints >= 0) {
-      return 'Aman';
-    } else if (totalPoints >= -20) {
-      return 'Bermasalah';
-    } else {
-      return 'Prioritas';
-    }
-  }
-
-  int get points => poinTotal ?? 0;
-
-  String get spLevelDisplay {
-    final sp = spLevel?.trim();
-    if (sp != null && sp.isNotEmpty) {
-      return sp;
-    }
-    final totalPoints = poinTotal ?? 0;
-    if (totalPoints <= -76) return 'SP3';
-    if (totalPoints <= -51) return 'SP2';
-    if (totalPoints <= -25) return 'SP1';
-    return '-';
-  }
-
-  String get phLevelDisplay {
-    final totalPoints = poinTotal ?? 0;
-    if (totalPoints <= -25) return '-';
-    final ph = phLevel?.trim();
-    if (ph != null && ph.isNotEmpty) {
-      return ph;
-    }
-    if (totalPoints >= 151) return 'PH3';
-    if (totalPoints >= 126) return 'PH2';
-    if (totalPoints >= 100) return 'PH1';
-    return '-';
-  }
-}
 
 class SiswaScreen extends StatefulWidget {
   const SiswaScreen({Key? key}) : super(key: key);
@@ -149,130 +69,129 @@ class _SiswaScreenState extends State<SiswaScreen>
     });
   }
 
-Future<void> fetchKelas() async {
-  if (walikelasId == null || idKelas == null) {
+  Future<void> fetchKelas() async {
+    if (walikelasId == null || idKelas == null) {
+      _safeSetState(() {
+        errorMessageKelas = 'Data guru tidak lengkap. Silakan login ulang.';
+        isLoadingKelas = false;
+      });
+      return;
+    }
+
     _safeSetState(() {
-      errorMessageKelas = 'Data guru tidak lengkap. Silakan login ulang.';
-      isLoadingKelas = false;
+      isLoadingKelas = true;
+      errorMessageKelas = null;
     });
-    return;
-  }
 
-  _safeSetState(() {
-    isLoadingKelas = true;
-    errorMessageKelas = null;
-  });
+    try {
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/kelas?nip=$walikelasId&id_kelas=$idKelas',
+      );
 
-  try {
-    final uri = Uri.parse(
-      '${ApiConfig.baseUrl}/kelas?nip=$walikelasId&id_kelas=$idKelas',
-    );
+      final response = await http.get(
+        uri,
+        headers: {'Accept': 'application/json'},
+      );
 
-    final response = await http.get(
-      uri,
-      headers: {
-        'Accept': 'application/json',
-      },
-    );
+      print('GET $uri -> ${response.statusCode}');
 
-    print('GET $uri -> ${response.statusCode}');
-
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
-      if (jsonData['success']) {
-        List<dynamic> data = jsonData['data'];
-        if (data.isNotEmpty) {
-          _safeSetState(() {
-            kelasList = data.map((json) => Kelas.fromJson(json)).toList();
-            selectedKelas = kelasList.firstWhere(
-              (kelas) => kelas.idKelas == idKelas,
-              orElse: () => kelasList.first,
-            );
-            isLoadingKelas = false;
-          });
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        if (jsonData['success']) {
+          List<dynamic> data = jsonData['data'];
+          if (data.isNotEmpty) {
+            _safeSetState(() {
+              kelasList = data.map((json) => Kelas.fromJson(json)).toList();
+              selectedKelas = kelasList.firstWhere(
+                (kelas) => kelas.idKelas == idKelas,
+                orElse: () => kelasList.first,
+              );
+              isLoadingKelas = false;
+            });
+          } else {
+            _safeSetState(() {
+              errorMessageKelas = 'Tidak ada data kelas ditemukan';
+              isLoadingKelas = false;
+            });
+          }
         } else {
           _safeSetState(() {
-            errorMessageKelas = 'Tidak ada data kelas ditemukan';
+            errorMessageKelas = jsonData['message'] ?? 'Gagal memuat kelas';
             isLoadingKelas = false;
           });
         }
       } else {
         _safeSetState(() {
-          errorMessageKelas = jsonData['message'] ?? 'Gagal memuat kelas';
+          errorMessageKelas =
+              'Gagal mengambil data kelas (${response.statusCode})';
           isLoadingKelas = false;
         });
       }
-    } else {
+    } catch (e) {
+      print('Error fetchKelas: $e');
       _safeSetState(() {
-        errorMessageKelas = 'Gagal mengambil data kelas (${response.statusCode})';
+        errorMessageKelas = 'Terjadi kesalahan: $e';
         isLoadingKelas = false;
       });
     }
-  } catch (e) {
-    print('Error fetchKelas: $e');
-    _safeSetState(() {
-      errorMessageKelas = 'Terjadi kesalahan: $e';
-      isLoadingKelas = false;
-    });
-  }
-}
-
-Future<void> fetchSiswa() async {
-  if (walikelasId == null || idKelas == null) {
-    _safeSetState(() {
-      errorMessageSiswa = 'Data guru tidak lengkap. Silakan login ulang.';
-      isLoadingSiswa = false;
-    });
-    return;
   }
 
-  _safeSetState(() {
-    isLoadingSiswa = true;
-    errorMessageSiswa = null;
-  });
+  Future<void> fetchSiswa() async {
+    if (walikelasId == null || idKelas == null) {
+      _safeSetState(() {
+        errorMessageSiswa = 'Data guru tidak lengkap. Silakan login ulang.';
+        isLoadingSiswa = false;
+      });
+      return;
+    }
 
-  try {
-    final uri = Uri.parse(
-      '${ApiConfig.baseUrl}/siswa?nip=$walikelasId&id_kelas=$idKelas',
-    );
+    _safeSetState(() {
+      isLoadingSiswa = true;
+      errorMessageSiswa = null;
+    });
 
-    final response = await http.get(
-      uri,
-      headers: {
-        'Accept': 'application/json',
-      },
-    );
+    try {
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/siswa?nip=$walikelasId&id_kelas=$idKelas',
+      );
 
-    print('GET $uri -> ${response.statusCode}');
+      final response = await http.get(
+        uri,
+        headers: {'Accept': 'application/json'},
+      );
 
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
-      if (jsonData['success']) {
-        List<dynamic> data = jsonData['data'];
-        _safeSetState(() {
-          studentsList = data.map((json) => Student.fromJson(json)).toList();
-          isLoadingSiswa = false;
-        });
+      print('GET $uri -> ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        if (jsonData['success']) {
+          List<dynamic> data = jsonData['data'];
+          _safeSetState(() {
+            studentsList = data.map((json) => Student.fromJson(json)).toList();
+            isLoadingSiswa = false;
+          });
+        } else {
+          _safeSetState(() {
+            errorMessageSiswa =
+                jsonData['message'] ?? 'Gagal memuat data siswa';
+            isLoadingSiswa = false;
+          });
+        }
       } else {
         _safeSetState(() {
-          errorMessageSiswa = jsonData['message'] ?? 'Gagal memuat data siswa';
+          errorMessageSiswa =
+              'Gagal mengambil data siswa (${response.statusCode})';
           isLoadingSiswa = false;
         });
       }
-    } else {
+    } catch (e) {
+      print('Error fetchSiswa: $e');
       _safeSetState(() {
-        errorMessageSiswa = 'Gagal mengambil data siswa (${response.statusCode})';
+        errorMessageSiswa = 'Terjadi kesalahan: $e';
         isLoadingSiswa = false;
       });
     }
-  } catch (e) {
-    print('Error fetchSiswa: $e');
-    _safeSetState(() {
-      errorMessageSiswa = 'Terjadi kesalahan: $e';
-      isLoadingSiswa = false;
-    });
   }
-}
 
   @override
   void dispose() {
@@ -290,13 +209,9 @@ Future<void> fetchSiswa() async {
             .toList();
 
     if (_selectedFilter == 1) {
-      filtered =
-          filtered.where((s) => (s.poinApresiasi ?? 0) > 0).toList();
+      filtered = filtered.where((s) => (s.poinApresiasi ?? 0) > 0).toList();
     } else if (_selectedFilter == 2) {
-      filtered =
-          filtered
-              .where((s) => (s.poinPelanggaran ?? 0) > 0)
-              .toList();
+      filtered = filtered.where((s) => (s.poinPelanggaran ?? 0) > 0).toList();
     }
 
     if (_searchQuery.isNotEmpty) {
@@ -485,249 +400,258 @@ Future<void> fetchSiswa() async {
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
                         children: [
-                        Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.only(
-                              bottomLeft: Radius.circular(32),
-                              bottomRight: Radius.circular(32),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0x200083EE),
-                                blurRadius: 20,
-                                offset: Offset(0, 10),
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                            ],
-                          ),
-                          child: SafeArea(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                24,
-                                20,
-                                24,
-                                32,
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(32),
+                                bottomRight: Radius.circular(32),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const SizedBox(width: 40, height: 40),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0x200083EE),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: SafeArea(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  24,
+                                  20,
+                                  24,
+                                  32,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const SizedBox(width: 40, height: 40),
+                                        Row(
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            const NotifikasiScreen(),
+                                                  ),
+                                                );
+                                              },
+                                              child: Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.notifications_rounded,
+                                                  color: Colors.white,
+                                                  size: 24,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            const ProfileScreen(),
+                                                  ),
+                                                );
+                                              },
+                                              child: Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(0.1),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(
+                                                        0,
+                                                        2,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: const Icon(
+                                                  Icons.person_rounded,
+                                                  color: Color(0xFF0083EE),
+                                                  size: 24,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Container(
+                                      width: double.infinity,
+                                      child: _buildHeaderContent(),
+                                    ),
+                                    if (!isLoading && !hasError) ...[
+                                      const SizedBox(height: 24),
+                                      Container(
+                                        height: 50,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            25,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.08,
+                                              ),
+                                              blurRadius: 15,
+                                              offset: const Offset(0, 5),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFF61B8FF),
+                                                    Color(0xFF0083EE),
+                                                  ],
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(30),
+                                              ),
+                                              child: const Icon(
+                                                Icons.search,
+                                                color: Colors.white,
+                                                size: 18,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: TextField(
+                                                controller: _searchController,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    _searchQuery = value;
+                                                  });
+                                                },
+                                                decoration: InputDecoration(
+                                                  hintText:
+                                                      'Cari nama siswa atau NIS...',
+                                                  hintStyle:
+                                                      GoogleFonts.poppins(
+                                                        color: const Color(
+                                                          0xFF9CA3AF,
+                                                        ),
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.w400,
+                                                      ),
+                                                  border: InputBorder.none,
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                ),
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 15,
+                                                  color: const Color(
+                                                    0xFF1F2937,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            if (_searchQuery.isNotEmpty)
+                                              GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    _searchQuery = '';
+                                                    _searchController.clear();
+                                                  });
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(
+                                                    4,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.clear,
+                                                    color: Color(0xFF6B7280),
+                                                    size: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
                                       Row(
                                         children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (context) =>
-                                                          const NotifikasiScreen(),
-                                                ),
-                                              );
-                                            },
-                                            child: Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(
-                                                  0.2,
-                                                ),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: const Icon(
-                                                Icons.notifications_rounded,
-                                                color: Colors.white,
-                                                size: 24,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          GestureDetector(
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (context) =>
-                                                          const ProfileScreen(),
-                                                ),
-                                              );
-                                            },
-                                            child: Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withOpacity(0.1),
-                                                    blurRadius: 8,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: const Icon(
-                                                Icons.person_rounded,
-                                                color: Color(0xFF0083EE),
-                                                size: 24,
-                                              ),
-                                            ),
-                                          ),
+                                          _buildActionButton('Akumulasi', 0),
+                                          const SizedBox(width: 10),
+                                          _buildActionButton('Penghargaan', 1),
+                                          const SizedBox(width: 10),
+                                          _buildActionButton('Pelanggaran', 2),
                                         ],
                                       ),
                                     ],
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Container(
-                                    width: double.infinity,
-                                    child: _buildHeaderContent(),
-                                  ),
-                                  if (!isLoading && !hasError) ...[
-                                    const SizedBox(height: 24),
-                                    Container(
-                                      height: 50,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(25),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              0.08,
-                                            ),
-                                            blurRadius: 15,
-                                            offset: const Offset(0, 5),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              gradient: const LinearGradient(
-                                                colors: [
-                                                  Color(0xFF61B8FF),
-                                                  Color(0xFF0083EE),
-                                                ],
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
-                                            ),
-                                            child: const Icon(
-                                              Icons.search,
-                                              color: Colors.white,
-                                              size: 18,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: TextField(
-                                              controller: _searchController,
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  _searchQuery = value;
-                                                });
-                                              },
-                                              decoration: InputDecoration(
-                                                hintText:
-                                                    'Cari nama siswa atau NIS...',
-                                                hintStyle: GoogleFonts.poppins(
-                                                  color: const Color(
-                                                    0xFF9CA3AF,
-                                                  ),
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w400,
-                                                ),
-                                                border: InputBorder.none,
-                                                contentPadding: EdgeInsets.zero,
-                                              ),
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 15,
-                                                color: const Color(0xFF1F2937),
-                                              ),
-                                            ),
-                                          ),
-                                          if (_searchQuery.isNotEmpty)
-                                            GestureDetector(
-                                              onTap: () {
-                                                setState(() {
-                                                  _searchQuery = '';
-                                                  _searchController.clear();
-                                                });
-                                              },
-                                              child: Container(
-                                                padding: const EdgeInsets.all(
-                                                  4,
-                                                ),
-                                                child: const Icon(
-                                                  Icons.clear,
-                                                  color: Color(0xFF6B7280),
-                                                  size: 16,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Row(
-                                      children: [
-                                        _buildActionButton('Akumulasi', 0),
-                                        const SizedBox(width: 10),
-                                        _buildActionButton('Penghargaan', 1),
-                                        const SizedBox(width: 10),
-                                        _buildActionButton('Pelanggaran', 2),
-                                      ],
-                                    ),
                                   ],
-                                ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              if (hasError)
-                                _buildErrorState()
-                              else if (isLoading)
-                                _buildLoadingState()
-                              else ...[
-                                if (filteredStudents.isEmpty &&
-                                    selectedKelas != null)
-                                  _buildEmptyState()
-                                else
-                                  Column(
-                                    children:
-                                        filteredStudents.asMap().entries.map((
-                                          entry,
-                                        ) {
-                                          return _buildStudentCard(
-                                            entry.value,
-                                            entry.key,
-                                          );
-                                        }).toList(),
-                                  ),
+                          Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                if (hasError)
+                                  _buildErrorState()
+                                else if (isLoading)
+                                  _buildLoadingState()
+                                else ...[
+                                  if (filteredStudents.isEmpty &&
+                                      selectedKelas != null)
+                                    _buildEmptyState()
+                                  else
+                                    Column(
+                                      children:
+                                          filteredStudents.asMap().entries.map((
+                                            entry,
+                                          ) {
+                                            return _buildStudentCard(
+                                              entry.value,
+                                              entry.key,
+                                            );
+                                          }).toList(),
+                                    ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
                         ],
                       ),
                     ),
@@ -1011,15 +935,9 @@ Future<void> fetchSiswa() async {
                       runSpacing: 4,
                       children: [
                         if (hasSp)
-                          _buildStatusChip(
-                            spLevel,
-                            const Color(0xFFFF6B6D),
-                          ),
+                          _buildStatusChip(spLevel, const Color(0xFFFF6B6D)),
                         if (hasPh)
-                          _buildStatusChip(
-                            phLevel,
-                            const Color(0xFF10B981),
-                          ),
+                          _buildStatusChip(phLevel, const Color(0xFF10B981)),
                       ],
                     ),
                   const SizedBox(height: 2),
