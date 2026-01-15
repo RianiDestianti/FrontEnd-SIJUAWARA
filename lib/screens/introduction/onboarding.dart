@@ -711,7 +711,6 @@ class LoginFormState extends State<LoginForm> {
       if (response.statusCode == 200 && data['status'] == true) {
         final prefs = await SharedPreferences.getInstance();
 
-        // Simpan data user (TANPA TOKEN)
         await prefs.setString(
           'walikelas_id',
           data['detail']['nip_walikelas']?.toString() ?? '',
@@ -735,12 +734,10 @@ class LoginFormState extends State<LoginForm> {
           'jurusan',
           data['detail']['jurusan'] ?? 'Unknown',
         );
-        // Simpan kredensial untuk login biometrik cepat (non-token)
         await prefs.setString('biometric_nip', nip);
         await prefs.setString('biometric_password', password);
         await FcmTokenService.instance.syncToken();
 
-        // Cek role dan navigasi
         String role = data['role'].toString();
         if (role == '3') {
           Navigator.pushNamedAndRemoveUntil(

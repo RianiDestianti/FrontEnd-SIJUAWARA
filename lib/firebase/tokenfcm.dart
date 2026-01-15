@@ -67,7 +67,7 @@ class FcmTokenService {
         body: {'nip': nip, 'token': token, 'device_name': 'android'},
       );
     } catch (error) {
-      // Ignore token sync errors to avoid blocking app flow.
+      return;
     }
   }
 }
