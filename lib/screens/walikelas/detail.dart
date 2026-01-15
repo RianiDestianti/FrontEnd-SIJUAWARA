@@ -5,10 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-
-import 'package:skoring/config/api_config.dart';
-import 'package:skoring/models/walikelas/detailmodels.dart';
-
+import 'package:skoring/config/api.dart';
+import 'package:skoring/models/api/api_detail.dart';
 import 'point.dart';
 import 'note.dart';
 import 'history.dart';
@@ -18,16 +16,16 @@ class DetailScreen extends StatefulWidget {
   const DetailScreen({Key? key, required this.student}) : super(key: key);
 
   @override
-  State<DetailScreen> createState() => _DetailScreenState();
+  State<DetailScreen> createState() => DetailScreenState();
 }
 
-class _DetailScreenState extends State<DetailScreen>
+class DetailScreenState extends State<DetailScreen>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  static const int _maxHistoryPreview = 5;
-  int _selectedTab = 0;
+  late AnimationController animationController;
+  late Animation<double> fadeAnimation;
+  late Animation<Offset> slideAnimation;
+  static const int maxHistoryPreview = 5;
+  int selectedTab = 0;
   late Student detailedStudent;
   List<ViolationHistory> pelanggaranHistory = [];
   List<AppreciationHistory> apresiasiHistory = [];
@@ -39,37 +37,37 @@ class _DetailScreenState extends State<DetailScreen>
   String? errorMessageViolations;
   String? errorMessageStudent;
   List<dynamic> aspekPenilaianData = [];
-  String _nipWalikelas = '';
-  String _idKelas = '';
+  String nipWalikelas = '';
+  String idKelas = '';
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
+    slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+      CurvedAnimation(parent: animationController, curve: Curves.easeOutBack),
     );
-    _animationController.forward();
-    _loadUserData();
+    animationController.forward();
+    loadUserData();
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _nipWalikelas = prefs.getString('walikelas_id') ?? '';
-      _idKelas = prefs.getString('id_kelas') ?? '';
+      nipWalikelas = prefs.getString('walikelas_id') ?? '';
+      idKelas = prefs.getString('id_kelas') ?? '';
     });
 
-    if (_nipWalikelas.isEmpty || _idKelas.isEmpty) {
+    if (nipWalikelas.isEmpty || idKelas.isEmpty) {
       setState(() {
         errorMessageStudent = 'Data guru tidak lengkap. Silakan login ulang.';
         isLoadingStudent = false;
@@ -81,8 +79,8 @@ class _DetailScreenState extends State<DetailScreen>
     initializeStudentData();
   }
 
-  Future<void> _refreshData() async {
-    await _loadUserData();
+  Future<void> refreshData() async {
+    await loadUserData();
   }
 
   void initializeStudentData() {
@@ -96,8 +94,8 @@ class _DetailScreenState extends State<DetailScreen>
       final poinTotal = int.tryParse(data['points']?.toString() ?? '') ?? 0;
       final spLevelRaw = data['spLevel'] ?? data['sp_level'];
       final phLevelRaw = data['phLevel'] ?? data['ph_level'];
-      final spLevel = _resolveSpLevel(spLevelRaw?.toString(), poinTotal);
-      final phLevel = _resolvePhLevel(phLevelRaw?.toString(), poinTotal);
+      final spLevel = resolveSpLevel(spLevelRaw?.toString(), poinTotal);
+      final phLevel = resolvePhLevel(phLevelRaw?.toString(), poinTotal);
 
       detailedStudent = Student(
         name: data['name'] ?? 'Unknown',
@@ -122,7 +120,7 @@ class _DetailScreenState extends State<DetailScreen>
     }
   }
 
-  String _resolveSpLevel(String? spLevel, int poinTotal) {
+  String resolveSpLevel(String? spLevel, int poinTotal) {
     final sp = spLevel?.trim();
     if (sp != null && sp.isNotEmpty) {
       return sp;
@@ -133,7 +131,7 @@ class _DetailScreenState extends State<DetailScreen>
     return '-';
   }
 
-  String _resolvePhLevel(String? phLevel, int poinTotal) {
+  String resolvePhLevel(String? phLevel, int poinTotal) {
     if (poinTotal <= -25) return '-';
     final ph = phLevel?.trim();
     if (ph != null && ph.isNotEmpty) {
@@ -151,7 +149,7 @@ class _DetailScreenState extends State<DetailScreen>
     });
     try {
       final uri = Uri.parse(
-        '${ApiConfig.baseUrl}/aspekpenilaian?nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/aspekpenilaian?nip=$nipWalikelas&id_kelas=$idKelas',
       );
       final response = await http.get(
         uri,
@@ -189,7 +187,7 @@ class _DetailScreenState extends State<DetailScreen>
     });
     try {
       final uri = Uri.parse(
-        '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$nipWalikelas&id_kelas=$idKelas',
       );
       final response = await http.get(
         uri,
@@ -276,7 +274,7 @@ class _DetailScreenState extends State<DetailScreen>
       Future<http.Response> loadPelanggaran() {
         return http.get(
           Uri.parse(
-            '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$_nipWalikelas&id_kelas=$_idKelas',
+            '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$nipWalikelas&id_kelas=$idKelas',
           ),
           headers: {'Accept': 'application/json'},
         );
@@ -286,7 +284,7 @@ class _DetailScreenState extends State<DetailScreen>
       if (response.statusCode != 200) {
         response = await http.get(
           Uri.parse(
-            '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$_nipWalikelas&id_kelas=$_idKelas',
+            '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$nipWalikelas&id_kelas=$idKelas',
           ),
           headers: {'Accept': 'application/json'},
         );
@@ -396,7 +394,7 @@ class _DetailScreenState extends State<DetailScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
+    animationController.dispose();
     super.dispose();
   }
 
@@ -444,9 +442,9 @@ class _DetailScreenState extends State<DetailScreen>
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: FadeTransition(
-                  opacity: _fadeAnimation,
+                  opacity: fadeAnimation,
                   child: RefreshIndicator(
-                    onRefresh: _refreshData,
+                    onRefresh: refreshData,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
@@ -479,7 +477,7 @@ class _DetailScreenState extends State<DetailScreen>
                                   ),
                                   const SizedBox(height: 32),
                                   SlideTransition(
-                                    position: _slideAnimation,
+                                    position: slideAnimation,
                                     child: Container(
                                       width: double.infinity,
                                       padding: const EdgeInsets.all(24),
@@ -733,42 +731,42 @@ class _DetailScreenState extends State<DetailScreen>
                                     ),
                                   ),
                                   const SizedBox(height: 16),
-                                  _buildBiodataRow(
+                                  buildBiodataRow(
                                     'NIS',
                                     detailedStudent.nis,
                                     Icons.badge,
                                   ),
-                                  _buildBiodataRow(
+                                  buildBiodataRow(
                                     'Program Keahlian',
                                     detailedStudent.programKeahlian,
                                     Icons.school,
                                   ),
-                                  _buildBiodataRow(
+                                  buildBiodataRow(
                                     'Kelas',
                                     detailedStudent.kelas,
                                     Icons.class_,
                                   ),
-                                  _buildBiodataRow(
+                                  buildBiodataRow(
                                     'Poin Apresiasi',
                                     '+${detailedStudent.poinApresiasi}',
                                     Icons.star,
                                   ),
-                                  _buildBiodataRow(
+                                  buildBiodataRow(
                                     'Poin Pelanggaran',
                                     '-${detailedStudent.poinPelanggaran.abs()}',
                                     Icons.warning,
                                   ),
-                                  _buildBiodataRow(
+                                  buildBiodataRow(
                                     'Poin Total',
                                     '${detailedStudent.poinTotal > 0 ? '+' : ''}${detailedStudent.poinTotal}',
                                     Icons.calculate,
                                   ),
-                                  _buildBiodataRow(
+                                  buildBiodataRow(
                                     'Status SP',
                                     detailedStudent.spLevel,
                                     Icons.report,
                                   ),
-                                  _buildBiodataRow(
+                                  buildBiodataRow(
                                     'Status PH',
                                     detailedStudent.phLevel,
                                     Icons.emoji_events,
@@ -794,16 +792,16 @@ class _DetailScreenState extends State<DetailScreen>
                               ),
                               child: Row(
                                 children: [
-                                  _buildTabButton('Pelanggaran', 0),
-                                  _buildTabButton('Apresiasi', 1),
-                                  _buildTabButton('Akumulasi', 2),
+                                  buildTabButton('Pelanggaran', 0),
+                                  buildTabButton('Apresiasi', 1),
+                                  buildTabButton('Akumulasi', 2),
                                 ],
                               ),
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.all(20),
-                            child: _buildTabContent(),
+                            child: buildTabContent(),
                           ),
                         ],
                       ),
@@ -818,7 +816,7 @@ class _DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget _buildBiodataRow(String label, String value, IconData icon) {
+  Widget buildBiodataRow(String label, String value, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -863,11 +861,11 @@ class _DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget _buildTabButton(String text, int index) {
-    bool isActive = _selectedTab == index;
+  Widget buildTabButton(String text, int index) {
+    bool isActive = selectedTab == index;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedTab = index),
+        onTap: () => setState(() => selectedTab = index),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: 50,
@@ -890,23 +888,23 @@ class _DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget _buildTabContent() {
-    switch (_selectedTab) {
+  Widget buildTabContent() {
+    switch (selectedTab) {
       case 0:
-        return _buildPelanggaranContent();
+        return buildPelanggaranContent();
       case 1:
-        return _buildApresiasiContent();
+        return buildApresiasiContent();
       case 2:
-        return _buildAkumulasiContent();
+        return buildAkumulasiContent();
       default:
-        return _buildPelanggaranContent();
+        return buildPelanggaranContent();
     }
   }
 
-  Widget _buildPelanggaranContent() {
+  Widget buildPelanggaranContent() {
     final displayed =
-        pelanggaranHistory.length > _maxHistoryPreview
-            ? pelanggaranHistory.take(_maxHistoryPreview).toList()
+        pelanggaranHistory.length > maxHistoryPreview
+            ? pelanggaranHistory.take(maxHistoryPreview).toList()
             : pelanggaranHistory;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -923,24 +921,24 @@ class _DetailScreenState extends State<DetailScreen>
         if (isLoadingViolations)
           const Center(child: CircularProgressIndicator())
         else if (errorMessageViolations != null)
-          _buildEmptyState(errorMessageViolations!, Icons.error)
+          buildEmptyState(errorMessageViolations!, Icons.error)
         else if (pelanggaranHistory.isEmpty)
-          _buildEmptyState('Belum ada riwayat pelanggaran', Icons.warning)
+          buildEmptyState('Belum ada riwayat pelanggaran', Icons.warning)
         else ...[
           ...displayed.map(
-            (item) => _buildHistoryCard(item, isPelanggaran: true),
+            (item) => buildHistoryCard(item, isPelanggaran: true),
           ),
-          if (pelanggaranHistory.length > _maxHistoryPreview)
-            _buildSeeAllButton(),
+          if (pelanggaranHistory.length > maxHistoryPreview)
+            buildSeeAllButton(),
         ],
       ],
     );
   }
 
-  Widget _buildApresiasiContent() {
+  Widget buildApresiasiContent() {
     final displayed =
-        apresiasiHistory.length > _maxHistoryPreview
-            ? apresiasiHistory.take(_maxHistoryPreview).toList()
+        apresiasiHistory.length > maxHistoryPreview
+            ? apresiasiHistory.take(maxHistoryPreview).toList()
             : apresiasiHistory;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -957,21 +955,20 @@ class _DetailScreenState extends State<DetailScreen>
         if (isLoadingAppreciations)
           const Center(child: CircularProgressIndicator())
         else if (errorMessageAppreciations != null)
-          _buildEmptyState(errorMessageAppreciations!, Icons.error)
+          buildEmptyState(errorMessageAppreciations!, Icons.error)
         else if (apresiasiHistory.isEmpty)
-          _buildEmptyState('Belum ada riwayat apresiasi', Icons.star)
+          buildEmptyState('Belum ada riwayat apresiasi', Icons.star)
         else ...[
           ...displayed.map(
-            (item) => _buildHistoryCard(item, isPelanggaran: false),
+            (item) => buildHistoryCard(item, isPelanggaran: false),
           ),
-          if (apresiasiHistory.length > _maxHistoryPreview)
-            _buildSeeAllButton(),
+          if (apresiasiHistory.length > maxHistoryPreview) buildSeeAllButton(),
         ],
       ],
     );
   }
 
-  Widget _buildAkumulasiContent() {
+  Widget buildAkumulasiContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -988,19 +985,19 @@ class _DetailScreenState extends State<DetailScreen>
           const Center(child: CircularProgressIndicator())
         else if (errorMessageAppreciations != null ||
             errorMessageViolations != null)
-          _buildEmptyState(
+          buildEmptyState(
             (errorMessageAppreciations ?? errorMessageViolations)!,
             Icons.error,
           )
         else if (akumulasiHistory.isEmpty)
-          _buildEmptyState('Belum ada riwayat akumulasi', Icons.calculate)
+          buildEmptyState('Belum ada riwayat akumulasi', Icons.calculate)
         else
-          ...akumulasiHistory.map((item) => _buildAkumulasiCard(item)).toList(),
+          ...akumulasiHistory.map((item) => buildAkumulasiCard(item)).toList(),
       ],
     );
   }
 
-  Widget _buildHistoryCard(dynamic item, {required bool isPelanggaran}) {
+  Widget buildHistoryCard(dynamic item, {required bool isPelanggaran}) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -1120,7 +1117,7 @@ class _DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget _buildSeeAllButton() {
+  Widget buildSeeAllButton() {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: SizedBox(
@@ -1153,7 +1150,7 @@ class _DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget _buildAkumulasiCard(AccumulationHistory item) {
+  Widget buildAkumulasiCard(AccumulationHistory item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -1368,7 +1365,7 @@ class _DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget _buildEmptyState(String message, IconData icon) {
+  Widget buildEmptyState(String message, IconData icon) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),

@@ -17,10 +17,10 @@ class FaqWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final filteredFaqData = _filterFaqData();
-    final apresiasiEntries = _entriesForType(filteredFaqData, 'apresiasi');
-    final pelanggaranEntries = _entriesForType(filteredFaqData, 'pelanggaran');
-    final otherEntries = _entriesForOtherTypes(filteredFaqData);
+    final filteredFaqData = filterFaqData();
+    final apresiasiEntries = entriesForType(filteredFaqData, 'apresiasi');
+    final pelanggaranEntries = entriesForType(filteredFaqData, 'pelanggaran');
+    final otherEntries = entriesForOtherTypes(filteredFaqData);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,34 +82,34 @@ class FaqWidget extends StatelessWidget {
             ),
           ],
           if (apresiasiEntries.isNotEmpty) ...[
-            _buildSectionTitle('Lembar 1 - Penghargaan dan Apresiasi'),
+            sectionTitle('Lembar 1 - Penghargaan dan Apresiasi'),
             ...apresiasiEntries.map(
-              (entry) => _buildFaqSection(
+              (entry) => buildFaqSection(
                 entry.key,
                 entry.value['title']?.toString() ?? '',
-                _buildItems(entry.value['items']),
+                buildItems(entry.value['items']),
               ),
             ),
             const SizedBox(height: 24),
           ],
           if (pelanggaranEntries.isNotEmpty) ...[
-            _buildSectionTitle('Lembar 2 - Pelanggaran dan Sanksi'),
+            sectionTitle('Lembar 2 - Pelanggaran dan Sanksi'),
             ...pelanggaranEntries.map(
-              (entry) => _buildFaqSection(
+              (entry) => buildFaqSection(
                 entry.key,
                 entry.value['title']?.toString() ?? '',
-                _buildItems(entry.value['items']),
+                buildItems(entry.value['items']),
               ),
             ),
             const SizedBox(height: 24),
           ],
           if (otherEntries.isNotEmpty) ...[
-            _buildSectionTitle('Lembar 3 - Lainnya'),
+            sectionTitle('Lembar 3 - Lainnya'),
             ...otherEntries.map(
-              (entry) => _buildFaqSection(
+              (entry) => buildFaqSection(
                 entry.key,
                 entry.value['title']?.toString() ?? '',
-                _buildItems(entry.value['items']),
+                buildItems(entry.value['items']),
               ),
             ),
             const SizedBox(height: 16),
@@ -137,7 +137,7 @@ class FaqWidget extends StatelessWidget {
     );
   }
 
-  Map<String, Map<String, dynamic>> _filterFaqData() {
+  Map<String, Map<String, dynamic>> filterFaqData() {
     if (searchQuery.isEmpty) {
       return faqData;
     }
@@ -174,7 +174,7 @@ class FaqWidget extends StatelessWidget {
     return filtered;
   }
 
-  List<MapEntry<String, Map<String, dynamic>>> _entriesForType(
+  List<MapEntry<String, Map<String, dynamic>>> entriesForType(
     Map<String, Map<String, dynamic>> data,
     String type,
   ) {
@@ -185,7 +185,7 @@ class FaqWidget extends StatelessWidget {
     }).toList();
   }
 
-  List<MapEntry<String, Map<String, dynamic>>> _entriesForOtherTypes(
+  List<MapEntry<String, Map<String, dynamic>>> entriesForOtherTypes(
     Map<String, Map<String, dynamic>> data,
   ) {
     return data.entries.where((entry) {
@@ -194,13 +194,13 @@ class FaqWidget extends StatelessWidget {
     }).toList();
   }
 
-  List<Widget> _buildItems(dynamic items) {
+  List<Widget> buildItems(dynamic items) {
     final list = items as List<dynamic>? ?? [];
     return list
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
         .map(
-          (item) => _buildFaqItem(
+          (item) => buildFaqItem(
             item['text']?.toString() ?? '',
             item['points']?.toString() ?? '',
           ),
@@ -208,7 +208,7 @@ class FaqWidget extends StatelessWidget {
         .toList();
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget sectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
@@ -222,7 +222,7 @@ class FaqWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFaqSection(String code, String title, List<Widget> items) {
+  Widget buildFaqSection(String code, String title, List<Widget> items) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -242,7 +242,7 @@ class FaqWidget extends StatelessWidget {
         onExpansionChanged: (expanded) => onExpansionChanged(code, expanded),
         title: RichText(
           text: TextSpan(
-            children: _highlightSearchText(
+            children: highlightSearchText(
               '$code - $title',
               searchQuery,
               GoogleFonts.poppins(
@@ -265,7 +265,7 @@ class FaqWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFaqItem(String question, String answer) {
+  Widget buildFaqItem(String question, String answer) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -274,7 +274,7 @@ class FaqWidget extends StatelessWidget {
           Expanded(
             child: RichText(
               text: TextSpan(
-                children: _highlightSearchText(
+                children: highlightSearchText(
                   question,
                   searchQuery,
                   GoogleFonts.poppins(
@@ -294,7 +294,7 @@ class FaqWidget extends StatelessWidget {
             ),
             child: RichText(
               text: TextSpan(
-                children: _highlightSearchText(
+                children: highlightSearchText(
                   answer,
                   searchQuery,
                   GoogleFonts.poppins(
@@ -311,7 +311,7 @@ class FaqWidget extends StatelessWidget {
     );
   }
 
-  List<TextSpan> _highlightSearchText(
+  List<TextSpan> highlightSearchText(
     String text,
     String searchQuery,
     TextStyle baseStyle,

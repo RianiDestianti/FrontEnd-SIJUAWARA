@@ -1,12 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skoring/models/point.dart';
-
-import 'package:skoring/config/api_config.dart';
+import 'package:skoring/models/types/point.dart';
+import 'package:skoring/config/api.dart';
 
 class PointUtils {
   static Future<Point?> submitPoint({
@@ -28,7 +26,7 @@ class PointUtils {
         category.isEmpty) {
       print('Validation failed: Some fields are empty');
       if (context.mounted) {
-        _showErrorSnackBar(
+        showErrorSnackBar(
           context,
           'Mohon lengkapi semua field yang diperlukan',
         );
@@ -43,23 +41,22 @@ class PointUtils {
 
       if (nip.isEmpty || idKelas.isEmpty) {
         if (context.mounted) {
-          _showErrorSnackBar(context, 'Data guru tidak lengkap. Silakan login ulang.');
+          showErrorSnackBar(
+            context,
+            'Data guru tidak lengkap. Silakan login ulang.',
+          );
         }
         return null;
       }
 
-      final endpoint = type == 'Apresiasi'
-          ? '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$nip&id_kelas=$idKelas'
-          : '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$nip&id_kelas=$idKelas';
+      final endpoint =
+          type == 'Apresiasi'
+              ? '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$nip&id_kelas=$idKelas'
+              : '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$nip&id_kelas=$idKelas';
 
       print('Sending POST request to $endpoint');
       print(
-        'Request body: ${jsonEncode({
-          'id_penilaian': idPenilaian,
-          'nis': nis,
-          'id_aspekpenilaian': idAspekPenilaian,
-          'nip_walikelas': nip,
-        })}',
+        'Request body: ${jsonEncode({'id_penilaian': idPenilaian, 'nis': nis, 'id_aspekpenilaian': idAspekPenilaian, 'nip_walikelas': nip})}',
       );
 
       final response = await http.post(
@@ -83,7 +80,8 @@ class PointUtils {
         try {
           final responseData = jsonDecode(response.body);
           if (responseData['success'] == true ||
-              (responseData['message']?.toString().contains('berhasil') ?? false)) {
+              (responseData['message']?.toString().contains('berhasil') ??
+                  false)) {
             final pointData = Point(
               type: type,
               studentName: studentName,
@@ -97,7 +95,7 @@ class PointUtils {
             );
 
             if (context.mounted) {
-              _showSuccessSnackBar(
+              showSuccessSnackBar(
                 context,
                 'Poin $type berhasil ditambahkan untuk $studentName',
               );
@@ -105,7 +103,7 @@ class PointUtils {
             return pointData;
           } else {
             if (context.mounted) {
-              _showErrorSnackBar(
+              showErrorSnackBar(
                 context,
                 responseData['message'] ?? 'Gagal menambahkan poin',
               );
@@ -115,7 +113,7 @@ class PointUtils {
         } catch (e) {
           print('JSON decode error: $e');
           if (context.mounted) {
-            _showErrorSnackBar(
+            showErrorSnackBar(
               context,
               'Invalid server response: Expected JSON, received invalid data',
             );
@@ -126,14 +124,15 @@ class PointUtils {
         try {
           final errorData = jsonDecode(response.body);
           if (context.mounted) {
-            _showErrorSnackBar(
+            showErrorSnackBar(
               context,
-              errorData['message'] ?? 'Gagal menghubungi server: ${response.statusCode}',
+              errorData['message'] ??
+                  'Gagal menghubungi server: ${response.statusCode}',
             );
           }
         } catch (e) {
           if (context.mounted) {
-            _showErrorSnackBar(
+            showErrorSnackBar(
               context,
               'Gagal menghubungi server: ${response.statusCode}',
             );
@@ -144,13 +143,13 @@ class PointUtils {
     } catch (e) {
       print('Error during HTTP request: $e');
       if (context.mounted) {
-        _showErrorSnackBar(context, 'Terjadi kesalahan: $e');
+        showErrorSnackBar(context, 'Terjadi kesalahan: $e');
       }
       return null;
     }
   }
 
-  static void _showErrorSnackBar(BuildContext context, String message) {
+  static void showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -176,12 +175,16 @@ class PointUtils {
     );
   }
 
-  static void _showSuccessSnackBar(BuildContext context, String message) {
+  static void showSuccessSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+            const Icon(
+              Icons.check_circle_outline,
+              color: Colors.white,
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -216,191 +219,196 @@ class PointPopup extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<PointPopup> createState() => _PointPopupState();
+  State<PointPopup> createState() => PointPopupState();
 }
 
-class _PointPopupState extends State<PointPopup> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _slideController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _rotateAnimation;
+class PointPopupState extends State<PointPopup> with TickerProviderStateMixin {
+  late AnimationController animationController;
+  late AnimationController slideController;
+  late Animation<double> scaleAnimation;
+  late Animation<double> fadeAnimation;
+  late Animation<Offset> slideAnimation;
+  late Animation<double> rotateAnimation;
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _nisController = TextEditingController();
-  final TextEditingController _classController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
-  final TextEditingController _idPenilaianController = TextEditingController();
-  String _selectedPointType = 'Pelanggaran';
-  String _selectedCategory = '';
-  bool _isSubmitting = false;
-  bool _isLoadingCategories = true;
-  String? _errorMessageCategories;
-  List<Map<String, dynamic>> _aspekPenilaian = [];
-  final TextEditingController _categorySearchController =
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController nisController = TextEditingController();
+  final TextEditingController classController = TextEditingController();
+  final TextEditingController dateController = TextEditingController();
+  final TextEditingController idPenilaianController = TextEditingController();
+  String selectedPointType = 'Pelanggaran';
+  String selectedCategory = '';
+  bool isSubmitting = false;
+  bool isLoadingCategories = true;
+  String? errorMessageCategories;
+  List<Map<String, dynamic>> aspekPenilaian = [];
+  final TextEditingController categorySearchController =
       TextEditingController();
-  String _categorySearch = '';
+  String categorySearch = '';
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
-    _nameController.text = widget.studentName;
-    _nisController.text = widget.nis;
-    _classController.text = widget.className;
-    _dateController.text = DateTime.now().toString().split(' ')[0];
-    _idPenilaianController.text = _generateIdPenilaian();
+    initializeAnimations();
+    nameController.text = widget.studentName;
+    nisController.text = widget.nis;
+    classController.text = widget.className;
+    dateController.text = DateTime.now().toString().split(' ')[0];
+    idPenilaianController.text = generateIdPenilaian();
     fetchAspekPenilaian();
   }
 
-  void _initializeAnimations() {
-    _animationController = AnimationController(
+  void initializeAnimations() {
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _slideController = AnimationController(
+    slideController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.elasticOut),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
     );
-    _slideAnimation = Tween<Offset>(
+    slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+      CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic),
     );
-    _rotateAnimation = Tween<double>(begin: 0.1, end: 0.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    rotateAnimation = Tween<double>(begin: 0.1, end: 0.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
     );
 
-    _animationController.forward();
+    animationController.forward();
   }
 
-  String _generateIdPenilaian() {
+  String generateIdPenilaian() {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final shortId = (timestamp % 1000000000).toString().padLeft(9, '0');
     return shortId;
   }
 
-Future<void> fetchAspekPenilaian() async {
-  setState(() {
-    _isLoadingCategories = true;
-    _errorMessageCategories = null;
-  });
+  Future<void> fetchAspekPenilaian() async {
+    setState(() {
+      isLoadingCategories = true;
+      errorMessageCategories = null;
+    });
 
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final nip = prefs.getString('walikelas_id') ?? '';
-    final idKelas = prefs.getString('id_kelas') ?? '';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final nip = prefs.getString('walikelas_id') ?? '';
+      final idKelas = prefs.getString('id_kelas') ?? '';
 
-    if (nip.isEmpty || idKelas.isEmpty) {
-      setState(() {
-        _errorMessageCategories = 'Data guru tidak lengkap. Silakan login ulang.';
-        _isLoadingCategories = false;
-      });
-      return;
-    }
-
-    final uri = Uri.parse(
-      '${ApiConfig.baseUrl}/aspekpenilaian?nip=$nip&id_kelas=$idKelas',
-    );
-
-    final response = await http.get(uri, headers: {'Accept': 'application/json'});
-
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      if (jsonData['success']) {
+      if (nip.isEmpty || idKelas.isEmpty) {
         setState(() {
-          _aspekPenilaian = List<Map<String, dynamic>>.from(jsonData['data']);
-          if (_aspekPenilaian.isNotEmpty) {
-            _selectedCategory = _aspekPenilaian
-                .firstWhere(
-                  (aspek) => aspek['jenis_poin'] == _selectedPointType,
-                  orElse: () => _aspekPenilaian[0],
-                )['id_aspekpenilaian']
-                .toString();
-          }
-          _isLoadingCategories = false;
+          errorMessageCategories =
+              'Data guru tidak lengkap. Silakan login ulang.';
+          isLoadingCategories = false;
         });
+        return;
+      }
+
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/aspekpenilaian?nip=$nip&id_kelas=$idKelas',
+      );
+
+      final response = await http.get(
+        uri,
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['success']) {
+          setState(() {
+            aspekPenilaian = List<Map<String, dynamic>>.from(jsonData['data']);
+            if (aspekPenilaian.isNotEmpty) {
+              selectedCategory =
+                  aspekPenilaian
+                      .firstWhere(
+                        (aspek) => aspek['jenis_poin'] == selectedPointType,
+                        orElse: () => aspekPenilaian[0],
+                      )['id_aspekpenilaian']
+                      .toString();
+            }
+            isLoadingCategories = false;
+          });
+        } else {
+          setState(() {
+            errorMessageCategories = jsonData['message'];
+            isLoadingCategories = false;
+          });
+        }
       } else {
         setState(() {
-          _errorMessageCategories = jsonData['message'];
-          _isLoadingCategories = false;
+          errorMessageCategories = 'Gagal mengambil data aspek penilaian';
+          isLoadingCategories = false;
         });
       }
-    } else {
+    } catch (e) {
       setState(() {
-        _errorMessageCategories = 'Gagal mengambil data aspek penilaian';
-        _isLoadingCategories = false;
+        errorMessageCategories = 'Terjadi kesalahan: $e';
+        isLoadingCategories = false;
       });
     }
-  } catch (e) {
-    setState(() {
-      _errorMessageCategories = 'Terjadi kesalahan: $e';
-      _isLoadingCategories = false;
-    });
   }
-}
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _slideController.dispose();
-    _nameController.dispose();
-    _nisController.dispose();
-    _classController.dispose();
-    _dateController.dispose();
-    _idPenilaianController.dispose();
-    _categorySearchController.dispose();
+    animationController.dispose();
+    slideController.dispose();
+    nameController.dispose();
+    nisController.dispose();
+    classController.dispose();
+    dateController.dispose();
+    idPenilaianController.dispose();
+    categorySearchController.dispose();
     super.dispose();
   }
 
-  void _closeDialog() {
-    _animationController.reverse().then((_) => Navigator.of(context).pop());
+  void closeDialog() {
+    animationController.reverse().then((unused) => Navigator.of(context).pop());
   }
 
-  void _submitPoint() async {
-    setState(() => _isSubmitting = true);
-    final selectedAspek = _aspekPenilaian.firstWhere(
-      (aspek) => aspek['id_aspekpenilaian'].toString() == _selectedCategory,
+  void submitPoint() async {
+    setState(() => isSubmitting = true);
+    final selectedAspek = aspekPenilaian.firstWhere(
+      (aspek) => aspek['id_aspekpenilaian'].toString() == selectedCategory,
       orElse: () => {},
     );
     if (selectedAspek.isEmpty) {
-      setState(() => _isSubmitting = false);
-      PointUtils._showErrorSnackBar(context, 'Kategori tidak valid');
+      setState(() => isSubmitting = false);
+      PointUtils.showErrorSnackBar(context, 'Kategori tidak valid');
       return;
     }
     print(
-      'Submitting point: type=$_selectedPointType, nis=${_nisController.text}, '
-      'idPenilaian=${_idPenilaianController.text}, idAspekPenilaian=$_selectedCategory, '
+      'Submitting point: type=$selectedPointType, nis=${nisController.text}, '
+      'idPenilaian=${idPenilaianController.text}, idAspekPenilaian=$selectedCategory, '
       'category=${selectedAspek['kategori']}, description=${selectedAspek['uraian']}, '
       'points=${selectedAspek['indikator_poin']}',
     );
     final point = await PointUtils.submitPoint(
-      type: _selectedPointType,
-      studentName: _nameController.text,
-      nis: _nisController.text,
-      idPenilaian: _idPenilaianController.text,
-      idAspekPenilaian: _selectedCategory,
-      date: _dateController.text,
+      type: selectedPointType,
+      studentName: nameController.text,
+      nis: nisController.text,
+      idPenilaian: idPenilaianController.text,
+      idAspekPenilaian: selectedCategory,
+      date: dateController.text,
       category: selectedAspek['kategori'] ?? '',
       description: selectedAspek['uraian'] ?? '',
       points: int.parse(selectedAspek['indikator_poin'].toString()),
       context: context,
     );
-    setState(() => _isSubmitting = false);
+    setState(() => isSubmitting = false);
     if (point != null) {
-      _closeDialog();
+      closeDialog();
     }
   }
 
-  Future<void> _pickDate() async {
+  Future<void> pickDate() async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -417,32 +425,32 @@ Future<void> fetchAspekPenilaian() async {
     );
     if (pickedDate != null) {
       setState(() {
-        _dateController.text = pickedDate.toString().split(' ')[0];
+        dateController.text = pickedDate.toString().split(' ')[0];
       });
     }
   }
 
-  void _onPointTypeChanged(String value) {
+  void onPointTypeChanged(String value) {
     setState(() {
-      _selectedPointType = value;
-      _categorySearch = '';
-      _categorySearchController.clear();
-      _selectedCategory =
-          _aspekPenilaian
+      selectedPointType = value;
+      categorySearch = '';
+      categorySearchController.clear();
+      selectedCategory =
+          aspekPenilaian
               .firstWhere(
-                (aspek) => aspek['jenis_poin'] == _selectedPointType,
+                (aspek) => aspek['jenis_poin'] == selectedPointType,
                 orElse:
-                    () => _aspekPenilaian.isNotEmpty ? _aspekPenilaian[0] : {},
+                    () => aspekPenilaian.isNotEmpty ? aspekPenilaian[0] : {},
               )['id_aspekpenilaian']
               ?.toString() ??
           '';
     });
   }
 
-  List<Map<String, dynamic>> get _filteredAspekPenilaian {
-    final query = _categorySearch.toLowerCase();
-    return _aspekPenilaian
-        .where((aspek) => aspek['jenis_poin'] == _selectedPointType)
+  List<Map<String, dynamic>> get filteredAspekPenilaian {
+    final query = categorySearch.toLowerCase();
+    return aspekPenilaian
+        .where((aspek) => aspek['jenis_poin'] == selectedPointType)
         .where(
           (aspek) =>
               query.isEmpty ||
@@ -456,16 +464,16 @@ Future<void> fetchAspekPenilaian() async {
         .toList();
   }
 
-  void _onCategorySearchChanged(String value) {
+  void onCategorySearchChanged(String value) {
     setState(() {
-      _categorySearch = value;
-      final filtered = _filteredAspekPenilaian;
+      categorySearch = value;
+      final filtered = filteredAspekPenilaian;
       if (filtered.isNotEmpty &&
           !filtered.any(
             (aspek) =>
-                aspek['id_aspekpenilaian'].toString() == _selectedCategory,
+                aspek['id_aspekpenilaian'].toString() == selectedCategory,
           )) {
-        _selectedCategory = filtered.first['id_aspekpenilaian'].toString();
+        selectedCategory = filtered.first['id_aspekpenilaian'].toString();
       }
     });
   }
@@ -473,38 +481,38 @@ Future<void> fetchAspekPenilaian() async {
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-      opacity: _fadeAnimation,
+      opacity: fadeAnimation,
       child: Container(
         color: Colors.black.withOpacity(0.6),
         child: Center(
           child: SlideTransition(
-            position: _slideAnimation,
+            position: slideAnimation,
             child: RotationTransition(
-              turns: _rotateAnimation,
+              turns: rotateAnimation,
               child: ScaleTransition(
-                scale: _scaleAnimation,
+                scale: scaleAnimation,
                 child: Material(
                   color: Colors.transparent,
                   child: PointDialogContent(
-                    nameController: _nameController,
-                    nisController: _nisController,
-                    classController: _classController,
-                    dateController: _dateController,
-                    idPenilaianController: _idPenilaianController,
-                    selectedPointType: _selectedPointType,
-                  selectedCategory: _selectedCategory,
-                    aspekPenilaian: _filteredAspekPenilaian,
-                    categorySearchController: _categorySearchController,
-                    onCategorySearchChanged: _onCategorySearchChanged,
-                    onPointTypeChanged: _onPointTypeChanged,
+                    nameController: nameController,
+                    nisController: nisController,
+                    classController: classController,
+                    dateController: dateController,
+                    idPenilaianController: idPenilaianController,
+                    selectedPointType: selectedPointType,
+                    selectedCategory: selectedCategory,
+                    aspekPenilaian: filteredAspekPenilaian,
+                    categorySearchController: categorySearchController,
+                    onCategorySearchChanged: onCategorySearchChanged,
+                    onPointTypeChanged: onPointTypeChanged,
                     onCategoryChanged:
-                        (value) => setState(() => _selectedCategory = value),
-                    isSubmitting: _isSubmitting,
-                    isLoadingCategories: _isLoadingCategories,
-                    errorMessageCategories: _errorMessageCategories,
-                    onClose: _closeDialog,
-                    onSubmit: _submitPoint,
-                    onDateTap: _pickDate,
+                        (value) => setState(() => selectedCategory = value),
+                    isSubmitting: isSubmitting,
+                    isLoadingCategories: isLoadingCategories,
+                    errorMessageCategories: errorMessageCategories,
+                    onClose: closeDialog,
+                    onSubmit: submitPoint,
+                    onDateTap: pickDate,
                   ),
                 ),
               ),

@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-import 'package:skoring/config/api_config.dart';
-
+import 'package:skoring/config/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'detail.dart';
@@ -14,49 +12,49 @@ class NotifikasiScreen extends StatefulWidget {
   const NotifikasiScreen({super.key});
 
   @override
-  State<NotifikasiScreen> createState() => _NotifikasiScreenState();
+  State<NotifikasiScreen> createState() => NotifikasiScreenState();
 }
 
-class _NotifikasiScreenState extends State<NotifikasiScreen>
+class NotifikasiScreenState extends State<NotifikasiScreen>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  String _selectedFilter = 'Semua';
-  List<Map<String, dynamic>> _notificationsData = [];
-  bool _isLoading = true;
-  String _mostCriticalStatus = 'Aman';
-  String _teacherClassId = '';
-  String _walikelasId = '';
+  late AnimationController animationController;
+  late Animation<double> fadeAnimation;
+  String selectedFilter = 'Semua';
+  List<Map<String, dynamic>> notificationsData = [];
+  bool isLoading = true;
+  String mostCriticalStatus = 'Aman';
+  String teacherClassId = '';
+  String walikelasId = '';
 
   @override
   void initState() {
     super.initState();
     timeago.setLocaleMessages('id', timeago.IdMessages());
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _animationController.forward();
-    _fetchNotifications();
+    animationController.forward();
+    fetchNotifications();
   }
 
-  Future<void> _fetchNotifications() async {
+  Future<void> fetchNotifications() async {
     setState(() {
-      _isLoading = true;
+      isLoading = true;
     });
     try {
       final prefs = await SharedPreferences.getInstance();
-      _teacherClassId = prefs.getString('id_kelas') ?? '';
-      _walikelasId = prefs.getString('walikelas_id') ?? '';
+      teacherClassId = prefs.getString('id_kelas') ?? '';
+      walikelasId = prefs.getString('walikelas_id') ?? '';
 
-      if (_teacherClassId.isEmpty || _walikelasId.isEmpty) {
+      if (teacherClassId.isEmpty || walikelasId.isEmpty) {
         setState(() {
-          _isLoading = false;
-          _notificationsData = [];
-          _mostCriticalStatus = 'Aman';
+          isLoading = false;
+          notificationsData = [];
+          mostCriticalStatus = 'Aman';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -72,7 +70,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
 
       final response = await http.get(
         Uri.parse(
-          '${ApiConfig.baseUrl}/notifikasi?nip=$_walikelasId&id_kelas=$_teacherClassId',
+          '${ApiConfig.baseUrl}/notifikasi?nip=$walikelasId&id_kelas=$teacherClassId',
         ),
       );
       if (response.statusCode == 200) {
@@ -87,12 +85,12 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
               final mapNotif = notif as Map<String, dynamic>;
               final createdRaw =
                   mapNotif['created_at'] ??
-                      mapNotif['tanggal_Mulai_Perbaikan'] ??
-                      mapNotif['tanggal_sp'] ??
-                      mapNotif['tanggal_penghargaan'] ??
-                      DateTime.now().toString();
-              final createdAt = DateTime.tryParse(createdRaw.toString()) ??
-                  DateTime.now();
+                  mapNotif['tanggal_Mulai_Perbaikan'] ??
+                  mapNotif['tanggal_sp'] ??
+                  mapNotif['tanggal_penghargaan'] ??
+                  DateTime.now().toString();
+              final createdAt =
+                  DateTime.tryParse(createdRaw.toString()) ?? DateTime.now();
               final time = timeago.format(createdAt, locale: 'id');
               final isRead = readStatuses.contains(
                 mapNotif['id_intervensi']?.toString() ??
@@ -100,12 +98,13 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
                     mapNotif['nis']?.toString() ??
                     createdAt.toIso8601String(),
               );
-              final status = mapNotif['status']?.toString() ?? 'Dalam Bimbingan';
+              final status =
+                  mapNotif['status']?.toString() ?? 'Dalam Bimbingan';
               final nis = mapNotif['nis']?.toString() ?? '-';
               final namaSiswa =
                   mapNotif['nama_siswa']?.toString() ??
-                      mapNotif['siswa']?.toString() ??
-                      'Siswa $nis';
+                  mapNotif['siswa']?.toString() ??
+                  'Siswa $nis';
 
               return {
                 'id':
@@ -127,7 +126,8 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
                 'isRead': isRead,
                 'student': namaSiswa,
                 'action':
-                    mapNotif['action']?.toString() ?? 'Penanganan BK / Intervensi',
+                    mapNotif['action']?.toString() ??
+                    'Penanganan BK / Intervensi',
                 'bkTeacher':
                     mapNotif['nama_guru_bk']?.toString() ??
                     'Guru BK NIP ${mapNotif['nip_bk'] ?? '-'}',
@@ -144,9 +144,9 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
         }
 
         setState(() {
-          _notificationsData = notificationList;
-          _mostCriticalStatus = mostCriticalStatus;
-          _isLoading = false;
+          notificationsData = notificationList;
+          mostCriticalStatus = mostCriticalStatus;
+          isLoading = false;
         });
       } else {
         throw Exception('Failed to load notifications: ${response.statusCode}');
@@ -154,7 +154,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
     } catch (e) {
       print('Error fetching notifications: $e');
       setState(() {
-        _isLoading = false;
+        isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -170,32 +170,32 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
+    animationController.dispose();
     super.dispose();
   }
 
-  List<Map<String, dynamic>> get _filteredNotifications {
-    return _selectedFilter == 'Semua'
-        ? _notificationsData
-        : _notificationsData
+  List<Map<String, dynamic>> get filteredNotifications {
+    return selectedFilter == 'Semua'
+        ? notificationsData
+        : notificationsData
             .where(
               (notif) =>
-                  _selectedFilter == 'Belum Dibaca'
+                  selectedFilter == 'Belum Dibaca'
                       ? !notif['isRead']
                       : notif['isRead'],
             )
             .toList();
   }
 
-  int get _unreadCount =>
-      _notificationsData.where((notif) => !notif['isRead']).length;
+  int get unreadCount =>
+      notificationsData.where((notif) => !notif['isRead']).length;
 
-  void _markAsRead(String notificationId) async {
+  void markAsRead(String notificationId) async {
     setState(() {
-      final index = _notificationsData.indexWhere(
+      final index = notificationsData.indexWhere(
         (notif) => notif['id'] == notificationId,
       );
-      if (index != -1) _notificationsData[index]['isRead'] = true;
+      if (index != -1) notificationsData[index]['isRead'] = true;
     });
     final prefs = await SharedPreferences.getInstance();
     final readStatuses = prefs.getStringList('notification_read_status') ?? [];
@@ -205,15 +205,15 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
     }
   }
 
-  void _markAllAsRead() async {
+  void markAllAsRead() async {
     setState(() {
-      for (var notif in _notificationsData) {
+      for (var notif in notificationsData) {
         notif['isRead'] = true;
       }
     });
     final prefs = await SharedPreferences.getInstance();
     final readStatuses =
-        _notificationsData.map((n) => n['id'].toString()).toList();
+        notificationsData.map((n) => n['id'].toString()).toList();
     await prefs.setStringList('notification_read_status', readStatuses);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -228,24 +228,24 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
     );
   }
 
-  String _getStudentStatus(String status) {
+  String getStudentStatus(String status) {
     return status == 'Dalam Bimbingan' ? 'Aman' : 'Bermasalah';
   }
 
-  List<Color> _getBackgroundGradient(String status) {
+  List<Color> getBackgroundGradient(String status) {
     return status == 'Aman'
         ? [const Color(0xFF61B8FF), const Color(0xFF0083EE)]
         : [const Color(0xFFFF6B6D), const Color(0xFFEA580C)];
   }
 
-  Color _getBackgroundShadowColor(String status) {
+  Color getBackgroundShadowColor(String status) {
     return status == 'Aman' ? const Color(0x200083EE) : const Color(0x20FF6B6D);
   }
 
-  void _navigateToStudentDetail(Map<String, dynamic> notification) {
+  void navigateToStudentDetail(Map<String, dynamic> notification) {
     final studentData = {
       'name': notification['student'],
-      'status': _getStudentStatus(notification['statusChange']),
+      'status': getStudentStatus(notification['statusChange']),
       'nis': notification['nis'],
       'class': 'Kelas Tidak Diketahui',
     };
@@ -253,8 +253,8 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
 
   @override
   Widget build(BuildContext context) {
-    final backgroundGradient = _getBackgroundGradient(_mostCriticalStatus);
-    final shadowColor = _getBackgroundShadowColor(_mostCriticalStatus);
+    final backgroundGradient = getBackgroundGradient(mostCriticalStatus);
+    final shadowColor = getBackgroundShadowColor(mostCriticalStatus);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -275,7 +275,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: maxWidth),
                   child: FadeTransition(
-                    opacity: _fadeAnimation,
+                    opacity: fadeAnimation,
                     child: Column(
                       children: [
                         Container(
@@ -312,9 +312,9 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     const SizedBox(width: 40, height: 40),
-                                    if (_unreadCount > 0)
+                                    if (unreadCount > 0)
                                       GestureDetector(
-                                        onTap: _markAllAsRead,
+                                        onTap: markAllAsRead,
                                         child: Container(
                                           padding: EdgeInsets.symmetric(
                                             horizontal: padding * 0.8,
@@ -383,8 +383,8 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
                                             ),
                                           ),
                                           Text(
-                                            _unreadCount > 0
-                                                ? '$_unreadCount belum dibaca'
+                                            unreadCount > 0
+                                                ? '$unreadCount belum dibaca'
                                                 : 'Semua sudah dibaca',
                                             style: GoogleFonts.poppins(
                                               color: Colors.white.withOpacity(
@@ -407,22 +407,22 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
                           child: Padding(
                             padding: EdgeInsets.all(padding),
                             child:
-                                _isLoading
+                                isLoading
                                     ? const Center(
                                       child: CircularProgressIndicator(),
                                     )
                                     : ContentWidget(
                                       filteredNotifications:
-                                          _filteredNotifications,
-                                      selectedFilter: _selectedFilter,
+                                          filteredNotifications,
+                                      selectedFilter: selectedFilter,
                                       onFilterChanged:
                                           (filter) => setState(
-                                            () => _selectedFilter = filter,
+                                            () => selectedFilter = filter,
                                           ),
-                                      onRefresh: _fetchNotifications,
+                                      onRefresh: fetchNotifications,
                                       onNotificationTap: (notif) {
                                         if (!notif['isRead'])
-                                          _markAsRead(notif['id']);
+                                          markAsRead(notif['id']);
                                         showModalBottomSheet(
                                           context: context,
                                           isScrollControlled: true,
@@ -440,7 +440,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen>
                                                 fontSize: fontSize,
                                                 onStudentTap:
                                                     () =>
-                                                        _navigateToStudentDetail(
+                                                        navigateToStudentDetail(
                                                           notif,
                                                         ),
                                               ),
@@ -570,10 +570,7 @@ class ContentWidget extends StatelessWidget {
                     ? ListView(
                       children: [
                         SizedBox(height: padding),
-                        EmptyStateWidget(
-                          fontSize: fontSize,
-                          status: 'Aman',
-                        ),
+                        EmptyStateWidget(fontSize: fontSize, status: 'Aman'),
                       ],
                     )
                     : ListView.builder(
@@ -669,13 +666,13 @@ class EmptyStateWidget extends StatelessWidget {
     required this.status,
   });
 
-  List<Color> _getBackgroundGradient(String status) {
+  List<Color> getBackgroundGradient(String status) {
     return status == 'Aman'
         ? [const Color(0xFF61B8FF), const Color(0xFF0083EE)]
         : [const Color(0xFFFF6B6D), const Color(0xFFEA580C)];
   }
 
-  Color _getBackgroundShadowColor(String status) {
+  Color getBackgroundShadowColor(String status) {
     return status == 'Aman' ? const Color(0x200083EE) : const Color(0x20FF6B6D);
   }
 
@@ -689,11 +686,11 @@ class EmptyStateWidget extends StatelessWidget {
             width: fontSize * 7.5,
             height: fontSize * 7.5,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: _getBackgroundGradient(status)),
+              gradient: LinearGradient(colors: getBackgroundGradient(status)),
               borderRadius: BorderRadius.circular(fontSize * 3.75),
               boxShadow: [
                 BoxShadow(
-                  color: _getBackgroundShadowColor(status),
+                  color: getBackgroundShadowColor(status),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -742,19 +739,19 @@ class NotificationCardWidget extends StatelessWidget {
     required this.fontSize,
   });
 
-  Color _getTypeColor(String status) {
+  Color getTypeColor(String status) {
     return status == 'Dalam Bimbingan'
         ? const Color(0xFF3B82F6)
         : const Color(0xFFEA580C);
   }
 
-  IconData _getTypeIcon(String status) {
+  IconData getTypeIcon(String status) {
     return status == 'Dalam Bimbingan'
         ? Icons.psychology_rounded
         : Icons.warning_rounded;
   }
 
-  String _getTypeLabel(String status) {
+  String getTypeLabel(String status) {
     return status == 'Dalam Bimbingan' ? 'PENANGANAN BK' : 'INTERVENSI';
   }
 
@@ -775,7 +772,7 @@ class NotificationCardWidget extends StatelessWidget {
             color:
                 isRead
                     ? const Color(0xFFE5E7EB)
-                    : _getTypeColor(status).withOpacity(0.3),
+                    : getTypeColor(status).withOpacity(0.3),
             width: isRead ? 1 : 2,
           ),
           boxShadow: [
@@ -801,12 +798,12 @@ class NotificationCardWidget extends StatelessWidget {
                     width: fontSize * 3,
                     height: fontSize * 3,
                     decoration: BoxDecoration(
-                      color: _getTypeColor(status).withOpacity(0.1),
+                      color: getTypeColor(status).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
-                      _getTypeIcon(status),
-                      color: _getTypeColor(status),
+                      getTypeIcon(status),
+                      color: getTypeColor(status),
                       size: fontSize * 1.5,
                     ),
                   ),
@@ -823,15 +820,15 @@ class NotificationCardWidget extends StatelessWidget {
                                 vertical: padding * 0.2,
                               ),
                               decoration: BoxDecoration(
-                                color: _getTypeColor(status).withOpacity(0.1),
+                                color: getTypeColor(status).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                _getTypeLabel(status),
+                                getTypeLabel(status),
                                 style: GoogleFonts.poppins(
                                   fontSize: fontSize * 0.6,
                                   fontWeight: FontWeight.w800,
-                                  color: _getTypeColor(status),
+                                  color: getTypeColor(status),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -842,7 +839,7 @@ class NotificationCardWidget extends StatelessWidget {
                                 width: fontSize * 0.5,
                                 height: fontSize * 0.5,
                                 decoration: BoxDecoration(
-                                  color: _getTypeColor(status),
+                                  color: getTypeColor(status),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -958,13 +955,13 @@ class NotificationDetailWidget extends StatelessWidget {
     required this.onStudentTap,
   });
 
-  Color _getTypeColor(String status) {
+  Color getTypeColor(String status) {
     return status == 'Dalam Bimbingan'
         ? const Color(0xFF3B82F6)
         : const Color(0xFFEA580C);
   }
 
-  IconData _getTypeIcon(String status) {
+  IconData getTypeIcon(String status) {
     return status == 'Dalam Bimbingan'
         ? Icons.psychology_rounded
         : Icons.warning_rounded;
@@ -984,14 +981,14 @@ class NotificationDetailWidget extends StatelessWidget {
                 width: fontSize * 3.75,
                 height: fontSize * 3.75,
                 decoration: BoxDecoration(
-                  color: _getTypeColor(
+                  color: getTypeColor(
                     notification['statusChange'],
                   ).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
-                  _getTypeIcon(notification['statusChange']),
-                  color: _getTypeColor(notification['statusChange']),
+                  getTypeIcon(notification['statusChange']),
+                  color: getTypeColor(notification['statusChange']),
                   size: fontSize * 1.9,
                 ),
               ),

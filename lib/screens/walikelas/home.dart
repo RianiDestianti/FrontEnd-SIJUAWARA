@@ -3,15 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-import 'package:skoring/config/api_config.dart';
-import 'package:skoring/models/walikelas/homestudent.dart';
-
+import 'package:skoring/config/api.dart';
+import 'package:skoring/models/types/student.dart';
 import '../../navigation/walikelas.dart';
 import 'student.dart';
 import 'report.dart';
 import 'notification.dart';
-import 'package:skoring/screens/profile.dart';
+import 'package:skoring/screens/walikelas/profile.dart';
 import 'package:skoring/screens/walikelas/chart.dart';
 import 'package:skoring/screens/walikelas/activity.dart';
 import 'detail.dart';
@@ -21,21 +19,21 @@ class WalikelasMainScreen extends StatefulWidget {
   const WalikelasMainScreen({Key? key}) : super(key: key);
 
   @override
-  State<WalikelasMainScreen> createState() => _WalikelasMainScreenState();
+  State<WalikelasMainScreen> createState() => WalikelasMainScreenState();
 }
 
-class _WalikelasMainScreenState extends State<WalikelasMainScreen> {
-  int _currentIndex = 0;
+class WalikelasMainScreenState extends State<WalikelasMainScreen> {
+  int currentIndex = 0;
 
-  final List<Widget> _screens = [
+  final List<Widget> screens = [
     const HomeScreen(),
     const SiswaScreen(),
     const LaporanScreen(),
   ];
 
-  void _onNavigationTap(int index) {
+  void onNavigationTap(int index) {
     setState(() {
-      _currentIndex = index;
+      currentIndex = index;
     });
   }
 
@@ -48,11 +46,11 @@ class _WalikelasMainScreenState extends State<WalikelasMainScreen> {
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
-        child: _screens[_currentIndex],
+        child: screens[currentIndex],
       ),
       bottomNavigationBar: WalikelasNavigation(
-        currentIndex: _currentIndex,
-        onTap: _onNavigationTap,
+        currentIndex: currentIndex,
+        onTap: onNavigationTap,
       ),
     );
   }
@@ -62,70 +60,70 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  int _selectedTab = 0;
-  int _apresiasiChartTab = 0;
-  int _pelanggaranChartTab = 0;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  List<Student> _filteredSiswaTerbaik = [];
-  List<Student> _filteredSiswaBerat = [];
-  List<Student> _siswaTerbaik = [];
-  List<Student> _siswaBerat = [];
-  List<Map<String, dynamic>> _apresiasiRawData = [];
-  List<Map<String, dynamic>> _pelanggaranRawData = [];
-  List<Map<String, dynamic>> _kelasData = [];
-  List<Activity> _activityData = [];
-  String _teacherName = 'Teacher';
-  String _teacherClassId = '';
-  String _walikelasId = '';
-  bool _isRefreshing = false;
+class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  int selectedTab = 0;
+  int apresiasiChartTab = 0;
+  int pelanggaranChartTab = 0;
+  late AnimationController animationController;
+  late Animation<double> fadeAnimation;
+  List<Student> filteredSiswaTerbaik = [];
+  List<Student> filteredSiswaBerat = [];
+  List<Student> siswaTerbaik = [];
+  List<Student> siswaBerat = [];
+  List<Map<String, dynamic>> apresiasiRawData = [];
+  List<Map<String, dynamic>> pelanggaranRawData = [];
+  List<Map<String, dynamic>> kelasData = [];
+  List<Activity> activityData = [];
+  String teacherName = 'Teacher';
+  String teacherClassId = '';
+  String walikelasId = '';
+  bool isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _animationController.forward();
-    _loadTeacherData();
+    animationController.forward();
+    loadTeacherData();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    animationController.dispose();
     super.dispose();
   }
 
-  void _safeSetState(VoidCallback fn) {
+  void safeSetState(VoidCallback fn) {
     if (!mounted) return;
     setState(fn);
   }
 
-  Future<void> _loadTeacherData() async {
+  Future<void> loadTeacherData() async {
     final prefs = await SharedPreferences.getInstance();
-    _safeSetState(() {
-      _teacherName = prefs.getString('name') ?? 'Teacher';
-      _teacherClassId = prefs.getString('id_kelas') ?? '';
-      _walikelasId = prefs.getString('walikelas_id') ?? '';
+    safeSetState(() {
+      teacherName = prefs.getString('name') ?? 'Teacher';
+      teacherClassId = prefs.getString('id_kelas') ?? '';
+      walikelasId = prefs.getString('walikelas_id') ?? '';
     });
-    await _fetchData();
+    await fetchData();
   }
 
-  Future<void> _updateActivityTimeline({
+  Future<void> updateActivityTimeline({
     Map<String, dynamic>? apresiasiJson,
     Map<String, dynamic>? pelanggaranJson,
   }) async {
-    if (_teacherClassId.isEmpty) {
-      _safeSetState(() {
-        _activityData = [];
+    if (teacherClassId.isEmpty) {
+      safeSetState(() {
+        activityData = [];
       });
       return;
     }
@@ -136,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         mapActivityLogsFromJson(
           json: apresiasiJson,
           category: 'Apresiasi',
-          classId: _teacherClassId,
+          classId: teacherClassId,
         ),
       );
     }
@@ -145,25 +143,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         mapActivityLogsFromJson(
           json: pelanggaranJson,
           category: 'Pelanggaran',
-          classId: _teacherClassId,
+          classId: teacherClassId,
         ),
       );
     }
 
     activities.sort((a, b) => b.fullDate.compareTo(a.fullDate));
-    _safeSetState(() {
-      _activityData = activities;
+    safeSetState(() {
+      activityData = activities;
     });
   }
 
-  Future<void> _addLocalActivity(
+  Future<void> addLocalActivity(
     String type,
     String title,
     String subtitle,
   ) async {}
 
-  Future<void> _fetchData({bool force = false}) async {
-    if (_isRefreshing && !force) return;
+  Future<void> fetchData({bool force = false}) async {
+    if (isRefreshing && !force) return;
     try {
       Map<String, dynamic>? penghargaanJson;
       Map<String, dynamic>? pelanggaranJson;
@@ -175,21 +173,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       );
       if (kelasResponse.statusCode == 200) {
         final kelasJson = jsonDecode(kelasResponse.body);
-        _kelasData = List<Map<String, dynamic>>.from(kelasJson['data']);
+        kelasData = List<Map<String, dynamic>>.from(kelasJson['data']);
         kelasMap = {
-          for (var kelas in _kelasData)
+          for (var kelas in kelasData)
             kelas['id_kelas'].toString(): kelas['nama_kelas'].toString(),
         };
         jurusanMap = {
-          for (var kelas in _kelasData)
+          for (var kelas in kelasData)
             kelas['id_kelas'].toString(): kelas['jurusan'].toString(),
         };
       }
 
-      if (_walikelasId.isNotEmpty && _teacherClassId.isNotEmpty) {
+      if (walikelasId.isNotEmpty && teacherClassId.isNotEmpty) {
         final siswaResponse = await http.get(
           Uri.parse(
-            '${ApiConfig.baseUrl}/siswa?nip=$_walikelasId&id_kelas=$_teacherClassId',
+            '${ApiConfig.baseUrl}/siswa?nip=$walikelasId&id_kelas=$teacherClassId',
           ),
         );
         if (siswaResponse.statusCode == 200) {
@@ -203,11 +201,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 final idKelas = siswa['id_kelas']?.toString() ?? '';
                 final poin =
                     int.tryParse(siswa['poin_total']?.toString() ?? '') ?? 0;
-                final spLevel = _resolveSpLevel(
+                final spLevel = resolveSpLevel(
                   poin,
                   siswa['sp_level']?.toString(),
                 );
-                final phLevel = _resolvePhLevel(
+                final phLevel = resolvePhLevel(
                   poin,
                   siswa['ph_level']?.toString(),
                 );
@@ -241,34 +239,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               classStudents.where((s) => s.spLevel != null).toList()
                 ..sort((a, b) => a.poin.compareTo(b.poin));
 
-          _siswaTerbaik = _rankAndLabel(phStudents, isPh: true);
-          _siswaBerat = _rankAndLabel(spStudents, isPh: false);
+          siswaTerbaik = rankAndLabel(phStudents, isPh: true);
+          siswaBerat = rankAndLabel(spStudents, isPh: false);
 
-          _filteredSiswaTerbaik = _siswaTerbaik;
-          _filteredSiswaBerat = _siswaBerat;
+          filteredSiswaTerbaik = siswaTerbaik;
+          filteredSiswaBerat = siswaBerat;
 
-          await _addLocalActivity(
+          await addLocalActivity(
             'Sistem',
             'Data Diperbarui',
             'Melakukan refresh data siswa dan kelas',
           );
         } else {
-          _siswaTerbaik = [];
-          _siswaBerat = [];
-          _filteredSiswaTerbaik = [];
-          _filteredSiswaBerat = [];
+          siswaTerbaik = [];
+          siswaBerat = [];
+          filteredSiswaTerbaik = [];
+          filteredSiswaBerat = [];
         }
       } else {
-        _siswaTerbaik = [];
-        _siswaBerat = [];
-        _filteredSiswaTerbaik = [];
-        _filteredSiswaBerat = [];
+        siswaTerbaik = [];
+        siswaBerat = [];
+        filteredSiswaTerbaik = [];
+        filteredSiswaBerat = [];
       }
 
-      if (_walikelasId.isNotEmpty && _teacherClassId.isNotEmpty) {
+      if (walikelasId.isNotEmpty && teacherClassId.isNotEmpty) {
         final penghargaanResponse = await http.get(
           Uri.parse(
-            '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$_walikelasId&id_kelas=$_teacherClassId',
+            '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$walikelasId&id_kelas=$teacherClassId',
           ),
         );
         if (penghargaanResponse.statusCode == 200) {
@@ -282,24 +280,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     (item) => siswaData.any(
                       (siswa) =>
                           siswa['nis'].toString() == item['nis'].toString() &&
-                          siswa['id_kelas'].toString() == _teacherClassId,
+                          siswa['id_kelas'].toString() == teacherClassId,
                     ),
                   )
                   .toList();
-          _apresiasiRawData = List<Map<String, dynamic>>.from(penilaianData);
+          apresiasiRawData = List<Map<String, dynamic>>.from(penilaianData);
         } else {
-          _apresiasiRawData = [];
+          apresiasiRawData = [];
         }
 
         var pelanggaranResponse = await http.get(
           Uri.parse(
-            '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
+            '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$walikelasId&id_kelas=$teacherClassId',
           ),
         );
         if (pelanggaranResponse.statusCode != 200) {
           pelanggaranResponse = await http.get(
             Uri.parse(
-              '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
+              '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$walikelasId&id_kelas=$teacherClassId',
             ),
           );
         }
@@ -314,38 +312,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     (item) => siswaData.any(
                       (siswa) =>
                           siswa['nis'].toString() == item['nis'].toString() &&
-                          siswa['id_kelas'].toString() == _teacherClassId,
+                          siswa['id_kelas'].toString() == teacherClassId,
                     ),
                   )
                   .toList();
-          _pelanggaranRawData = List<Map<String, dynamic>>.from(penilaianData);
+          pelanggaranRawData = List<Map<String, dynamic>>.from(penilaianData);
         } else {
-          _pelanggaranRawData = [];
+          pelanggaranRawData = [];
         }
       } else {
-        _apresiasiRawData = [];
-        _pelanggaranRawData = [];
-        _activityData = [];
+        apresiasiRawData = [];
+        pelanggaranRawData = [];
+        activityData = [];
       }
 
-      await _updateActivityTimeline(
+      await updateActivityTimeline(
         apresiasiJson: penghargaanJson,
         pelanggaranJson: pelanggaranJson,
       );
-      _safeSetState(() {});
+      safeSetState(() {});
     } catch (e) {
       print('Error fetching data: $e');
     }
   }
 
-  Future<void> _manualRefresh() async {
-    if (_isRefreshing) return;
-    _safeSetState(() => _isRefreshing = true);
-    await _fetchData(force: true);
-    _safeSetState(() => _isRefreshing = false);
+  Future<void> manualRefresh() async {
+    if (isRefreshing) return;
+    safeSetState(() => isRefreshing = true);
+    await fetchData(force: true);
+    safeSetState(() => isRefreshing = false);
   }
 
-  List<Map<String, dynamic>> _aggregateChartData(
+  List<Map<String, dynamic>> aggregateChartData(
     List<Map<String, dynamic>> data,
     int selectedTab, {
     String dateField = 'created_at',
@@ -378,14 +376,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return monthlyEntries
         .map(
           (e) => {
-            'label': _getMonthName(int.parse(e.key.split('-')[1])),
+            'label': getMonthName(int.parse(e.key.split('-')[1])),
             'value': e.value,
           },
         )
         .toList();
   }
 
-  String _getMonthName(int month) {
+  String getMonthName(int month) {
     const months = [
       'Jan',
       'Feb',
@@ -404,15 +402,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return months[month - 1];
   }
 
-  void _filterSiswa(String query) {
+  void filterSiswa(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredSiswaTerbaik = _siswaTerbaik;
-        _filteredSiswaBerat = _siswaBerat;
+        filteredSiswaTerbaik = siswaTerbaik;
+        filteredSiswaBerat = siswaBerat;
       } else {
         final searchLower = query.toLowerCase();
-        _filteredSiswaTerbaik =
-            _siswaTerbaik.where((siswa) {
+        filteredSiswaTerbaik =
+            siswaTerbaik.where((siswa) {
               final namaLower = siswa.name.toLowerCase();
               final kelasLower = siswa.kelas.toLowerCase();
               final prestasiLower = siswa.prestasi.toLowerCase();
@@ -424,8 +422,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   statusLower.contains(searchLower) ||
                   nisString.contains(searchLower);
             }).toList();
-        _filteredSiswaBerat =
-            _siswaBerat.where((siswa) {
+        filteredSiswaBerat =
+            siswaBerat.where((siswa) {
               final namaLower = siswa.name.toLowerCase();
               final kelasLower = siswa.kelas.toLowerCase();
               final prestasiLower = siswa.prestasi.toLowerCase();
@@ -441,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     });
 
     if (query.isNotEmpty) {
-      _addLocalActivity(
+      addLocalActivity(
         'Pencarian',
         'Pencarian Siswa',
         'Melakukan pencarian: $query',
@@ -449,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _navigateToDetailScreen(Student siswa) {
+  void navigateToDetailScreen(Student siswa) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -467,8 +465,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               },
             ),
       ),
-    ).then((_) {
-      _addLocalActivity(
+    ).then((unused) {
+      addLocalActivity(
         'Navigasi',
         'Detail Siswa',
         'Mengakses detail siswa: ${siswa.name}',
@@ -478,13 +476,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final apresiasiChartData = _aggregateChartData(
-      _apresiasiRawData,
-      _apresiasiChartTab,
+    final apresiasiChartData = aggregateChartData(
+      apresiasiRawData,
+      apresiasiChartTab,
     );
-    final pelanggaranChartData = _aggregateChartData(
-      _pelanggaranRawData,
-      _pelanggaranChartTab,
+    final pelanggaranChartData = aggregateChartData(
+      pelanggaranRawData,
+      pelanggaranChartTab,
     );
 
     return Scaffold(
@@ -502,9 +500,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: FadeTransition(
-                  opacity: _fadeAnimation,
+                  opacity: fadeAnimation,
                   child: RefreshIndicator(
-                    onRefresh: _manualRefresh,
+                    onRefresh: manualRefresh,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
@@ -553,8 +551,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                       (context) =>
                                                           const NotifikasiScreen(),
                                                 ),
-                                              ).then((_) {
-                                                _addLocalActivity(
+                                              ).then((unused) {
+                                                addLocalActivity(
                                                   'Navigasi',
                                                   'Notifikasi',
                                                   'Mengakses halaman notifikasi',
@@ -590,8 +588,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                       (context) =>
                                                           const ProfileScreen(),
                                                 ),
-                                              ).then((_) {
-                                                _addLocalActivity(
+                                              ).then((unused) {
+                                                addLocalActivity(
                                                   'Navigasi',
                                                   'Profil',
                                                   'Mengakses halaman profil',
@@ -633,7 +631,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Hello, $_teacherName! 👋',
+                                          'Hello, $teacherName! 👋',
                                           style: GoogleFonts.poppins(
                                             color: Colors.white,
                                             fontSize: 26,
@@ -696,7 +694,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         const SizedBox(width: 16),
                                         Expanded(
                                           child: TextField(
-                                            onChanged: _filterSiswa,
+                                            onChanged: filterSiswa,
                                             decoration: InputDecoration(
                                               hintText:
                                                   'Cari siswa, kelas, atau aktivitas...',
@@ -720,11 +718,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   const SizedBox(height: 20),
                                   Row(
                                     children: [
-                                      _buildActionButton('Umum', 0),
+                                      buildActionButton('Umum', 0),
                                       const SizedBox(width: 10),
-                                      _buildActionButton('PH', 2),
+                                      buildActionButton('PH', 2),
                                       const SizedBox(width: 10),
-                                      _buildActionButton('SP', 3),
+                                      buildActionButton('SP', 3),
                                     ],
                                   ),
                                 ],
@@ -735,14 +733,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             padding: const EdgeInsets.all(20),
                             child: Column(
                               children: [
-                                if (_selectedTab == 2) ...[
-                                  _buildSiswaTerbaikSection(),
+                                if (selectedTab == 2) ...[
+                                  buildSiswaTerbaikSection(),
                                   const SizedBox(height: 20),
-                                ] else if (_selectedTab == 3) ...[
-                                  _buildSiswaBeratSection(),
+                                ] else if (selectedTab == 3) ...[
+                                  buildSiswaBeratSection(),
                                   const SizedBox(height: 20),
                                 ] else ...[
-                                  _buildEnhancedChartCard(
+                                  buildEnhancedChartCard(
                                     'Grafik Apresiasi Siswa',
                                     'Pencapaian positif minggu ini',
                                     Icons.trending_up,
@@ -752,7 +750,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         Color(0xFF0083EE),
                                       ],
                                     ),
-                                    _buildBarChart(
+                                    buildBarChart(
                                       apresiasiChartData,
                                       const LinearGradient(
                                         colors: [
@@ -761,14 +759,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         ],
                                       ),
                                     ),
-                                    _apresiasiChartTab,
+                                    apresiasiChartTab,
                                     (index) => setState(
-                                      () => _apresiasiChartTab = index,
+                                      () => apresiasiChartTab = index,
                                     ),
                                     true,
                                   ),
                                   const SizedBox(height: 20),
-                                  _buildEnhancedChartCard(
+                                  buildEnhancedChartCard(
                                     'Grafik Pelanggaran Siswa',
                                     'Monitoring pelanggaran minggu ini',
                                     Icons.warning_amber_rounded,
@@ -778,7 +776,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         Color(0xFFFF6B6D),
                                       ],
                                     ),
-                                    _buildBarChart(
+                                    buildBarChart(
                                       pelanggaranChartData,
                                       const LinearGradient(
                                         colors: [
@@ -787,9 +785,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                         ],
                                       ),
                                     ),
-                                    _pelanggaranChartTab,
+                                    pelanggaranChartTab,
                                     (index) => setState(
-                                      () => _pelanggaranChartTab = index,
+                                      () => pelanggaranChartTab = index,
                                     ),
                                     false,
                                   ),
@@ -803,8 +801,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               (context) =>
                                                   const ActivityScreen(),
                                         ),
-                                      ).then((_) {
-                                        _addLocalActivity(
+                                      ).then((unused) {
+                                        addLocalActivity(
                                           'Navigasi',
                                           'Aktivitas',
                                           'Mengakses halaman aktivitas',
@@ -903,7 +901,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                             ],
                                           ),
                                           const SizedBox(height: 24),
-                                          if (_activityData.isEmpty)
+                                          if (activityData.isEmpty)
                                             Text(
                                               'Belum ada aktivitas skoring.',
                                               style: GoogleFonts.poppins(
@@ -912,7 +910,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               ),
                                             )
                                           else
-                                            ..._activityData
+                                            ...activityData
                                                 .take(3)
                                                 .map(
                                                   (activity) => Padding(
@@ -921,7 +919,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                           bottom: 16,
                                                         ),
                                                     child:
-                                                        _buildEnhancedActivityItem(
+                                                        buildEnhancedActivityItem(
                                                           activity,
                                                         ),
                                                   ),
@@ -947,7 +945,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSiswaTerbaikSection() {
+  Widget buildSiswaTerbaikSection() {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1021,7 +1019,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.all(20),
             child: Column(
               children:
-                  _filteredSiswaTerbaik.isEmpty
+                  filteredSiswaTerbaik.isEmpty
                       ? [
                         Text(
                           'Tidak ada hasil ditemukan',
@@ -1031,17 +1029,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                       ]
-                      : _filteredSiswaTerbaik.asMap().entries.map((entry) {
+                      : filteredSiswaTerbaik.asMap().entries.map((entry) {
                         int index = entry.key;
                         Student siswa = entry.value;
                         return Padding(
                           padding: EdgeInsets.only(
                             bottom:
-                                index < _filteredSiswaTerbaik.length - 1
+                                index < filteredSiswaTerbaik.length - 1
                                     ? 16
                                     : 0,
                           ),
-                          child: _buildSiswaTerbaikItem(siswa),
+                          child: buildSiswaTerbaikItem(siswa),
                         );
                       }).toList(),
             ),
@@ -1051,7 +1049,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSiswaBeratSection() {
+  Widget buildSiswaBeratSection() {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1125,7 +1123,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.all(20),
             child: Column(
               children:
-                  _filteredSiswaBerat.isEmpty
+                  filteredSiswaBerat.isEmpty
                       ? [
                         Text(
                           'Tidak ada hasil ditemukan',
@@ -1135,15 +1133,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                       ]
-                      : _filteredSiswaBerat.asMap().entries.map((entry) {
+                      : filteredSiswaBerat.asMap().entries.map((entry) {
                         int index = entry.key;
                         Student siswa = entry.value;
                         return Padding(
                           padding: EdgeInsets.only(
                             bottom:
-                                index < _filteredSiswaBerat.length - 1 ? 16 : 0,
+                                index < filteredSiswaBerat.length - 1 ? 16 : 0,
                           ),
-                          child: _buildSiswaBeratItem(siswa),
+                          child: buildSiswaBeratItem(siswa),
                         );
                       }).toList(),
             ),
@@ -1153,12 +1151,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSiswaTerbaikItem(Student siswa) {
-    Color rankColor = _getRankColor(siswa.rank);
-    IconData rankIcon = _getRankIcon(siswa.rank);
+  Widget buildSiswaTerbaikItem(Student siswa) {
+    Color rankColor = getRankColor(siswa.rank);
+    IconData rankIcon = getRankIcon(siswa.rank);
 
     return GestureDetector(
-      onTap: () => _navigateToDetailScreen(siswa),
+      onTap: () => navigateToDetailScreen(siswa),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -1326,11 +1324,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSiswaBeratItem(Student siswa) {
-    Color rankColor = _getRankColor(siswa.rank);
+  Widget buildSiswaBeratItem(Student siswa) {
+    Color rankColor = getRankColor(siswa.rank);
 
     return GestureDetector(
-      onTap: () => _navigateToDetailScreen(siswa),
+      onTap: () => navigateToDetailScreen(siswa),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -1380,7 +1378,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           border: Border.all(color: Colors.white, width: 2),
                         ),
                         child: Icon(
-                          _getRankIcon(siswa.rank),
+                          getRankIcon(siswa.rank),
                           color: Colors.white,
                           size: 10,
                         ),
@@ -1499,7 +1497,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Color _getRankColor(int rank) {
+  Color getRankColor(int rank) {
     switch (rank) {
       case 1:
         return const Color(0xFFFFD700);
@@ -1512,7 +1510,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  String? _resolvePhLevel(int points, String? rawLevel) {
+  String? resolvePhLevel(int points, String? rawLevel) {
     if (points <= -25) return null;
     final ph = rawLevel?.trim();
     if (ph != null && ph.isNotEmpty && ph != '-') {
@@ -1524,7 +1522,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return null;
   }
 
-  String? _resolveSpLevel(int points, String? rawLevel) {
+  String? resolveSpLevel(int points, String? rawLevel) {
     final sp = rawLevel?.trim();
     if (sp != null && sp.isNotEmpty && sp != '-') {
       return sp;
@@ -1535,7 +1533,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return null;
   }
 
-  List<Student> _rankAndLabel(List<Student> students, {required bool isPh}) {
+  List<Student> rankAndLabel(List<Student> students, {required bool isPh}) {
     return students.asMap().entries.map((entry) {
       final siswa = entry.value;
       final level = isPh ? siswa.phLevel : siswa.spLevel;
@@ -1555,7 +1553,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }).toList();
   }
 
-  IconData _getRankIcon(int rank) {
+  IconData getRankIcon(int rank) {
     switch (rank) {
       case 1:
         return Icons.looks_one;
@@ -1568,13 +1566,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Widget _buildActionButton(String text, int index) {
-    bool isActive = _selectedTab == index;
+  Widget buildActionButton(String text, int index) {
+    bool isActive = selectedTab == index;
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          setState(() => _selectedTab = index);
-          _addLocalActivity('Navigasi', 'Tab $text', 'Berpindah ke tab $text');
+          setState(() => selectedTab = index);
+          addLocalActivity('Navigasi', 'Tab $text', 'Berpindah ke tab $text');
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -1654,7 +1652,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildEnhancedChartCard(
+  Widget buildEnhancedChartCard(
     String title,
     String subtitle,
     IconData icon,
@@ -1722,7 +1720,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                _buildSwipeableChartButtons(selectedTab, onTabChanged),
+                buildSwipeableChartButtons(selectedTab, onTabChanged),
               ],
             ),
           ),
@@ -1740,8 +1738,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           subtitle: subtitle,
                         ),
                   ),
-                ).then((_) {
-                  _addLocalActivity(
+                ).then((unused) {
+                  addLocalActivity(
                     'Navigasi',
                     'Grafik ${isFirst ? 'Apresiasi' : 'Pelanggaran'}',
                     'Mengakses grafik ${isFirst ? 'apresiasi' : 'pelanggaran'}',
@@ -1756,7 +1754,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSwipeableChartButtons(
+  Widget buildSwipeableChartButtons(
     int selectedTab,
     Function(int) onTabChanged,
   ) {
@@ -1765,7 +1763,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (details.delta.dx > 5) {
           if (selectedTab > 0) {
             onTabChanged(selectedTab - 1);
-            _addLocalActivity(
+            addLocalActivity(
               'Navigasi',
               'Tab Grafik',
               'Berpindah ke tab ${selectedTab == 0 ? 'Bulan' : 'Minggu'}',
@@ -1774,7 +1772,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         } else if (details.delta.dx < -5) {
           if (selectedTab < 1) {
             onTabChanged(selectedTab + 1);
-            _addLocalActivity(
+            addLocalActivity(
               'Navigasi',
               'Tab Grafik',
               'Berpindah ke tab ${selectedTab == 0 ? 'Bulan' : 'Minggu'}',
@@ -1792,19 +1790,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildChartButton(
-              'Minggu',
-              selectedTab == 0,
-              () => onTabChanged(0),
-            ),
-            _buildChartButton('Bulan', selectedTab == 1, () => onTabChanged(1)),
+            buildChartButton('Minggu', selectedTab == 0, () => onTabChanged(0)),
+            buildChartButton('Bulan', selectedTab == 1, () => onTabChanged(1)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildChartButton(String text, bool isActive, VoidCallback onTap) {
+  Widget buildChartButton(String text, bool isActive, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -1840,7 +1834,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildBarChart(List<Map<String, dynamic>> data, Gradient gradient) {
+  Widget buildBarChart(List<Map<String, dynamic>> data, Gradient gradient) {
     double maxValue =
         data.isNotEmpty
             ? data
@@ -1963,14 +1957,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildEnhancedActivityItem(Activity activity) {
+  Widget buildEnhancedActivityItem(Activity activity) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ActivityScreen()),
-        ).then((_) {
-          _addLocalActivity(
+        ).then((unused) {
+          addLocalActivity(
             'Navigasi',
             'Aktivitas',
             'Mengakses halaman aktivitas dari item',

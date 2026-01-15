@@ -3,29 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:skoring/config/api_config.dart';
-import 'package:skoring/models/walikelas/classstudent.dart';
-
+import 'package:skoring/config/api.dart';
+import 'package:skoring/models/api/api_student.dart';
 import 'detail.dart';
 import 'package:skoring/screens/walikelas/notification.dart';
-import 'package:skoring/screens/profile.dart';
-import 'package:skoring/models/api/api_kelas.dart';
+import 'package:skoring/screens/walikelas/profile.dart';
+import 'package:skoring/models/api/api_class.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SiswaScreen extends StatefulWidget {
   const SiswaScreen({Key? key}) : super(key: key);
 
   @override
-  State<SiswaScreen> createState() => _SiswaScreenState();
+  State<SiswaScreen> createState() => SiswaScreenState();
 }
 
-class _SiswaScreenState extends State<SiswaScreen>
+class SiswaScreenState extends State<SiswaScreen>
     with TickerProviderStateMixin {
-  int _selectedFilter = 0;
-  String _searchQuery = '';
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  TextEditingController _searchController = TextEditingController();
+  int selectedFilter = 0;
+  String searchQuery = '';
+  late AnimationController animationController;
+  late Animation<double> fadeAnimation;
+  TextEditingController searchController = TextEditingController();
   List<Kelas> kelasList = [];
   List<Student> studentsList = [];
   Kelas? selectedKelas;
@@ -35,34 +34,34 @@ class _SiswaScreenState extends State<SiswaScreen>
   String? errorMessageSiswa;
   String? walikelasId;
   String? idKelas;
-  bool _isRefreshing = false;
+  bool isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _animationController.forward();
+    animationController.forward();
 
-    _loadWalikelasId().then((_) {
+    loadWalikelasId().then((unused) {
       fetchKelas();
       fetchSiswa();
     });
   }
 
-  void _safeSetState(VoidCallback fn) {
+  void safeSetState(VoidCallback fn) {
     if (!mounted) return;
     setState(fn);
   }
 
-  Future<void> _loadWalikelasId() async {
+  Future<void> loadWalikelasId() async {
     final prefs = await SharedPreferences.getInstance();
-    _safeSetState(() {
+    safeSetState(() {
       walikelasId = prefs.getString('walikelas_id');
       idKelas = prefs.getString('id_kelas');
       print('Loaded walikelasId: $walikelasId, id_kelas: $idKelas');
@@ -71,14 +70,14 @@ class _SiswaScreenState extends State<SiswaScreen>
 
   Future<void> fetchKelas() async {
     if (walikelasId == null || idKelas == null) {
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageKelas = 'Data guru tidak lengkap. Silakan login ulang.';
         isLoadingKelas = false;
       });
       return;
     }
 
-    _safeSetState(() {
+    safeSetState(() {
       isLoadingKelas = true;
       errorMessageKelas = null;
     });
@@ -100,7 +99,7 @@ class _SiswaScreenState extends State<SiswaScreen>
         if (jsonData['success']) {
           List<dynamic> data = jsonData['data'];
           if (data.isNotEmpty) {
-            _safeSetState(() {
+            safeSetState(() {
               kelasList = data.map((json) => Kelas.fromJson(json)).toList();
               selectedKelas = kelasList.firstWhere(
                 (kelas) => kelas.idKelas == idKelas,
@@ -109,19 +108,19 @@ class _SiswaScreenState extends State<SiswaScreen>
               isLoadingKelas = false;
             });
           } else {
-            _safeSetState(() {
+            safeSetState(() {
               errorMessageKelas = 'Tidak ada data kelas ditemukan';
               isLoadingKelas = false;
             });
           }
         } else {
-          _safeSetState(() {
+          safeSetState(() {
             errorMessageKelas = jsonData['message'] ?? 'Gagal memuat kelas';
             isLoadingKelas = false;
           });
         }
       } else {
-        _safeSetState(() {
+        safeSetState(() {
           errorMessageKelas =
               'Gagal mengambil data kelas (${response.statusCode})';
           isLoadingKelas = false;
@@ -129,7 +128,7 @@ class _SiswaScreenState extends State<SiswaScreen>
       }
     } catch (e) {
       print('Error fetchKelas: $e');
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageKelas = 'Terjadi kesalahan: $e';
         isLoadingKelas = false;
       });
@@ -138,14 +137,14 @@ class _SiswaScreenState extends State<SiswaScreen>
 
   Future<void> fetchSiswa() async {
     if (walikelasId == null || idKelas == null) {
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageSiswa = 'Data guru tidak lengkap. Silakan login ulang.';
         isLoadingSiswa = false;
       });
       return;
     }
 
-    _safeSetState(() {
+    safeSetState(() {
       isLoadingSiswa = true;
       errorMessageSiswa = null;
     });
@@ -166,19 +165,19 @@ class _SiswaScreenState extends State<SiswaScreen>
         final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
         if (jsonData['success']) {
           List<dynamic> data = jsonData['data'];
-          _safeSetState(() {
+          safeSetState(() {
             studentsList = data.map((json) => Student.fromJson(json)).toList();
             isLoadingSiswa = false;
           });
         } else {
-          _safeSetState(() {
+          safeSetState(() {
             errorMessageSiswa =
                 jsonData['message'] ?? 'Gagal memuat data siswa';
             isLoadingSiswa = false;
           });
         }
       } else {
-        _safeSetState(() {
+        safeSetState(() {
           errorMessageSiswa =
               'Gagal mengambil data siswa (${response.statusCode})';
           isLoadingSiswa = false;
@@ -186,7 +185,7 @@ class _SiswaScreenState extends State<SiswaScreen>
       }
     } catch (e) {
       print('Error fetchSiswa: $e');
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageSiswa = 'Terjadi kesalahan: $e';
         isLoadingSiswa = false;
       });
@@ -195,8 +194,8 @@ class _SiswaScreenState extends State<SiswaScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _searchController.dispose();
+    animationController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
@@ -208,28 +207,28 @@ class _SiswaScreenState extends State<SiswaScreen>
             .where((student) => student.idKelas == selectedKelas!.idKelas)
             .toList();
 
-    if (_selectedFilter == 1) {
+    if (selectedFilter == 1) {
       filtered = filtered.where((s) => (s.poinApresiasi ?? 0) > 0).toList();
-    } else if (_selectedFilter == 2) {
+    } else if (selectedFilter == 2) {
       filtered = filtered.where((s) => (s.poinPelanggaran ?? 0) > 0).toList();
     }
 
-    if (_searchQuery.isNotEmpty) {
+    if (searchQuery.isNotEmpty) {
       filtered =
           filtered
               .where(
                 (s) =>
                     s.namaSiswa.toLowerCase().contains(
-                      _searchQuery.toLowerCase(),
+                      searchQuery.toLowerCase(),
                     ) ||
-                    s.nis.toString().contains(_searchQuery),
+                    s.nis.toString().contains(searchQuery),
               )
               .toList();
     }
     return filtered;
   }
 
-  void _navigateToDetail(Student student) {
+  void navigateToDetail(Student student) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -256,17 +255,17 @@ class _SiswaScreenState extends State<SiswaScreen>
     );
   }
 
-  Future<void> _refreshData() async {
-    if (_isRefreshing) return;
-    _safeSetState(() => _isRefreshing = true);
+  Future<void> refreshData() async {
+    if (isRefreshing) return;
+    safeSetState(() => isRefreshing = true);
     try {
       await Future.wait([fetchKelas(), fetchSiswa()]);
     } finally {
-      _safeSetState(() => _isRefreshing = false);
+      safeSetState(() => isRefreshing = false);
     }
   }
 
-  Widget _buildHeaderContent() {
+  Widget buildHeaderContent() {
     final bool isLoading = isLoadingKelas || isLoadingSiswa;
     final bool hasError =
         errorMessageKelas != null || errorMessageSiswa != null;
@@ -393,9 +392,9 @@ class _SiswaScreenState extends State<SiswaScreen>
               child: SizedBox(
                 width: maxWidth,
                 child: FadeTransition(
-                  opacity: _fadeAnimation,
+                  opacity: fadeAnimation,
                   child: RefreshIndicator(
-                    onRefresh: _refreshData,
+                    onRefresh: refreshData,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
@@ -509,7 +508,7 @@ class _SiswaScreenState extends State<SiswaScreen>
                                     const SizedBox(height: 24),
                                     Container(
                                       width: double.infinity,
-                                      child: _buildHeaderContent(),
+                                      child: buildHeaderContent(),
                                     ),
                                     if (!isLoading && !hasError) ...[
                                       const SizedBox(height: 24),
@@ -556,10 +555,10 @@ class _SiswaScreenState extends State<SiswaScreen>
                                             const SizedBox(width: 16),
                                             Expanded(
                                               child: TextField(
-                                                controller: _searchController,
+                                                controller: searchController,
                                                 onChanged: (value) {
                                                   setState(() {
-                                                    _searchQuery = value;
+                                                    searchQuery = value;
                                                   });
                                                 },
                                                 decoration: InputDecoration(
@@ -586,12 +585,12 @@ class _SiswaScreenState extends State<SiswaScreen>
                                                 ),
                                               ),
                                             ),
-                                            if (_searchQuery.isNotEmpty)
+                                            if (searchQuery.isNotEmpty)
                                               GestureDetector(
                                                 onTap: () {
                                                   setState(() {
-                                                    _searchQuery = '';
-                                                    _searchController.clear();
+                                                    searchQuery = '';
+                                                    searchController.clear();
                                                   });
                                                 },
                                                 child: Container(
@@ -611,11 +610,11 @@ class _SiswaScreenState extends State<SiswaScreen>
                                       const SizedBox(height: 20),
                                       Row(
                                         children: [
-                                          _buildActionButton('Akumulasi', 0),
+                                          buildActionButton('Akumulasi', 0),
                                           const SizedBox(width: 10),
-                                          _buildActionButton('Penghargaan', 1),
+                                          buildActionButton('Penghargaan', 1),
                                           const SizedBox(width: 10),
-                                          _buildActionButton('Pelanggaran', 2),
+                                          buildActionButton('Pelanggaran', 2),
                                         ],
                                       ),
                                     ],
@@ -629,20 +628,20 @@ class _SiswaScreenState extends State<SiswaScreen>
                             child: Column(
                               children: [
                                 if (hasError)
-                                  _buildErrorState()
+                                  buildErrorState()
                                 else if (isLoading)
-                                  _buildLoadingState()
+                                  buildLoadingState()
                                 else ...[
                                   if (filteredStudents.isEmpty &&
                                       selectedKelas != null)
-                                    _buildEmptyState()
+                                    buildEmptyState()
                                   else
                                     Column(
                                       children:
                                           filteredStudents.asMap().entries.map((
                                             entry,
                                           ) {
-                                            return _buildStudentCard(
+                                            return buildStudentCard(
                                               entry.value,
                                               entry.key,
                                             );
@@ -665,7 +664,7 @@ class _SiswaScreenState extends State<SiswaScreen>
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget buildLoadingState() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),
@@ -689,7 +688,7 @@ class _SiswaScreenState extends State<SiswaScreen>
     );
   }
 
-  Widget _buildErrorState() {
+  Widget buildErrorState() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),
@@ -734,11 +733,11 @@ class _SiswaScreenState extends State<SiswaScreen>
     );
   }
 
-  Widget _buildActionButton(String text, int index) {
-    bool isActive = _selectedFilter == index;
+  Widget buildActionButton(String text, int index) {
+    bool isActive = selectedFilter == index;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedFilter = index),
+        onTap: () => setState(() => selectedFilter = index),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: 40,
@@ -824,7 +823,7 @@ class _SiswaScreenState extends State<SiswaScreen>
     );
   }
 
-  Widget _buildStatusChip(String label, Color color) {
+  Widget buildStatusChip(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -842,41 +841,41 @@ class _SiswaScreenState extends State<SiswaScreen>
     );
   }
 
-  Widget _buildStudentCard(Student student, int index) {
-    int _getDisplayPoints() {
-      if (_selectedFilter == 1) {
+  Widget buildStudentCard(Student student, int index) {
+    int getDisplayPoints() {
+      if (selectedFilter == 1) {
         return (student.poinApresiasi ?? 0);
       }
-      if (_selectedFilter == 2) {
+      if (selectedFilter == 2) {
         return (student.poinPelanggaran ?? 0).abs();
       }
       return student.points;
     }
 
-    String _getPointLabel() {
-      if (_selectedFilter == 1) return 'Penghargaan';
-      if (_selectedFilter == 2) return 'Pelanggaran';
+    String getPointLabel() {
+      if (selectedFilter == 1) return 'Penghargaan';
+      if (selectedFilter == 2) return 'Pelanggaran';
       return 'Poin';
     }
 
-    Color _getPointColor() {
-      if (_selectedFilter == 1) return const Color(0xFF10B981);
-      if (_selectedFilter == 2) return const Color(0xFFFF6B6D);
+    Color getPointColor() {
+      if (selectedFilter == 1) return const Color(0xFF10B981);
+      if (selectedFilter == 2) return const Color(0xFFFF6B6D);
       return student.points >= 0
           ? const Color(0xFF10B981)
           : const Color(0xFFFF6B6D);
     }
 
-    final displayPoints = _getDisplayPoints();
-    final pointLabel = _getPointLabel();
-    final pointColor = _getPointColor();
+    final displayPoints = getDisplayPoints();
+    final pointLabel = getPointLabel();
+    final pointColor = getPointColor();
     final spLevel = student.spLevelDisplay;
     final phLevel = student.phLevelDisplay;
     final hasSp = spLevel != '-';
     final hasPh = phLevel != '-';
 
     return GestureDetector(
-      onTap: () => _navigateToDetail(student),
+      onTap: () => navigateToDetail(student),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(20),
@@ -884,7 +883,7 @@ class _SiswaScreenState extends State<SiswaScreen>
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: _getStatusColor(student.status).withOpacity(0.2),
+            color: getStatusColor(student.status).withOpacity(0.2),
             width: 2,
           ),
           boxShadow: [
@@ -935,9 +934,9 @@ class _SiswaScreenState extends State<SiswaScreen>
                       runSpacing: 4,
                       children: [
                         if (hasSp)
-                          _buildStatusChip(spLevel, const Color(0xFFFF6B6D)),
+                          buildStatusChip(spLevel, const Color(0xFFFF6B6D)),
                         if (hasPh)
-                          _buildStatusChip(phLevel, const Color(0xFF10B981)),
+                          buildStatusChip(phLevel, const Color(0xFF10B981)),
                       ],
                     ),
                   const SizedBox(height: 2),
@@ -965,7 +964,7 @@ class _SiswaScreenState extends State<SiswaScreen>
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget buildEmptyState() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),
@@ -1012,9 +1011,9 @@ class _SiswaScreenState extends State<SiswaScreen>
           GestureDetector(
             onTap: () {
               setState(() {
-                _searchQuery = '';
-                _searchController.clear();
-                _selectedFilter = 0;
+                searchQuery = '';
+                searchController.clear();
+                selectedFilter = 0;
               });
             },
             child: Container(
@@ -1047,7 +1046,7 @@ class _SiswaScreenState extends State<SiswaScreen>
     );
   }
 
-  Color _getStatusColor(String status) {
+  Color getStatusColor(String status) {
     switch (status) {
       case 'Aman':
         return const Color(0xFF10B981);

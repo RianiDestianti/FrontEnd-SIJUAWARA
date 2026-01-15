@@ -4,34 +4,32 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:skoring/screens/walikelas/notification.dart';
-import 'package:skoring/screens/profile.dart';
+import 'package:skoring/screens/walikelas/profile.dart';
 import 'package:skoring/widgets/exports/pdf.dart';
 import 'package:skoring/widgets/exports/excel.dart';
 import 'package:skoring/widgets/faq.dart';
-import 'package:skoring/services/notification_service.dart';
+import 'package:skoring/firebase/notification.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
-
-import 'package:skoring/config/api_config.dart';
-import 'package:skoring/models/walikelas/reportmodels.dart';
-
+import 'package:skoring/config/api.dart';
+import 'package:skoring/models/api/api_report.dart';
 import 'dart:io';
 
 class LaporanScreen extends StatefulWidget {
   const LaporanScreen({Key? key}) : super(key: key);
 
   @override
-  State<LaporanScreen> createState() => _LaporanScreenState();
+  State<LaporanScreen> createState() => LaporanScreenState();
 }
 
-class _LaporanScreenState extends State<LaporanScreen>
+class LaporanScreenState extends State<LaporanScreen>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  String _selectedFilter = 'Semua';
-  String _selectedView = 'Rekap';
-  TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  late AnimationController animationController;
+  late Animation<double> fadeAnimation;
+  String selectedFilter = 'Semua';
+  String selectedView = 'Rekap';
+  TextEditingController searchController = TextEditingController();
+  String searchQuery = '';
   List<Student> studentsList = [];
   List<Kelas> kelasList = [];
   Map<String, FAQItem> faqData = {};
@@ -44,10 +42,10 @@ class _LaporanScreenState extends State<LaporanScreen>
   String? errorMessageAspek;
   String? walikelasId;
   String? idKelas;
-  bool _isRefreshing = false;
+  bool isRefreshing = false;
   Map<String, dynamic> aspekPenilaianData = {};
 
-  Map<String, dynamic> _spStatus(Student student) {
+  Map<String, dynamic> spStatus(Student student) {
     final p = student.pelanggaran;
     if (p >= 76) {
       return {
@@ -77,7 +75,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     };
   }
 
-  Map<String, dynamic>? _apresiasiBadge(Student student) {
+  Map<String, dynamic>? apresiasiBadge(Student student) {
     final a = student.apresiasi;
     if (a >= 151) {
       return {
@@ -103,7 +101,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     return null;
   }
 
-  Widget _statusChip(String text, Color fg, Color bg) {
+  Widget statusChip(String text, Color fg, Color bg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -122,9 +120,9 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  final Map<String, bool> _expandedSections = {};
+  final Map<String, bool> expandedSections = {};
 
-  void _safeSetState(VoidCallback fn) {
+  void safeSetState(VoidCallback fn) {
     if (!mounted) return;
     setState(fn);
   }
@@ -132,41 +130,41 @@ class _LaporanScreenState extends State<LaporanScreen>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _animationController.forward();
+    animationController.forward();
 
-    _loadWalikelasId().then((_) {
-      _refreshData();
+    loadWalikelasId().then((unused) {
+      refreshData();
     });
   }
 
-  Future<void> _loadWalikelasId() async {
+  Future<void> loadWalikelasId() async {
     final prefs = await SharedPreferences.getInstance();
-    _safeSetState(() {
+    safeSetState(() {
       walikelasId = prefs.getString('walikelas_id');
       idKelas = prefs.getString('id_kelas');
     });
   }
 
-  Future<void> _refreshData() async {
+  Future<void> refreshData() async {
     await Future.wait([fetchKelas(), fetchSiswa(), fetchAspekPenilaian()]);
   }
 
-  Future<void> _manualRefresh() async {
-    if (_isRefreshing) return;
-    _safeSetState(() => _isRefreshing = true);
-    await _refreshData();
-    _safeSetState(() => _isRefreshing = false);
+  Future<void> manualRefresh() async {
+    if (isRefreshing) return;
+    safeSetState(() => isRefreshing = true);
+    await refreshData();
+    safeSetState(() => isRefreshing = false);
   }
 
-  List<Map<String, dynamic>> _mappedStudentsForExport() {
-    return _filteredAndSortedStudents
+  List<Map<String, dynamic>> mappedStudentsForExport() {
+    return filteredAndSortedStudents
         .map(
           (s) => {
             'name': s.name,
@@ -193,16 +191,16 @@ class _LaporanScreenState extends State<LaporanScreen>
         .toList();
   }
 
-  Future<void> _exportToPdf(String filterLabel) async {
-    if (!await _ensureStoragePermission()) return;
+  Future<void> exportToPdf(String filterLabel) async {
+    if (!await ensureStoragePermission()) return;
     final fileName =
         'Laporan_Siswa_${selectedKelas?.namaKelas ?? 'Unknown'}.pdf';
     final savedPath = await PdfExport.exportToPDF(
-      _mappedStudentsForExport(),
+      mappedStudentsForExport(),
       fileName,
       kelas: selectedKelas?.namaKelas,
       filterLabel: filterLabel,
-      searchQuery: _searchQuery,
+      searchQuery: searchQuery,
     );
     if (mounted) {
       final message =
@@ -228,16 +226,16 @@ class _LaporanScreenState extends State<LaporanScreen>
     }
   }
 
-  Future<void> _exportToExcel(String filterLabel) async {
-    if (!await _ensureStoragePermission()) return;
+  Future<void> exportToExcel(String filterLabel) async {
+    if (!await ensureStoragePermission()) return;
     final fileName =
         'Laporan_Siswa_${selectedKelas?.namaKelas ?? 'Unknown'}.xlsx';
     final savedPath = await ExcelExport.exportToExcel(
-      _mappedStudentsForExport(),
+      mappedStudentsForExport(),
       fileName,
       kelas: selectedKelas?.namaKelas,
       filterLabel: filterLabel,
-      searchQuery: _searchQuery,
+      searchQuery: searchQuery,
     );
     if (mounted) {
       final message =
@@ -263,7 +261,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     }
   }
 
-  Future<bool> _ensureStoragePermission() async {
+  Future<bool> ensureStoragePermission() async {
     if (!Platform.isAndroid) return true;
 
     try {
@@ -287,21 +285,21 @@ class _LaporanScreenState extends State<LaporanScreen>
           );
         }
       }
-    } catch (_) {}
+    } catch (error) {}
 
     return true;
   }
 
   Future<void> fetchKelas() async {
     if (walikelasId == null) {
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageKelas = 'ID walikelas tidak ditemukan';
         isLoadingKelas = false;
       });
       return;
     }
 
-    _safeSetState(() {
+    safeSetState(() {
       isLoadingKelas = true;
       errorMessageKelas = null;
     });
@@ -314,7 +312,7 @@ class _LaporanScreenState extends State<LaporanScreen>
         final jsonData = jsonDecode(response.body);
         if (jsonData['success']) {
           List<dynamic> data = jsonData['data'];
-          _safeSetState(() {
+          safeSetState(() {
             kelasList = data.map((json) => Kelas.fromJson(json)).toList();
             selectedKelas =
                 idKelas != null
@@ -339,20 +337,20 @@ class _LaporanScreenState extends State<LaporanScreen>
             }
           });
         } else {
-          _safeSetState(() {
+          safeSetState(() {
             errorMessageKelas = jsonData['message'];
             isLoadingKelas = false;
           });
         }
       } else {
-        _safeSetState(() {
+        safeSetState(() {
           errorMessageKelas =
               'Gagal mengambil data kelas: ${response.statusCode}';
           isLoadingKelas = false;
         });
       }
     } catch (e) {
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageKelas = 'Terjadi kesalahan: $e';
         isLoadingKelas = false;
       });
@@ -361,14 +359,14 @@ class _LaporanScreenState extends State<LaporanScreen>
 
   Future<void> fetchSiswa() async {
     if (walikelasId == null || idKelas == null) {
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageStudents = 'Data guru tidak lengkap. Silakan login ulang.';
         isLoadingStudents = false;
       });
       return;
     }
 
-    _safeSetState(() {
+    safeSetState(() {
       isLoadingStudents = true;
       errorMessageStudents = null;
     });
@@ -388,32 +386,32 @@ class _LaporanScreenState extends State<LaporanScreen>
               data
                   .map((studentJson) => Student.fromJson(studentJson, const []))
                   .toList();
-          _safeSetState(() {
+          safeSetState(() {
             studentsList = students;
             isLoadingStudents = false;
           });
         } else {
-          _safeSetState(() {
+          safeSetState(() {
             errorMessageStudents = jsonData['message'];
             isLoadingStudents = false;
           });
         }
       } else {
-        _safeSetState(() {
+        safeSetState(() {
           errorMessageStudents =
               'Gagal mengambil data siswa: ${response.statusCode}';
           isLoadingStudents = false;
         });
       }
     } catch (e) {
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageStudents = 'Terjadi kesalahan: $e';
         isLoadingStudents = false;
       });
     }
   }
 
-  Future<List<StudentScore>> _fetchStudentScores(String nis) async {
+  Future<List<StudentScore>> fetchStudentScores(String nis) async {
     if (nis.isEmpty) return [];
     List<StudentScore> scores = [];
     try {
@@ -549,15 +547,15 @@ class _LaporanScreenState extends State<LaporanScreen>
     return scores;
   }
 
-  Future<List<StudentScore>> _loadStudentScores(String nis) async {
+  Future<List<StudentScore>> loadStudentScores(String nis) async {
     if (aspekPenilaianData.isEmpty) {
       await fetchAspekPenilaian();
     }
-    return _fetchStudentScores(nis);
+    return fetchStudentScores(nis);
   }
 
   Future<void> fetchAspekPenilaian() async {
-    _safeSetState(() {
+    safeSetState(() {
       isLoadingAspek = true;
       errorMessageAspek = null;
     });
@@ -578,28 +576,28 @@ class _LaporanScreenState extends State<LaporanScreen>
                 'A${data.indexOf(item)}';
             tempFaqData[key] = FAQItem.fromJson(item);
             tempAspekData[key] = item;
-            _expandedSections[key] = false;
+            expandedSections[key] = false;
           }
-          _safeSetState(() {
+          safeSetState(() {
             faqData = tempFaqData;
             aspekPenilaianData = tempAspekData;
             isLoadingAspek = false;
           });
         } else {
-          _safeSetState(() {
+          safeSetState(() {
             errorMessageAspek = jsonData['message'];
             isLoadingAspek = false;
           });
         }
       } else {
-        _safeSetState(() {
+        safeSetState(() {
           errorMessageAspek =
               'Gagal mengambil data aspek penilaian: ${response.statusCode}';
           isLoadingAspek = false;
         });
       }
     } catch (e) {
-      _safeSetState(() {
+      safeSetState(() {
         errorMessageAspek = 'Terjadi kesalahan: $e';
         isLoadingAspek = false;
       });
@@ -608,27 +606,27 @@ class _LaporanScreenState extends State<LaporanScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _searchController.dispose();
+    animationController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
-  double get _averageApresiasi {
-    if (_filteredAndSortedStudents.isEmpty) return 0;
-    double total = _filteredAndSortedStudents.fold(
+  double get averageApresiasi {
+    if (filteredAndSortedStudents.isEmpty) return 0;
+    double total = filteredAndSortedStudents.fold(
       0,
       (sum, student) => sum + student.apresiasi,
     );
-    return total / _filteredAndSortedStudents.length;
+    return total / filteredAndSortedStudents.length;
   }
 
-  double get _apresiasiPercentage {
-    if (_filteredAndSortedStudents.isEmpty) return 0;
-    final totalApresiasi = _filteredAndSortedStudents.fold<int>(
+  double get apresiasiPercentage {
+    if (filteredAndSortedStudents.isEmpty) return 0;
+    final totalApresiasi = filteredAndSortedStudents.fold<int>(
       0,
       (sum, student) => sum + student.apresiasi,
     );
-    final totalPelanggaran = _filteredAndSortedStudents.fold<int>(
+    final totalPelanggaran = filteredAndSortedStudents.fold<int>(
       0,
       (sum, student) => sum + student.pelanggaran.abs(),
     );
@@ -637,13 +635,13 @@ class _LaporanScreenState extends State<LaporanScreen>
     return totalApresiasi / total;
   }
 
-  double get _pelanggaranPercentage {
-    if (_filteredAndSortedStudents.isEmpty) return 0;
-    final totalApresiasi = _filteredAndSortedStudents.fold<int>(
+  double get pelanggaranPercentage {
+    if (filteredAndSortedStudents.isEmpty) return 0;
+    final totalApresiasi = filteredAndSortedStudents.fold<int>(
       0,
       (sum, student) => sum + student.apresiasi,
     );
-    final totalPelanggaran = _filteredAndSortedStudents.fold<int>(
+    final totalPelanggaran = filteredAndSortedStudents.fold<int>(
       0,
       (sum, student) => sum + student.pelanggaran.abs(),
     );
@@ -652,19 +650,19 @@ class _LaporanScreenState extends State<LaporanScreen>
     return totalPelanggaran / total;
   }
 
-  List<Student> get _filteredAndSortedStudents {
+  List<Student> get filteredAndSortedStudents {
     if (selectedKelas == null) return [];
 
     List<Student> filtered =
         studentsList.where((student) {
           bool matchesClass = student.idKelas == selectedKelas!.idKelas;
           bool matchesSearch = student.name.toLowerCase().contains(
-            _searchQuery.toLowerCase(),
+            searchQuery.toLowerCase(),
           );
           if (!matchesClass || !matchesSearch) return false;
 
           int poin = student.totalPoin;
-          switch (_selectedFilter) {
+          switch (selectedFilter) {
             case '0-50':
               return poin >= 0 && poin <= 50;
             case '51-100':
@@ -683,7 +681,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     return filtered;
   }
 
-  void _showFilterBottomSheet() {
+  void showFilterBottomSheet() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -717,17 +715,17 @@ class _LaporanScreenState extends State<LaporanScreen>
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color:
-                          _selectedFilter == filter
+                          selectedFilter == filter
                               ? const Color(0xFF0083EE)
                               : const Color(0xFF1F2937),
                     ),
                   ),
                   leading: Radio<String>(
                     value: filter,
-                    groupValue: _selectedFilter,
+                    groupValue: selectedFilter,
                     onChanged: (value) {
                       setState(() {
-                        _selectedFilter = value!;
+                        selectedFilter = value!;
                       });
                       Navigator.pop(context);
                     },
@@ -735,7 +733,7 @@ class _LaporanScreenState extends State<LaporanScreen>
                   ),
                   onTap: () {
                     setState(() {
-                      _selectedFilter = filter;
+                      selectedFilter = filter;
                     });
                     Navigator.pop(context);
                   },
@@ -748,7 +746,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  void _showExportDialog() {
+  void showExportDialog() {
     showDialog(
       context: context,
       builder: (context) {
@@ -769,7 +767,7 @@ class _LaporanScreenState extends State<LaporanScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Pilih format ekspor untuk ${_filteredAndSortedStudents.length} siswa dengan filter $_selectedFilter:',
+                'Pilih format ekspor untuk ${filteredAndSortedStudents.length} siswa dengan filter $selectedFilter:',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   color: const Color(0xFF6B7280),
@@ -781,12 +779,12 @@ class _LaporanScreenState extends State<LaporanScreen>
                 onTap: () {
                   Navigator.pop(context);
                   final filterLabel =
-                      _selectedFilter == 'Negatif'
+                      selectedFilter == 'Negatif'
                           ? 'Nilai Negatif'
-                          : _selectedFilter == '101+'
+                          : selectedFilter == '101+'
                           ? '101 ke atas'
-                          : _selectedFilter;
-                  _exportToPdf(filterLabel);
+                          : selectedFilter;
+                  exportToPdf(filterLabel);
                 },
               ),
               ListTile(
@@ -794,12 +792,12 @@ class _LaporanScreenState extends State<LaporanScreen>
                 onTap: () {
                   Navigator.pop(context);
                   final filterLabel =
-                      _selectedFilter == 'Negatif'
+                      selectedFilter == 'Negatif'
                           ? 'Nilai Negatif'
-                          : _selectedFilter == '101+'
+                          : selectedFilter == '101+'
                           ? '101 ke atas'
-                          : _selectedFilter;
-                  _exportToExcel(filterLabel);
+                          : selectedFilter;
+                  exportToExcel(filterLabel);
                 },
               ),
             ],
@@ -821,7 +819,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  Widget _buildHeaderContent() {
+  Widget buildHeaderContent() {
     final bool isLoading =
         isLoadingKelas || isLoadingStudents || isLoadingAspek;
     final bool hasError =
@@ -882,7 +880,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     }
 
     if (selectedKelas != null) {
-      final studentsInClass = _filteredAndSortedStudents.length;
+      final studentsInClass = filteredAndSortedStudents.length;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -953,9 +951,9 @@ class _LaporanScreenState extends State<LaporanScreen>
                 child: SizedBox(
                   width: maxWidth,
                   child: FadeTransition(
-                    opacity: _fadeAnimation,
+                    opacity: fadeAnimation,
                     child: RefreshIndicator(
-                      onRefresh: _manualRefresh,
+                      onRefresh: manualRefresh,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         child: Column(
@@ -1070,7 +1068,7 @@ class _LaporanScreenState extends State<LaporanScreen>
                                     const SizedBox(height: 24),
                                     Align(
                                       alignment: Alignment.centerLeft,
-                                      child: _buildHeaderContent(),
+                                      child: buildHeaderContent(),
                                     ),
                                     if (!isLoading && !hasError) ...[
                                       const SizedBox(height: 24),
@@ -1117,15 +1115,15 @@ class _LaporanScreenState extends State<LaporanScreen>
                                             const SizedBox(width: 16),
                                             Expanded(
                                               child: TextField(
-                                                controller: _searchController,
+                                                controller: searchController,
                                                 onChanged: (value) {
                                                   setState(() {
-                                                    _searchQuery = value;
+                                                    searchQuery = value;
                                                   });
                                                 },
                                                 decoration: InputDecoration(
                                                   hintText:
-                                                      _selectedView == 'Rekap'
+                                                      selectedView == 'Rekap'
                                                           ? 'Cari nama murid...'
                                                           : 'Cari aturan atau poin...',
                                                   hintStyle:
@@ -1149,12 +1147,12 @@ class _LaporanScreenState extends State<LaporanScreen>
                                                 ),
                                               ),
                                             ),
-                                            if (_searchQuery.isNotEmpty)
+                                            if (searchQuery.isNotEmpty)
                                               GestureDetector(
                                                 onTap: () {
                                                   setState(() {
-                                                    _searchController.clear();
-                                                    _searchQuery = '';
+                                                    searchController.clear();
+                                                    searchQuery = '';
                                                   });
                                                 },
                                                 child: Container(
@@ -1174,9 +1172,9 @@ class _LaporanScreenState extends State<LaporanScreen>
                                       const SizedBox(height: 20),
                                       Row(
                                         children: [
-                                          _buildViewButton('Rekap', 'Rekap'),
+                                          buildViewButton('Rekap', 'Rekap'),
                                           const SizedBox(width: 10),
-                                          _buildViewButton(
+                                          buildViewButton(
                                             'FAQ Poin',
                                             'FAQ Poin',
                                           ),
@@ -1193,15 +1191,15 @@ class _LaporanScreenState extends State<LaporanScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   if (hasError)
-                                    _buildErrorState()
+                                    buildErrorState()
                                   else if (isLoading)
-                                    _buildLoadingState()
-                                  else if (_selectedView == 'Rekap') ...[
+                                    buildLoadingState()
+                                  else if (selectedView == 'Rekap') ...[
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: _buildStatCard(
-                                            '${_filteredAndSortedStudents.length}',
+                                          child: buildStatCard(
+                                            '${filteredAndSortedStudents.length}',
                                             'Total Siswa',
                                             Icons.people_outline,
                                             const LinearGradient(
@@ -1214,8 +1212,8 @@ class _LaporanScreenState extends State<LaporanScreen>
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
-                                          child: _buildStatCard(
-                                            '${_averageApresiasi.toInt()}',
+                                          child: buildStatCard(
+                                            '${averageApresiasi.toInt()}',
                                             'Rata-rata\nApresiasi',
                                             Icons.check_circle_outline,
                                             const LinearGradient(
@@ -1232,10 +1230,10 @@ class _LaporanScreenState extends State<LaporanScreen>
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: _buildProgressCard(
+                                          child: buildProgressCard(
                                             'Apresiasi',
-                                            '${(_apresiasiPercentage * 100).toInt()}%',
-                                            _apresiasiPercentage,
+                                            '${(apresiasiPercentage * 100).toInt()}%',
+                                            apresiasiPercentage,
                                             const LinearGradient(
                                               colors: [
                                                 Color(0xFF10B981),
@@ -1246,10 +1244,10 @@ class _LaporanScreenState extends State<LaporanScreen>
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
-                                          child: _buildProgressCard(
+                                          child: buildProgressCard(
                                             'Pelanggaran',
-                                            '${(_pelanggaranPercentage * 100).toInt()}%',
-                                            _pelanggaranPercentage,
+                                            '${(pelanggaranPercentage * 100).toInt()}%',
+                                            pelanggaranPercentage,
                                             const LinearGradient(
                                               colors: [
                                                 Color(0xFFFF6B6D),
@@ -1282,13 +1280,13 @@ class _LaporanScreenState extends State<LaporanScreen>
                                           final isCompact =
                                               constraints.maxWidth < 360;
                                           final filterLabel =
-                                              _selectedFilter == 'Negatif'
+                                              selectedFilter == 'Negatif'
                                                   ? 'Nilai Negatif'
-                                                  : _selectedFilter == '101+'
+                                                  : selectedFilter == '101+'
                                                   ? '101 ke atas'
-                                                  : _selectedFilter;
+                                                  : selectedFilter;
                                           final filterButton = GestureDetector(
-                                            onTap: _showFilterBottomSheet,
+                                            onTap: showFilterBottomSheet,
                                             child: Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
@@ -1337,7 +1335,7 @@ class _LaporanScreenState extends State<LaporanScreen>
                                           );
                                           final downloadButton =
                                               GestureDetector(
-                                                onTap: _showExportDialog,
+                                                onTap: showExportDialog,
                                                 child: Container(
                                                   padding: const EdgeInsets.all(
                                                     8,
@@ -1434,22 +1432,22 @@ class _LaporanScreenState extends State<LaporanScreen>
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    if (_filteredAndSortedStudents.isEmpty &&
-                                        _searchQuery.isNotEmpty)
-                                      _buildEmptyState(
+                                    if (filteredAndSortedStudents.isEmpty &&
+                                        searchQuery.isNotEmpty)
+                                      buildEmptyState(
                                         'Tidak ada siswa ditemukan',
                                         'Coba ubah kata kunci pencarian atau filter',
                                       )
-                                    else if (_filteredAndSortedStudents.isEmpty)
-                                      _buildEmptyState(
+                                    else if (filteredAndSortedStudents.isEmpty)
+                                      buildEmptyState(
                                         'Tidak ada siswa dalam range ini',
                                         'Coba pilih filter lain',
                                       )
                                     else
                                       ...List.generate(
-                                        _filteredAndSortedStudents.length,
-                                        (index) => _buildStudentCard(
-                                          _filteredAndSortedStudents[index],
+                                        filteredAndSortedStudents.length,
+                                        (index) => buildStudentCard(
+                                          filteredAndSortedStudents[index],
                                           index,
                                         ),
                                       ),
@@ -1462,11 +1460,11 @@ class _LaporanScreenState extends State<LaporanScreen>
                                           'items': value.items,
                                         }),
                                       ),
-                                      expandedSections: _expandedSections,
-                                      searchQuery: _searchQuery,
+                                      expandedSections: expandedSections,
+                                      searchQuery: searchQuery,
                                       onExpansionChanged: (code, expanded) {
                                         setState(() {
-                                          _expandedSections[code] = expanded;
+                                          expandedSections[code] = expanded;
                                         });
                                       },
                                     ),
@@ -1488,15 +1486,15 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  Widget _buildViewButton(String text, String view) {
-    bool isActive = _selectedView == view;
+  Widget buildViewButton(String text, String view) {
+    bool isActive = selectedView == view;
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            _selectedView = view;
-            _searchController.clear();
-            _searchQuery = '';
+            selectedView = view;
+            searchController.clear();
+            searchQuery = '';
           });
         },
         child: AnimatedContainer(
@@ -1558,7 +1556,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  Widget _buildStatCard(
+  Widget buildStatCard(
     String value,
     String label,
     IconData icon,
@@ -1615,7 +1613,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  Widget _buildProgressCard(
+  Widget buildProgressCard(
     String title,
     String percentage,
     double progress,
@@ -1688,7 +1686,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  Widget _buildStudentCard(Student student, int index) {
+  Widget buildStudentCard(Student student, int index) {
     double totalPoints = (student.apresiasi + student.pelanggaran).toDouble();
     double apresiasiRatio =
         totalPoints > 0 ? student.apresiasi / totalPoints : 0;
@@ -1696,7 +1694,7 @@ class _LaporanScreenState extends State<LaporanScreen>
         totalPoints > 0 ? student.pelanggaran / totalPoints : 0;
 
     return GestureDetector(
-      onTap: () => _showStudentDetail(student),
+      onTap: () => showStudentDetail(student),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(20),
@@ -1841,7 +1839,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget buildLoadingState() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),
@@ -1865,7 +1863,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  Widget _buildErrorState() {
+  Widget buildErrorState() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),
@@ -1911,7 +1909,7 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  Widget _buildEmptyState(String title, String subtitle) {
+  Widget buildEmptyState(String title, String subtitle) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),
@@ -1958,9 +1956,9 @@ class _LaporanScreenState extends State<LaporanScreen>
           GestureDetector(
             onTap: () {
               setState(() {
-                _searchQuery = '';
-                _searchController.clear();
-                _selectedFilter = 'Semua';
+                searchQuery = '';
+                searchController.clear();
+                selectedFilter = 'Semua';
               });
             },
             child: Container(
@@ -1993,8 +1991,8 @@ class _LaporanScreenState extends State<LaporanScreen>
     );
   }
 
-  void _showStudentDetail(Student student) {
-    final scoresFuture = _loadStudentScores(student.nis);
+  void showStudentDetail(Student student) {
+    final scoresFuture = loadStudentScores(student.nis);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

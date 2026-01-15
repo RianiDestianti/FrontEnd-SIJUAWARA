@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skoring/models/note.dart';
+import 'package:skoring/models/types/note.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-import 'package:skoring/config/api_config.dart';
+import 'package:skoring/config/api.dart';
 
 class NoteUtils {
   static Future<Note?> submitNote({
@@ -22,7 +21,7 @@ class NoteUtils {
         date.isEmpty ||
         isiCatatan.isEmpty) {
       print('Validation failed: Some fields are empty');
-      _showErrorSnackBar(context, 'Mohon lengkapi semua field yang diperlukan');
+      showErrorSnackBar(context, 'Mohon lengkapi semua field yang diperlukan');
       return null;
     }
 
@@ -32,7 +31,10 @@ class NoteUtils {
       final idKelas = prefs.getString('id_kelas') ?? '';
 
       if (nip.isEmpty || idKelas.isEmpty) {
-        _showErrorSnackBar(context, 'Data guru tidak lengkap. Silakan login ulang.');
+        showErrorSnackBar(
+          context,
+          'Data guru tidak lengkap. Silakan login ulang.',
+        );
         return null;
       }
 
@@ -41,10 +43,9 @@ class NoteUtils {
       );
 
       print('Sending POST request to $url');
-      print('Request body: ${jsonEncode({
-            'judul_catatan': judulCatatan,
-            'isi_catatan': isiCatatan,
-          })}');
+      print(
+        'Request body: ${jsonEncode({'judul_catatan': judulCatatan, 'isi_catatan': isiCatatan})}',
+      );
 
       final response = await http.post(
         url,
@@ -72,10 +73,10 @@ class NoteUtils {
             title: judulCatatan,
           );
 
-          _showSuccessSnackBar(context, 'Penanganan berhasil ditambahkan');
+          showSuccessSnackBar(context, 'Penanganan berhasil ditambahkan');
           return noteData;
         } else {
-          _showErrorSnackBar(
+          showErrorSnackBar(
             context,
             responseData['message'] ?? 'Gagal menambahkan penanganan',
           );
@@ -83,35 +84,30 @@ class NoteUtils {
         }
       } else {
         final responseData = jsonDecode(response.body);
-        _showErrorSnackBar(
+        showErrorSnackBar(
           context,
-          responseData['message'] ?? 'Gagal menghubungi server: ${response.statusCode}',
+          responseData['message'] ??
+              'Gagal menghubungi server: ${response.statusCode}',
         );
         return null;
       }
     } catch (e) {
       print('Error during HTTP request: $e');
-      _showErrorSnackBar(context, 'Terjadi kesalahan: $e');
+      showErrorSnackBar(context, 'Terjadi kesalahan: $e');
       return null;
     }
   }
 }
 
-void _showErrorSnackBar(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red,
-    ),
-  );
+void showErrorSnackBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
 }
 
-void _showSuccessSnackBar(BuildContext context, String message) {
+void showSuccessSnackBar(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.green,
-    ),
+    SnackBar(content: Text(message), backgroundColor: Colors.green),
   );
 }
 
@@ -128,100 +124,100 @@ class BKNotePopup extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<BKNotePopup> createState() => _BKNotePopupState();
+  State<BKNotePopup> createState() => BKNotePopupState();
 }
 
-class _BKNotePopupState extends State<BKNotePopup>
+class BKNotePopupState extends State<BKNotePopup>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _slideController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _rotateAnimation;
+  late AnimationController animationController;
+  late AnimationController slideController;
+  late Animation<double> scaleAnimation;
+  late Animation<double> fadeAnimation;
+  late Animation<Offset> slideAnimation;
+  late Animation<double> rotateAnimation;
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _classController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
-  final TextEditingController _noteController = TextEditingController();
-  final TextEditingController _titleController = TextEditingController();
-  bool _isSubmitting = false;
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController classController = TextEditingController();
+  final TextEditingController dateController = TextEditingController();
+  final TextEditingController noteController = TextEditingController();
+  final TextEditingController titleController = TextEditingController();
+  bool isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
-    _nameController.text = widget.studentName;
-    _classController.text = widget.className;
-    _dateController.text = DateTime.now().toString().split(' ')[0];
+    initializeAnimations();
+    nameController.text = widget.studentName;
+    classController.text = widget.className;
+    dateController.text = DateTime.now().toString().split(' ')[0];
   }
 
-  void _initializeAnimations() {
-    _animationController = AnimationController(
+  void initializeAnimations() {
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _slideController = AnimationController(
+    slideController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.elasticOut),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
     );
-    _slideAnimation = Tween<Offset>(
+    slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+      CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic),
     );
-    _rotateAnimation = Tween<double>(begin: 0.1, end: 0.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    rotateAnimation = Tween<double>(begin: 0.1, end: 0.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
     );
 
-    _animationController.forward();
+    animationController.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _slideController.dispose();
-    _nameController.dispose();
-    _classController.dispose();
-    _dateController.dispose();
-    _noteController.dispose();
-    _titleController.dispose();
+    animationController.dispose();
+    slideController.dispose();
+    nameController.dispose();
+    classController.dispose();
+    dateController.dispose();
+    noteController.dispose();
+    titleController.dispose();
     super.dispose();
   }
 
-  void _closeDialog() {
-    _animationController.reverse().then((_) => Navigator.of(context).pop());
+  void closeDialog() {
+    animationController.reverse().then((unused) => Navigator.of(context).pop());
   }
 
-  void _submitNote() async {
+  void submitNote() async {
     print('Starting note submission...');
-    setState(() => _isSubmitting = true);
+    setState(() => isSubmitting = true);
     final note = await NoteUtils.submitNote(
       nis: widget.nis,
-      judulCatatan: _titleController.text,
-      className: _classController.text,
-      date: _dateController.text,
-      isiCatatan: _noteController.text,
+      judulCatatan: titleController.text,
+      className: classController.text,
+      date: dateController.text,
+      isiCatatan: noteController.text,
       context: context,
     );
     print('Submission result: $note');
-    setState(() => _isSubmitting = false);
+    setState(() => isSubmitting = false);
     if (note != null) {
       print('Note submitted successfully, closing dialog');
-      _closeDialog();
+      closeDialog();
     } else {
       print('Note submission failed');
     }
   }
 
-  Future<void> _pickDate() async {
+  Future<void> pickDate() async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -238,7 +234,7 @@ class _BKNotePopupState extends State<BKNotePopup>
     );
     if (pickedDate != null) {
       setState(() {
-        _dateController.text = pickedDate.toString().split(' ')[0];
+        dateController.text = pickedDate.toString().split(' ')[0];
       });
     }
   }
@@ -246,28 +242,28 @@ class _BKNotePopupState extends State<BKNotePopup>
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-      opacity: _fadeAnimation,
+      opacity: fadeAnimation,
       child: Container(
         color: Colors.black.withOpacity(0.6),
         child: Center(
           child: SlideTransition(
-            position: _slideAnimation,
+            position: slideAnimation,
             child: RotationTransition(
-              turns: _rotateAnimation,
+              turns: rotateAnimation,
               child: ScaleTransition(
-                scale: _scaleAnimation,
+                scale: scaleAnimation,
                 child: Material(
                   color: Colors.transparent,
                   child: NoteDialogContent(
-                    nameController: _nameController,
-                    classController: _classController,
-                    dateController: _dateController,
-                    noteController: _noteController,
-                    titleController: _titleController,
-                    isSubmitting: _isSubmitting,
-                    onClose: _closeDialog,
-                    onSubmit: _submitNote,
-                    onDateTap: _pickDate,
+                    nameController: nameController,
+                    classController: classController,
+                    dateController: dateController,
+                    noteController: noteController,
+                    titleController: titleController,
+                    isSubmitting: isSubmitting,
+                    onClose: closeDialog,
+                    onSubmit: submitNote,
+                    onDateTap: pickDate,
                   ),
                 ),
               ),

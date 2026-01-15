@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:skoring/models/navigation.dart';
+import 'package:skoring/models/types/navigation.dart';
 
 class WalikelasNavigation extends StatefulWidget {
   final int currentIndex;
@@ -12,13 +12,11 @@ class WalikelasNavigation extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  
-  State<WalikelasNavigation> createState
-  () => _WalikelasNavigationState();
+  State<WalikelasNavigation> createState() => WalikelasNavigationState();
 }
 
-class _WalikelasNavigationState extends State<WalikelasNavigation> {
-  final List<NavigationItemData> _items = [
+class WalikelasNavigationState extends State<WalikelasNavigation> {
+  final List<NavigationItemData> items = [
     NavigationItemData(
       index: 0,
       icon: Icons.home_outlined,
@@ -63,11 +61,16 @@ class _WalikelasNavigationState extends State<WalikelasNavigation> {
         ],
       ),
       child: Row(
-        children: _items.map((item) => NavigationItem(
-          item: item,
-          currentIndex: widget.currentIndex,
-          onTap: widget.onTap,
-        )).toList(),
+        children:
+            items
+                .map(
+                  (item) => NavigationItem(
+                    item: item,
+                    currentIndex: widget.currentIndex,
+                    onTap: widget.onTap,
+                  ),
+                )
+                .toList(),
       ),
     );
   }
@@ -167,10 +170,7 @@ class NavItemContent extends StatelessWidget {
               activeIcon: activeIcon,
             ),
             const SizedBox(height: 6),
-            AnimatedLabel(
-              isActive: isActive,
-              label: label,
-            ),
+            AnimatedLabel(isActive: isActive, label: label),
           ],
         ),
       ),
@@ -208,11 +208,8 @@ class AnimatedLabel extends StatelessWidget {
   final bool isActive;
   final String label;
 
-  const AnimatedLabel({
-    Key? key,
-    required this.isActive,
-    required this.label,
-  }) : super(key: key);
+  const AnimatedLabel({Key? key, required this.isActive, required this.label})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {

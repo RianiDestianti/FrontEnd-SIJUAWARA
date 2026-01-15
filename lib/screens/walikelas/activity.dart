@@ -4,83 +4,82 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-import 'package:skoring/config/api_config.dart';
-import 'package:skoring/models/walikelas/activitymodel.dart';
+import 'package:skoring/config/api.dart';
+import 'package:skoring/models/api/api_activity.dart';
 
 class ActivityScreen extends StatefulWidget {
   const ActivityScreen({Key? key}) : super(key: key);
 
   @override
-  State<ActivityScreen> createState() => _ActivityScreenState();
+  State<ActivityScreen> createState() => ActivityScreenState();
 }
 
-class _ActivityScreenState extends State<ActivityScreen>
+class ActivityScreenState extends State<ActivityScreen>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  String _selectedFilter = 'Semua';
-  String _searchQuery = '';
-  DateTime? _selectedDate;
-  List<Activity> _allActivities = [];
-  List<Activity> _filteredActivities = [];
-  bool _isLoading = true;
-  String _teacherClassId = '';
-  String _walikelasId = '';
-  String? _errorMessage;
-  final List<String> _filterOptions = ['Semua', 'Apresiasi', 'Pelanggaran'];
+  late AnimationController animationController;
+  late Animation<double> fadeAnimation;
+  String selectedFilter = 'Semua';
+  String searchQuery = '';
+  DateTime? selectedDate;
+  List<Activity> allActivities = [];
+  List<Activity> filteredActivities = [];
+  bool isLoading = true;
+  String teacherClassId = '';
+  String walikelasId = '';
+  String? errorMessage;
+  final List<String> filterOptions = ['Semua', 'Apresiasi', 'Pelanggaran'];
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _animationController.forward();
-    _loadActivities();
+    animationController.forward();
+    loadActivities();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    animationController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadActivities() async {
+  Future<void> loadActivities() async {
     setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+      isLoading = true;
+      errorMessage = null;
     });
 
     final prefs = await SharedPreferences.getInstance();
-    _teacherClassId = prefs.getString('id_kelas') ?? '';
-    _walikelasId = prefs.getString('walikelas_id') ?? '';
+    teacherClassId = prefs.getString('id_kelas') ?? '';
+    walikelasId = prefs.getString('walikelas_id') ?? '';
 
-    if (_teacherClassId.isEmpty || _walikelasId.isEmpty) {
+    if (teacherClassId.isEmpty || walikelasId.isEmpty) {
       setState(() {
-        _allActivities = [];
-        _filteredActivities = [];
-        _isLoading = false;
-        _errorMessage = 'Data guru tidak ditemukan. Silakan login ulang.';
+        allActivities = [];
+        filteredActivities = [];
+        isLoading = false;
+        errorMessage = 'Data guru tidak ditemukan. Silakan login ulang.';
       });
       return;
     }
 
     try {
-      final activities = await _fetchActivitiesFromBackend();
+      final activities = await fetchActivitiesFromBackend();
       setState(() {
-        _allActivities = activities;
-        _isLoading = false;
+        allActivities = activities;
+        isLoading = false;
       });
-      _filterActivities();
+      filterActivities();
     } catch (e) {
       setState(() {
-        _isLoading = false;
-        _errorMessage = 'Gagal memuat aktivitas';
+        isLoading = false;
+        errorMessage = 'Gagal memuat aktivitas';
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -94,11 +93,11 @@ class _ActivityScreenState extends State<ActivityScreen>
     }
   }
 
-  Future<List<Activity>> _fetchActivitiesFromBackend() async {
+  Future<List<Activity>> fetchActivitiesFromBackend() async {
     final activities = <Activity>[];
 
     final apresiasiUrl =
-        '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$_walikelasId&id_kelas=$_teacherClassId';
+        '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$walikelasId&id_kelas=$teacherClassId';
     final apresiasiResponse = await http.get(Uri.parse(apresiasiUrl));
     if (apresiasiResponse.statusCode == 200) {
       final jsonData = jsonDecode(apresiasiResponse.body);
@@ -106,7 +105,7 @@ class _ActivityScreenState extends State<ActivityScreen>
         mapActivityLogsFromJson(
           json: Map<String, dynamic>.from(jsonData),
           category: 'Apresiasi',
-          classId: _teacherClassId,
+          classId: teacherClassId,
         ),
       );
     }
@@ -119,7 +118,7 @@ class _ActivityScreenState extends State<ActivityScreen>
           mapActivityLogsFromJson(
             json: Map<String, dynamic>.from(jsonData),
             category: 'Pelanggaran',
-            classId: _teacherClassId,
+            classId: teacherClassId,
           ),
         );
       } else {
@@ -129,11 +128,11 @@ class _ActivityScreenState extends State<ActivityScreen>
 
     try {
       await loadPelanggaran(
-        '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
+        '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$walikelasId&id_kelas=$teacherClassId',
       );
-    } catch (_) {
+    } catch (error) {
       await loadPelanggaran(
-        '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$_walikelasId&id_kelas=$_teacherClassId',
+        '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$walikelasId&id_kelas=$teacherClassId',
       );
     }
 
@@ -141,43 +140,43 @@ class _ActivityScreenState extends State<ActivityScreen>
     return activities;
   }
 
-  void _filterActivities() {
+  void filterActivities() {
     setState(() {
-      String selectedType = _selectedFilter.toLowerCase();
+      String selectedType = selectedFilter.toLowerCase();
 
-      _filteredActivities =
-          _allActivities.where((activity) {
+      filteredActivities =
+          allActivities.where((activity) {
             bool matchesFilter =
-                _selectedFilter == 'Semua' || activity.type == selectedType;
+                selectedFilter == 'Semua' || activity.type == selectedType;
 
             bool matchesSearch =
-                _searchQuery.isEmpty ||
+                searchQuery.isEmpty ||
                 activity.title.toLowerCase().contains(
-                  _searchQuery.toLowerCase(),
+                  searchQuery.toLowerCase(),
                 ) ||
                 activity.subtitle.toLowerCase().contains(
-                  _searchQuery.toLowerCase(),
+                  searchQuery.toLowerCase(),
                 );
 
             bool matchesDate =
-                _selectedDate == null ||
-                _isSameDay(activity.fullDate, _selectedDate!);
+                selectedDate == null ||
+                isSameDay(activity.fullDate, selectedDate!);
 
             return matchesFilter && matchesSearch && matchesDate;
           }).toList();
     });
   }
 
-  bool _isSameDay(DateTime date1, DateTime date2) {
+  bool isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
         date1.month == date2.month &&
         date1.day == date2.day;
   }
 
-  String _formatDate(DateTime date) {
-    if (_isSameDay(date, DateTime.now())) {
+  String formatDate(DateTime date) {
+    if (isSameDay(date, DateTime.now())) {
       return 'Hari ini';
-    } else if (_isSameDay(date, DateTime.now().subtract(Duration(days: 1)))) {
+    } else if (isSameDay(date, DateTime.now().subtract(Duration(days: 1)))) {
       return 'Kemarin';
     } else {
       List<String> months = [
@@ -198,10 +197,10 @@ class _ActivityScreenState extends State<ActivityScreen>
     }
   }
 
-  Future<void> _selectDate() async {
+  Future<void> selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
+      initialDate: selectedDate ?? DateTime.now(),
       firstDate: DateTime.now().subtract(Duration(days: 365)),
       lastDate: DateTime.now().add(Duration(days: 30)),
       builder: (context, child) {
@@ -219,19 +218,19 @@ class _ActivityScreenState extends State<ActivityScreen>
       },
     );
 
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null && picked != selectedDate) {
       setState(() {
-        _selectedDate = picked;
+        selectedDate = picked;
       });
-      _filterActivities();
+      filterActivities();
     }
   }
 
-  void _clearDate() {
+  void clearDate() {
     setState(() {
-      _selectedDate = null;
+      selectedDate = null;
     });
-    _filterActivities();
+    filterActivities();
   }
 
   @override
@@ -251,29 +250,29 @@ class _ActivityScreenState extends State<ActivityScreen>
               child: SizedBox(
                 width: maxWidth,
                 child: FadeTransition(
-                  opacity: _fadeAnimation,
+                  opacity: fadeAnimation,
                   child: Column(
                     children: [
-                      _buildAppBar(),
+                      buildAppBar(),
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(20),
                           child:
-                              _isLoading
+                              isLoading
                                   ? const Center(
                                     child: CircularProgressIndicator(),
                                   )
                                   : RefreshIndicator(
-                                    onRefresh: _loadActivities,
+                                    onRefresh: loadActivities,
                                     child:
-                                        _filteredActivities.isEmpty
+                                        filteredActivities.isEmpty
                                             ? ListView(
                                               physics:
                                                   const AlwaysScrollableScrollPhysics(),
                                               children: [
                                                 const SizedBox(height: 24),
-                                                _buildEmptyState(
-                                                  message: _errorMessage,
+                                                buildEmptyState(
+                                                  message: errorMessage,
                                                 ),
                                               ],
                                             )
@@ -281,21 +280,21 @@ class _ActivityScreenState extends State<ActivityScreen>
                                               physics:
                                                   const AlwaysScrollableScrollPhysics(),
                                               itemCount:
-                                                  _filteredActivities.length,
+                                                  filteredActivities.length,
                                               itemBuilder: (context, index) {
                                                 final activity =
-                                                    _filteredActivities[index];
+                                                    filteredActivities[index];
                                                 return Padding(
                                                   padding: EdgeInsets.only(
                                                     bottom:
                                                         index <
-                                                                _filteredActivities
+                                                                filteredActivities
                                                                         .length -
                                                                     1
                                                             ? 16
                                                             : 0,
                                                   ),
-                                                  child: _buildActivityCard(
+                                                  child: buildActivityCard(
                                                     activity,
                                                   ),
                                                 );
@@ -315,7 +314,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
-  Widget _buildAppBar() {
+  Widget buildAppBar() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -416,8 +415,8 @@ class _ActivityScreenState extends State<ActivityScreen>
                   Expanded(
                     child: TextField(
                       onChanged: (value) {
-                        _searchQuery = value;
-                        _filterActivities();
+                        searchQuery = value;
+                        filterActivities();
                       },
                       decoration: InputDecoration(
                         hintText: 'Cari aktivitas...',
@@ -458,7 +457,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: _selectedFilter,
+                        value: selectedFilter,
                         isExpanded: true,
                         icon: const Icon(
                           Icons.keyboard_arrow_down,
@@ -470,7 +469,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                           color: const Color(0xFF1F2937),
                         ),
                         items:
-                            _filterOptions.map((String value) {
+                            filterOptions.map((String value) {
                               return DropdownMenuItem<String>(
                                 value: value,
                                 child: Row(
@@ -493,9 +492,9 @@ class _ActivityScreenState extends State<ActivityScreen>
                         onChanged: (String? newValue) {
                           if (newValue != null) {
                             setState(() {
-                              _selectedFilter = newValue;
+                              selectedFilter = newValue;
                             });
-                            _filterActivities();
+                            filterActivities();
                           }
                         },
                       ),
@@ -504,13 +503,13 @@ class _ActivityScreenState extends State<ActivityScreen>
                 ),
                 const SizedBox(width: 12),
                 GestureDetector(
-                  onTap: _selectDate,
+                  onTap: selectDate,
                   child: Container(
                     height: 45,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
                       color:
-                          _selectedDate != null
+                          selectedDate != null
                               ? const Color(0xFF0083EE)
                               : Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -529,28 +528,28 @@ class _ActivityScreenState extends State<ActivityScreen>
                           Icons.calendar_today_outlined,
                           size: 18,
                           color:
-                              _selectedDate != null
+                              selectedDate != null
                                   ? Colors.white
                                   : const Color(0xFF6B7280),
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _selectedDate != null
-                              ? _formatDate(_selectedDate!)
+                          selectedDate != null
+                              ? formatDate(selectedDate!)
                               : 'Tanggal',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color:
-                                _selectedDate != null
+                                selectedDate != null
                                     ? Colors.white
                                     : const Color(0xFF6B7280),
                           ),
                         ),
-                        if (_selectedDate != null) ...[
+                        if (selectedDate != null) ...[
                           const SizedBox(width: 8),
                           GestureDetector(
-                            onTap: _clearDate,
+                            onTap: clearDate,
                             child: Icon(
                               Icons.close,
                               size: 16,
@@ -570,7 +569,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
-  Widget _buildEmptyState({String? message}) {
+  Widget buildEmptyState({String? message}) {
     final title =
         message != null
             ? 'Tidak dapat memuat aktivitas'
@@ -615,9 +614,9 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
-  Widget _buildActivityCard(Activity activity) {
+  Widget buildActivityCard(Activity activity) {
     return GestureDetector(
-      onTap: () => _showActivityDetail(activity),
+      onTap: () => showActivityDetail(activity),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -761,7 +760,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
-  void _showActivityDetail(Activity activity) {
+  void showActivityDetail(Activity activity) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -873,14 +872,14 @@ class _ActivityScreenState extends State<ActivityScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildDetailRow(
+                              buildDetailRow(
                                 'Waktu',
                                 '${activity.time} • ${activity.date}',
                               ),
                               const SizedBox(height: 16),
-                              _buildDetailRow('Deskripsi', activity.subtitle),
+                              buildDetailRow('Deskripsi', activity.subtitle),
                               const SizedBox(height: 16),
-                              _buildDetailRow('Detail', activity.details),
+                              buildDetailRow('Detail', activity.details),
                             ],
                           ),
                         ),
@@ -917,7 +916,7 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget buildDetailRow(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

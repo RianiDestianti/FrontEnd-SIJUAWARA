@@ -1,40 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:skoring/models/introduction.dart';
+import 'package:skoring/models/types/introduction.dart';
 import 'package:skoring/screens/introduction/swipeup.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:skoring/services/fcm_token_service.dart';
-
-import 'package:skoring/config/api_config.dart';
+import 'package:skoring/firebase/tokenfcm.dart';
+import 'package:skoring/config/api.dart';
 
 class IntroductionScreen extends StatefulWidget {
   const IntroductionScreen({super.key});
 
   @override
-  State<IntroductionScreen> createState() => _IntroductionScreenState();
+  State<IntroductionScreen> createState() => IntroductionScreenState();
 }
 
-class _IntroductionScreenState extends State<IntroductionScreen>
+class IntroductionScreenState extends State<IntroductionScreen>
     with TickerProviderStateMixin {
-  late final AnimationController _animationController;
-  late final AnimationController _swipeController;
-  late final AnimationController _loginController;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<Offset> _slideAnimation;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _swipeAnimation;
-  late final Animation<Offset> _loginSlideAnimation;
-  late final Animation<double> _loginFadeAnimation;
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-  double _swipeOffset = 0.0;
-  bool _showLoginOverlay = false;
+  late final AnimationController animationController;
+  late final AnimationController swipeController;
+  late final AnimationController loginController;
+  late final Animation<double> fadeAnimation;
+  late final Animation<Offset> slideAnimation;
+  late final Animation<double> scaleAnimation;
+  late final Animation<double> swipeAnimation;
+  late final Animation<Offset> loginSlideAnimation;
+  late final Animation<double> loginFadeAnimation;
+  final PageController pageController = PageController();
+  int currentPage = 0;
+  double swipeOffset = 0.0;
+  bool showLoginOverlay = false;
 
-  final List<PageData> _pages = [
+  final List<PageData> pages = [
     PageData(
       image: 'assets/batang.png',
       title: 'Selamat Datang di Sistem Skoring!',
@@ -64,116 +63,116 @@ class _IntroductionScreenState extends State<IntroductionScreen>
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
-    _pageController.addListener(_updateCurrentPage);
-    _animationController.forward();
+    initializeAnimations();
+    pageController.addListener(updateCurrentPage);
+    animationController.forward();
   }
 
-  void _initializeAnimations() {
-    _animationController = AnimationController(
+  void initializeAnimations() {
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _swipeController = AnimationController(
+    swipeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _loginController = AnimationController(
+    loginController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
+    slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.5),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+      CurvedAnimation(parent: animationController, curve: Curves.easeOutBack),
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic),
     );
-    _swipeAnimation = Tween<double>(
+    swipeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeOut));
-    _loginSlideAnimation = Tween<Offset>(
+    ).animate(CurvedAnimation(parent: swipeController, curve: Curves.easeOut));
+    loginSlideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _loginController, curve: Curves.easeOutCubic),
+      CurvedAnimation(parent: loginController, curve: Curves.easeOutCubic),
     );
-    _loginFadeAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
-      CurvedAnimation(parent: _loginController, curve: Curves.easeInOut),
+    loginFadeAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
+      CurvedAnimation(parent: loginController, curve: Curves.easeInOut),
     );
   }
 
-  void _updateCurrentPage() {
+  void updateCurrentPage() {
     setState(() {
-      _currentPage = _pageController.page?.round() ?? 0;
+      currentPage = pageController.page?.round() ?? 0;
     });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _swipeController.dispose();
-    _loginController.dispose();
-    _pageController.dispose();
+    animationController.dispose();
+    swipeController.dispose();
+    loginController.dispose();
+    pageController.dispose();
     super.dispose();
   }
 
-  void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
-      _pageController.nextPage(
+  void nextPage() {
+    if (currentPage < pages.length - 1) {
+      pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     }
   }
 
-  void _skipToFinalPage() {
-    _pageController.animateToPage(
-      _pages.length - 1,
+  void skipToFinalPage() {
+    pageController.animateToPage(
+      pages.length - 1,
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
   }
 
-  void _showLogin() {
-    setState(() => _showLoginOverlay = true);
-    _loginController.forward();
+  void showLogin() {
+    setState(() => showLoginOverlay = true);
+    loginController.forward();
   }
 
-  void _hideLogin() {
-    _loginController.reverse().then((_) {
-      setState(() => _showLoginOverlay = false);
+  void hideLogin() {
+    loginController.reverse().then((unused) {
+      setState(() => showLoginOverlay = false);
     });
   }
 
-  void _onPanUpdate(DragUpdateDetails details) {
-  setState(() {
-    if (details.delta.dy < 0) {
-      _swipeOffset += details.delta.dy;
-    } else {
-      _swipeOffset = _swipeOffset * 0.9;
-    }
-    _swipeOffset = _swipeOffset.clamp(-100.0, 0.0);
-  });
-}
+  void onPanUpdate(DragUpdateDetails details) {
+    setState(() {
+      if (details.delta.dy < 0) {
+        swipeOffset += details.delta.dy;
+      } else {
+        swipeOffset = swipeOffset * 0.9;
+      }
+      swipeOffset = swipeOffset.clamp(-100.0, 0.0);
+    });
+  }
 
-  void _onPanEnd(DragEndDetails details) {
-    if (_swipeOffset < -50) {
-      _swipeController.forward().then((_) {
-        _showLogin();
-        _swipeController.reset();
-        setState(() => _swipeOffset = 0.0);
+  void onPanEnd(DragEndDetails details) {
+    if (swipeOffset < -50) {
+      swipeController.forward().then((unused) {
+        showLogin();
+        swipeController.reset();
+        setState(() => swipeOffset = 0.0);
       });
     } else {
-      _swipeController.reverse();
-      setState(() => _swipeOffset = 0.0);
+      swipeController.reverse();
+      setState(() => swipeOffset = 0.0);
     }
   }
 
@@ -189,7 +188,7 @@ class _IntroductionScreenState extends State<IntroductionScreen>
 
     return Scaffold(
       backgroundColor:
-          _currentPage == _pages.length - 1
+          currentPage == pages.length - 1
               ? const Color(0xFF1E6BB8)
               : Colors.white,
       body: SafeArea(
@@ -200,44 +199,44 @@ class _IntroductionScreenState extends State<IntroductionScreen>
               children: [
                 Expanded(
                   child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _pages.length,
+                    controller: pageController,
+                    itemCount: pages.length,
                     itemBuilder:
                         (context, index) =>
-                            index == _pages.length - 1
-                                ? _FinalPage(
-                                  pageData: _pages[index],
-                                  scaleAnimation: _scaleAnimation,
-                                  fadeAnimation: _fadeAnimation,
-                                  swipeAnimation: _swipeAnimation,
-                                  swipeOffset: _swipeOffset,
-                                  onPanUpdate: _onPanUpdate,
-                                  onPanEnd: _onPanEnd,
+                            index == pages.length - 1
+                                ? FinalPage(
+                                  pageData: pages[index],
+                                  scaleAnimation: scaleAnimation,
+                                  fadeAnimation: fadeAnimation,
+                                  swipeAnimation: swipeAnimation,
+                                  swipeOffset: swipeOffset,
+                                  onPanUpdate: onPanUpdate,
+                                  onPanEnd: onPanEnd,
                                 )
-                                : _RegularPage(
-                                  pageData: _pages[index],
-                                  fadeAnimation: _fadeAnimation,
-                                  slideAnimation: _slideAnimation,
-                                  scaleAnimation: _scaleAnimation,
+                                : RegularPage(
+                                  pageData: pages[index],
+                                  fadeAnimation: fadeAnimation,
+                                  slideAnimation: slideAnimation,
+                                  scaleAnimation: scaleAnimation,
                                 ),
                   ),
                 ),
-                if (_currentPage != _pages.length - 1)
-                  _BottomNavigation(
-                    currentPage: _currentPage,
-                    pagesLength: _pages.length,
-                    onNext: _nextPage,
+                if (currentPage != pages.length - 1)
+                  BottomNavigation(
+                    currentPage: currentPage,
+                    pagesLength: pages.length,
+                    onNext: nextPage,
                   ),
               ],
             ),
-            if (_currentPage != _pages.length - 1)
-              _SkipButton(onSkip: _skipToFinalPage),
-            if (_showLoginOverlay)
-              _LoginOverlay(
-                loginController: _loginController,
-                loginFadeAnimation: _loginFadeAnimation,
-                loginSlideAnimation: _loginSlideAnimation,
-                onClose: _hideLogin,
+            if (currentPage != pages.length - 1)
+              SkipButton(onSkip: skipToFinalPage),
+            if (showLoginOverlay)
+              LoginOverlay(
+                loginController: loginController,
+                loginFadeAnimation: loginFadeAnimation,
+                loginSlideAnimation: loginSlideAnimation,
+                onClose: hideLogin,
                 onLogin: () {},
               ),
           ],
@@ -247,13 +246,13 @@ class _IntroductionScreenState extends State<IntroductionScreen>
   }
 }
 
-class _RegularPage extends StatelessWidget {
+class RegularPage extends StatelessWidget {
   final PageData pageData;
   final Animation<double> fadeAnimation;
   final Animation<Offset> slideAnimation;
   final Animation<double> scaleAnimation;
 
-  const _RegularPage({
+  const RegularPage({
     required this.pageData,
     required this.fadeAnimation,
     required this.slideAnimation,
@@ -288,7 +287,7 @@ class _RegularPage extends StatelessWidget {
                       SizedBox(height: screenHeight * 0.05),
                       ScaleTransition(
                         scale: scaleAnimation,
-                        child: _LayeredImage(
+                        child: LayeredImage(
                           image: pageData.image!,
                           size: isWeb ? 400 : screenWidth * 0.85,
                         ),
@@ -305,7 +304,7 @@ class _RegularPage extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: isWeb ? 24 : 16),
-                      _DescriptionBox(
+                      DescriptionBox(
                         description: pageData.description,
                         isWeb: isWeb,
                         screenWidth: screenWidth,
@@ -323,7 +322,7 @@ class _RegularPage extends StatelessWidget {
   }
 }
 
-class _FinalPage extends StatelessWidget {
+class FinalPage extends StatelessWidget {
   final PageData pageData;
   final Animation<double> scaleAnimation;
   final Animation<double> fadeAnimation;
@@ -332,7 +331,7 @@ class _FinalPage extends StatelessWidget {
   final Function(DragUpdateDetails) onPanUpdate;
   final Function(DragEndDetails) onPanEnd;
 
-  const _FinalPage({
+  const FinalPage({
     required this.pageData,
     required this.scaleAnimation,
     required this.fadeAnimation,
@@ -375,7 +374,7 @@ class _FinalPage extends StatelessWidget {
                     SizedBox(height: screenHeight * 0.05),
                     ScaleTransition(
                       scale: scaleAnimation,
-                      child: _LayeredImage(
+                      child: LayeredImage(
                         image: pageData.image!,
                         size: isWeb ? 400 : screenWidth * 0.85,
                       ),
@@ -433,11 +432,11 @@ class _FinalPage extends StatelessWidget {
   }
 }
 
-class _LayeredImage extends StatelessWidget {
+class LayeredImage extends StatelessWidget {
   final String image;
   final double size;
 
-  const _LayeredImage({required this.image, required this.size});
+  const LayeredImage({required this.image, required this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -474,12 +473,12 @@ class _LayeredImage extends StatelessWidget {
   }
 }
 
-class _DescriptionBox extends StatelessWidget {
+class DescriptionBox extends StatelessWidget {
   final String description;
   final bool isWeb;
   final double screenWidth;
 
-  const _DescriptionBox({
+  const DescriptionBox({
     required this.description,
     required this.isWeb,
     required this.screenWidth,
@@ -514,12 +513,12 @@ class _DescriptionBox extends StatelessWidget {
   }
 }
 
-class _BottomNavigation extends StatelessWidget {
+class BottomNavigation extends StatelessWidget {
   final int currentPage;
   final int pagesLength;
   final VoidCallback onNext;
 
-  const _BottomNavigation({
+  const BottomNavigation({
     required this.currentPage,
     required this.pagesLength,
     required this.onNext,
@@ -554,17 +553,17 @@ class _BottomNavigation extends StatelessWidget {
             }),
           ),
           SizedBox(height: isWeb ? 32 : 24),
-          _GradientButton(text: 'Lanjut', onTap: onNext, isWeb: isWeb),
+          GradientButton(text: 'Lanjut', onTap: onNext, isWeb: isWeb),
         ],
       ),
     );
   }
 }
 
-class _SkipButton extends StatelessWidget {
+class SkipButton extends StatelessWidget {
   final VoidCallback onSkip;
 
-  const _SkipButton({required this.onSkip});
+  const SkipButton({required this.onSkip});
 
   @override
   Widget build(BuildContext context) {
@@ -610,14 +609,14 @@ class _SkipButton extends StatelessWidget {
   }
 }
 
-class _LoginOverlay extends StatelessWidget {
+class LoginOverlay extends StatelessWidget {
   final AnimationController loginController;
   final Animation<double> loginFadeAnimation;
   final Animation<Offset> loginSlideAnimation;
   final VoidCallback onClose;
   final VoidCallback onLogin;
 
-  const _LoginOverlay({
+  const LoginOverlay({
     required this.loginController,
     required this.loginFadeAnimation,
     required this.loginSlideAnimation,
@@ -647,7 +646,7 @@ class _LoginOverlay extends StatelessWidget {
               position: loginSlideAnimation,
               child: Align(
                 alignment: Alignment.bottomCenter,
-                child: _LoginForm(onClose: onClose, onLogin: onLogin),
+                child: LoginForm(onClose: onClose, onLogin: onLogin),
               ),
             ),
           ],
@@ -657,136 +656,147 @@ class _LoginOverlay extends StatelessWidget {
   }
 }
 
-class _LoginForm extends StatefulWidget {
+class LoginForm extends StatefulWidget {
   final VoidCallback onClose;
   final VoidCallback onLogin;
 
-  const _LoginForm({required this.onClose, required this.onLogin});
+  const LoginForm({required this.onClose, required this.onLogin});
 
   @override
-  State<_LoginForm> createState() => _LoginFormState();
+  State<LoginForm> createState() => LoginFormState();
 }
 
-class _LoginFormState extends State<_LoginForm> {
-  final TextEditingController _nipController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  bool _isPasswordVisible = false;
-  final LocalAuthentication _localAuth = LocalAuthentication();
-  bool _canCheckBiometrics = false;
+class LoginFormState extends State<LoginForm> {
+  final TextEditingController nipController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool isPasswordVisible = false;
+  final LocalAuthentication localAuth = LocalAuthentication();
+  bool canCheckBiometrics = false;
 
   @override
   void initState() {
     super.initState();
-    _checkBiometrics();
+    checkBiometrics();
   }
 
-  Future<void> _checkBiometrics() async {
+  Future<void> checkBiometrics() async {
     try {
-      final canCheck = await _localAuth.canCheckBiometrics;
-      setState(() => _canCheckBiometrics = canCheck);
-    } catch (_) {
-      setState(() => _canCheckBiometrics = false);
+      final canCheck = await localAuth.canCheckBiometrics;
+      setState(() => canCheckBiometrics = canCheck);
+    } catch (error) {
+      setState(() => canCheckBiometrics = false);
     }
   }
 
-  void _showSnackBar(BuildContext context, String message) {
+  void showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-void _handleLogin() async {
-  String nip = _nipController.text.trim();
-  String password = _passwordController.text.trim();
-  if (nip.isEmpty || password.isEmpty) {
-    _showSnackBar(context, "Harap isi NIP dan password");
-    return;
-  }
-  try {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/login'),
-      body: {"nip": nip, "password": password},
-    );
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode == 200 && data['status'] == true) {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Simpan data user (TANPA TOKEN)
-      await prefs.setString(
-        'walikelas_id',
-        data['detail']['nip_walikelas']?.toString() ?? '',
-      );
-      await prefs.setString('role', data['role'].toString());
-      await prefs.setString(
-        'name',
-        data['detail']['nama_walikelas'] ?? data['user']['username'],
-      );
-      await prefs.setString('email', data['user']['email'] ?? 'Unknown');
-      await prefs.setString('phone', 'Unknown');
-      await prefs.setString(
-        'joinDate',
-        data['detail']['created_at'] ?? 'Unknown',
-      );
-      await prefs.setString(
-        'id_kelas',
-        data['detail']['id_kelas'] ?? 'Unknown',
-      );
-      await prefs.setString(
-        'jurusan',
-        data['detail']['jurusan'] ?? 'Unknown',
-      );
-      // Simpan kredensial untuk login biometrik cepat (non-token)
-      await prefs.setString('biometric_nip', nip);
-      await prefs.setString('biometric_password', password);
-      await FcmTokenService.instance.syncToken();
-
-      // Cek role dan navigasi
-      String role = data['role'].toString();
-      if (role == '3') {
-        Navigator.pushNamedAndRemoveUntil(context, '/walikelas', (route) => false);
-      } else if (role == '4') {
-        Navigator.pushNamedAndRemoveUntil(context, '/kaprog', (route) => false);
-      } else {
-        _showSnackBar(context, "Role tidak dikenali");
-      }
-    } else {
-      _showSnackBar(context, data['message'] ?? 'Gagal masuk');
+  void handleLogin() async {
+    String nip = nipController.text.trim();
+    String password = passwordController.text.trim();
+    if (nip.isEmpty || password.isEmpty) {
+      showSnackBar(context, "Harap isi NIP dan password");
+      return;
     }
-  } catch (e) {
-    _showSnackBar(context, "Terjadi kesalahan: $e");
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/login'),
+        body: {"nip": nip, "password": password},
+      );
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['status'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+
+        // Simpan data user (TANPA TOKEN)
+        await prefs.setString(
+          'walikelas_id',
+          data['detail']['nip_walikelas']?.toString() ?? '',
+        );
+        await prefs.setString('role', data['role'].toString());
+        await prefs.setString(
+          'name',
+          data['detail']['nama_walikelas'] ?? data['user']['username'],
+        );
+        await prefs.setString('email', data['user']['email'] ?? 'Unknown');
+        await prefs.setString('phone', 'Unknown');
+        await prefs.setString(
+          'joinDate',
+          data['detail']['created_at'] ?? 'Unknown',
+        );
+        await prefs.setString(
+          'id_kelas',
+          data['detail']['id_kelas'] ?? 'Unknown',
+        );
+        await prefs.setString(
+          'jurusan',
+          data['detail']['jurusan'] ?? 'Unknown',
+        );
+        // Simpan kredensial untuk login biometrik cepat (non-token)
+        await prefs.setString('biometric_nip', nip);
+        await prefs.setString('biometric_password', password);
+        await FcmTokenService.instance.syncToken();
+
+        // Cek role dan navigasi
+        String role = data['role'].toString();
+        if (role == '3') {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/walikelas',
+            (route) => false,
+          );
+        } else if (role == '4') {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/kaprog',
+            (route) => false,
+          );
+        } else {
+          showSnackBar(context, "Role tidak dikenali");
+        }
+      } else {
+        showSnackBar(context, data['message'] ?? 'Gagal masuk');
+      }
+    } catch (e) {
+      showSnackBar(context, "Terjadi kesalahan: $e");
+    }
+    widget.onLogin();
   }
-  widget.onLogin();
-}
 
   @override
   void dispose() {
-    _nipController.dispose();
-    _passwordController.dispose();
+    nipController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleBiometricLogin() async {
+  Future<void> handleBiometricLogin() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedNip = prefs.getString('biometric_nip') ?? '';
       final savedPassword = prefs.getString('biometric_password') ?? '';
       if (savedNip.isEmpty || savedPassword.isEmpty) {
-        _showSnackBar(context, "Belum ada data login tersimpan. Masuk manual dulu.");
+        showSnackBar(
+          context,
+          "Belum ada data login tersimpan. Masuk manual dulu.",
+        );
         return;
       }
 
-      final didAuth = await _localAuth.authenticate(
+      final didAuth = await localAuth.authenticate(
         localizedReason: 'Autentikasi dengan sidik jari untuk login cepat',
         options: const AuthenticationOptions(biometricOnly: true),
       );
       if (!didAuth) return;
 
-      _nipController.text = savedNip;
-      _passwordController.text = savedPassword;
-      _handleLogin();
+      nipController.text = savedNip;
+      passwordController.text = savedPassword;
+      handleLogin();
     } catch (e) {
-      _showSnackBar(context, "Biometrik gagal: $e");
+      showSnackBar(context, "Biometrik gagal: $e");
     }
   }
 
@@ -812,40 +822,40 @@ void _handleLogin() async {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _HandleBar(onTap: widget.onClose),
+          HandleBar(onTap: widget.onClose),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(isWeb ? 32.0 : 24.0),
               child: Column(
                 children: [
                   SizedBox(height: isWeb ? 32 : 20),
-                  _LoginHeader(isWeb: isWeb),
+                  LoginHeader(isWeb: isWeb),
                   SizedBox(height: isWeb ? 48 : 40),
-                  _LoginTextField(
+                  LoginTextField(
                     hintText: 'Masukkan NIP anda',
                     icon: Icons.person_outline,
-                    controller: _nipController,
+                    controller: nipController,
                     isWeb: isWeb,
                   ),
                   SizedBox(height: isWeb ? 24 : 20),
-                  _LoginTextField(
+                  LoginTextField(
                     hintText: 'Masukkan password anda',
                     icon: Icons.lock_outline,
-                    obscureText: !_isPasswordVisible,
+                    obscureText: !isPasswordVisible,
                     suffixIcon:
-                        _isPasswordVisible
+                        isPasswordVisible
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                    controller: _passwordController,
+                    controller: passwordController,
                     isWeb: isWeb,
                     onSuffixIconTap: () {
                       setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
+                        isPasswordVisible = !isPasswordVisible;
                       });
                     },
                   ),
                   SizedBox(height: isWeb ? 32 : 24),
-                  if (_canCheckBiometrics)
+                  if (canCheckBiometrics)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -866,13 +876,13 @@ void _handleLogin() async {
                             fontSize: isWeb ? 15 : 14,
                           ),
                         ),
-                        onPressed: _handleBiometricLogin,
+                        onPressed: handleBiometricLogin,
                       ),
                     ),
                   SizedBox(height: isWeb ? 20 : 16),
-                  _GradientButton(
+                  GradientButton(
                     text: 'Masuk',
-                    onTap: _handleLogin,
+                    onTap: handleLogin,
                     isWeb: isWeb,
                   ),
                   SizedBox(height: isWeb ? 24 : 20),
@@ -886,10 +896,10 @@ void _handleLogin() async {
   }
 }
 
-class _HandleBar extends StatelessWidget {
+class HandleBar extends StatelessWidget {
   final VoidCallback onTap;
 
-  const _HandleBar({required this.onTap});
+  const HandleBar({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -910,10 +920,10 @@ class _HandleBar extends StatelessWidget {
   }
 }
 
-class _LoginHeader extends StatelessWidget {
+class LoginHeader extends StatelessWidget {
   final bool isWeb;
 
-  const _LoginHeader({required this.isWeb});
+  const LoginHeader({required this.isWeb});
 
   @override
   Widget build(BuildContext context) {
@@ -966,7 +976,7 @@ class _LoginHeader extends StatelessWidget {
   }
 }
 
-class _LoginTextField extends StatelessWidget {
+class LoginTextField extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final bool obscureText;
@@ -975,7 +985,7 @@ class _LoginTextField extends StatelessWidget {
   final bool isWeb;
   final VoidCallback? onSuffixIconTap;
 
-  const _LoginTextField({
+  const LoginTextField({
     required this.hintText,
     required this.icon,
     this.obscureText = false,
@@ -1021,12 +1031,12 @@ class _LoginTextField extends StatelessWidget {
   }
 }
 
-class _GradientButton extends StatelessWidget {
+class GradientButton extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
   final bool isWeb;
 
-  const _GradientButton({
+  const GradientButton({
     required this.text,
     required this.onTap,
     required this.isWeb,

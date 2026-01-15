@@ -5,9 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:skoring/config/api_config.dart';
-import 'package:skoring/models/walikelas/chartdataitem.dart';
+import 'package:skoring/config/api.dart';
+import 'package:skoring/models/types/chart.dart';
 
 class GrafikScreen extends StatefulWidget {
   final String chartType;
@@ -22,49 +21,49 @@ class GrafikScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<GrafikScreen> createState() => _GrafikScreenState();
+  State<GrafikScreen> createState() => GrafikScreenState();
 }
 
-class _GrafikScreenState extends State<GrafikScreen>
+class GrafikScreenState extends State<GrafikScreen>
     with TickerProviderStateMixin {
-  int _selectedPeriod = 0;
-  int _selectedChartType = 0;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  String _teacherClassId = '';
-  String _nipWalikelas = '';
-  List<ChartDataItem> _chartData = [];
+  int selectedPeriod = 0;
+  int selectedChartType = 0;
+  late AnimationController animationController;
+  late Animation<double> fadeAnimation;
+  late Animation<Offset> slideAnimation;
+  String teacherClassId = '';
+  String nipWalikelas = '';
+  List<ChartDataItem> chartData = [];
   bool isLoading = true;
   String? errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(
+    slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+      CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic),
     );
-    _animationController.forward();
-    _loadTeacherData();
+    animationController.forward();
+    loadTeacherData();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    animationController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadTeacherData() async {
+  Future<void> loadTeacherData() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -73,11 +72,11 @@ class _GrafikScreenState extends State<GrafikScreen>
     try {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
-        _teacherClassId = prefs.getString('id_kelas') ?? '';
-        _nipWalikelas = prefs.getString('walikelas_id') ?? '';
+        teacherClassId = prefs.getString('id_kelas') ?? '';
+        nipWalikelas = prefs.getString('walikelas_id') ?? '';
       });
 
-      if (_teacherClassId.isEmpty || _nipWalikelas.isEmpty) {
+      if (teacherClassId.isEmpty || nipWalikelas.isEmpty) {
         setState(() {
           errorMessage = 'Data guru tidak lengkap. Silakan login ulang.';
           isLoading = false;
@@ -85,7 +84,7 @@ class _GrafikScreenState extends State<GrafikScreen>
         return;
       }
 
-      await _fetchChartData();
+      await fetchChartData();
     } catch (e) {
       setState(() {
         errorMessage = 'Gagal memuat data: $e';
@@ -94,7 +93,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     }
   }
 
-  Future<void> _fetchChartData() async {
+  Future<void> fetchChartData() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -106,16 +105,16 @@ class _GrafikScreenState extends State<GrafikScreen>
           isApresiasi ? 'skoring_penghargaan' : 'skoring_pelanggaran';
       final fallbackEndpoint = isApresiasi ? null : 'skoring_2pelanggaran';
 
-      Future<http.Response> _doRequest(String endpoint) {
+      Future<http.Response> doRequest(String endpoint) {
         final uri = Uri.parse(
-          '${ApiConfig.baseUrl}/$endpoint?nip=$_nipWalikelas&id_kelas=$_teacherClassId',
+          '${ApiConfig.baseUrl}/$endpoint?nip=$nipWalikelas&id_kelas=$teacherClassId',
         );
         return http.get(uri, headers: {'Accept': 'application/json'});
       }
 
-      http.Response response = await _doRequest(primaryEndpoint);
+      http.Response response = await doRequest(primaryEndpoint);
       if (response.statusCode != 200 && fallbackEndpoint != null) {
-        final retry = await _doRequest(fallbackEndpoint);
+        final retry = await doRequest(fallbackEndpoint);
         if (retry.statusCode == 200) {
           response = retry;
         }
@@ -144,7 +143,7 @@ class _GrafikScreenState extends State<GrafikScreen>
                   (item) => siswaData.any(
                     (s) =>
                         s['nis'].toString() == item['nis'].toString() &&
-                        s['id_kelas'].toString() == _teacherClassId,
+                        s['id_kelas'].toString() == teacherClassId,
                   ),
                 )
                 .toList();
@@ -171,11 +170,11 @@ class _GrafikScreenState extends State<GrafikScreen>
         }
 
         setState(() {
-          if (_selectedPeriod == 0) {
+          if (selectedPeriod == 0) {
             final weekly =
                 weeklyData.entries.toList()
                   ..sort((a, b) => a.key.compareTo(b.key));
-            _chartData =
+            chartData =
                 weekly
                     .map(
                       (e) => ChartDataItem(
@@ -185,16 +184,16 @@ class _GrafikScreenState extends State<GrafikScreen>
                       ),
                     )
                     .toList();
-          } else if (_selectedPeriod == 1) {
+          } else if (selectedPeriod == 1) {
             final monthly =
                 monthlyData.entries.toList()
                   ..sort((a, b) => a.key.compareTo(b.key));
-            _chartData =
+            chartData =
                 monthly
                     .map(
                       (e) => ChartDataItem(
                         value: e.value,
-                        label: _getMonthName(int.parse(e.key.split('-')[1])),
+                        label: getMonthName(int.parse(e.key.split('-')[1])),
                         detail: 'Total: ${e.value.toInt()} kasus',
                       ),
                     )
@@ -203,7 +202,7 @@ class _GrafikScreenState extends State<GrafikScreen>
             final yearly =
                 yearlyData.entries.toList()
                   ..sort((a, b) => a.key.compareTo(b.key));
-            _chartData =
+            chartData =
                 yearly
                     .map(
                       (e) => ChartDataItem(
@@ -231,15 +230,15 @@ class _GrafikScreenState extends State<GrafikScreen>
     }
   }
 
-  Future<void> _refreshData() async {
-    if (_teacherClassId.isEmpty || _nipWalikelas.isEmpty) {
-      await _loadTeacherData();
+  Future<void> refreshData() async {
+    if (teacherClassId.isEmpty || nipWalikelas.isEmpty) {
+      await loadTeacherData();
       return;
     }
-    await _fetchChartData();
+    await fetchChartData();
   }
 
-  String _getMonthName(int month) {
+  String getMonthName(int month) {
     const months = [
       'Jan',
       'Feb',
@@ -257,8 +256,8 @@ class _GrafikScreenState extends State<GrafikScreen>
     return months[month - 1];
   }
 
-  String _getPeriodLabel() {
-    return ['Minggu Ini', 'Bulan Ini', 'Tahun Ini'][_selectedPeriod];
+  String getPeriodLabel() {
+    return ['Minggu Ini', 'Bulan Ini', 'Tahun Ini'][selectedPeriod];
   }
 
   @override
@@ -278,7 +277,7 @@ class _GrafikScreenState extends State<GrafikScreen>
                 style: GoogleFonts.poppins(color: Colors.red),
               ),
               ElevatedButton(
-                onPressed: _loadTeacherData,
+                onPressed: loadTeacherData,
                 child: Text('Coba Lagi', style: GoogleFonts.poppins()),
               ),
             ],
@@ -302,31 +301,31 @@ class _GrafikScreenState extends State<GrafikScreen>
               child: SizedBox(
                 width: maxWidth,
                 child: FadeTransition(
-                  opacity: _fadeAnimation,
+                  opacity: fadeAnimation,
                   child: SlideTransition(
-                    position: _slideAnimation,
+                    position: slideAnimation,
                     child: Column(
                       children: [
-                        _buildAppBar(),
+                        buildAppBar(),
                         Expanded(
                           child: RefreshIndicator(
-                            onRefresh: _refreshData,
+                            onRefresh: refreshData,
                             child: SingleChildScrollView(
                               physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.all(20),
                               child: Column(
                                 children: [
-                                  _buildStatisticsCards(),
+                                  buildStatisticsCards(),
                                   const SizedBox(height: 20),
-                                  _buildPeriodSelector(),
+                                  buildPeriodSelector(),
                                   const SizedBox(height: 20),
-                                  _buildChartTypeSelector(),
+                                  buildChartTypeSelector(),
                                   const SizedBox(height: 20),
-                                  _buildMainChart(),
+                                  buildMainChart(),
                                   const SizedBox(height: 20),
-                                  _buildDetailedAnalysis(),
+                                  buildDetailedAnalysis(),
                                   const SizedBox(height: 20),
-                                  _buildTrendAnalysis(),
+                                  buildTrendAnalysis(),
                                 ],
                               ),
                             ),
@@ -344,7 +343,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildAppBar() {
+  Widget buildAppBar() {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -421,18 +420,18 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildStatisticsCards() {
-    double total = _chartData.fold(0.0, (sum, item) => sum + item.value);
-    double average = _chartData.isNotEmpty ? total / _chartData.length : 0.0;
+  Widget buildStatisticsCards() {
+    double total = chartData.fold(0.0, (sum, item) => sum + item.value);
+    double average = chartData.isNotEmpty ? total / chartData.length : 0.0;
     double max =
-        _chartData.isNotEmpty
-            ? _chartData.map((e) => e.value).reduce((a, b) => a > b ? a : b)
+        chartData.isNotEmpty
+            ? chartData.map((e) => e.value).reduce((a, b) => a > b ? a : b)
             : 0.0;
 
     return Row(
       children: [
         Expanded(
-          child: _buildStatCard(
+          child: buildStatCard(
             'Total',
             total.toInt().toString(),
             Icons.analytics_outlined,
@@ -441,7 +440,7 @@ class _GrafikScreenState extends State<GrafikScreen>
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _buildStatCard(
+          child: buildStatCard(
             'Rata-rata',
             average.toInt().toString(),
             Icons.trending_up,
@@ -450,7 +449,7 @@ class _GrafikScreenState extends State<GrafikScreen>
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _buildStatCard(
+          child: buildStatCard(
             'Tertinggi',
             max.toInt().toString(),
             Icons.north,
@@ -461,12 +460,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -513,7 +507,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildPeriodSelector() {
+  Widget buildPeriodSelector() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -532,14 +526,14 @@ class _GrafikScreenState extends State<GrafikScreen>
             ['Minggu', 'Bulan', 'Tahun'].asMap().entries.map((entry) {
               int index = entry.key;
               String period = entry.value;
-              bool isActive = _selectedPeriod == index;
+              bool isActive = selectedPeriod == index;
 
               return Expanded(
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      _selectedPeriod = index;
-                      _fetchChartData();
+                      selectedPeriod = index;
+                      fetchChartData();
                     });
                   },
                   child: AnimatedContainer(
@@ -581,7 +575,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildChartTypeSelector() {
+  Widget buildChartTypeSelector() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -604,11 +598,11 @@ class _GrafikScreenState extends State<GrafikScreen>
             ].asMap().entries.map((entry) {
               int index = entry.key;
               Map<String, dynamic> chartType = entry.value;
-              bool isActive = _selectedChartType == index;
+              bool isActive = selectedChartType == index;
 
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => _selectedChartType = index),
+                  onTap: () => setState(() => selectedChartType = index),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -649,7 +643,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildMainChart() {
+  Widget buildMainChart() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -670,7 +664,7 @@ class _GrafikScreenState extends State<GrafikScreen>
             children: [
               Expanded(
                 child: Text(
-                  'Grafik ${widget.title} - ${_getPeriodLabel()}',
+                  'Grafik ${widget.title} - ${getPeriodLabel()}',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -696,7 +690,7 @@ class _GrafikScreenState extends State<GrafikScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _getPeriodLabel(),
+                  getPeriodLabel(),
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 10,
@@ -707,23 +701,23 @@ class _GrafikScreenState extends State<GrafikScreen>
             ],
           ),
           const SizedBox(height: 20),
-          if (_chartData.isEmpty)
-            _buildEmptyState('Tidak ada data untuk periode ini')
-          else if (_selectedChartType == 0)
-            _buildBarChart()
-          else if (_selectedChartType == 1)
-            _buildPieChart()
+          if (chartData.isEmpty)
+            buildEmptyState('Tidak ada data untuk periode ini')
+          else if (selectedChartType == 0)
+            buildBarChart()
+          else if (selectedChartType == 1)
+            buildPieChart()
           else
-            _buildLineChart(),
+            buildLineChart(),
         ],
       ),
     );
   }
 
-  Widget _buildBarChart() {
+  Widget buildBarChart() {
     double maxValue =
-        _chartData.isNotEmpty
-            ? _chartData.map((e) => e.value).reduce((a, b) => a > b ? a : b)
+        chartData.isNotEmpty
+            ? chartData.map((e) => e.value).reduce((a, b) => a > b ? a : b)
             : 1.0;
 
     return Container(
@@ -784,7 +778,7 @@ class _GrafikScreenState extends State<GrafikScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children:
-                        _chartData.map((item) {
+                        chartData.map((item) {
                           double value = item.value;
                           double height = (value / maxValue) * 150;
                           return Container(
@@ -820,7 +814,7 @@ class _GrafikScreenState extends State<GrafikScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children:
-                      _chartData.map((item) {
+                      chartData.map((item) {
                         return Text(
                           item.label,
                           style: GoogleFonts.poppins(
@@ -839,8 +833,8 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildPieChart() {
-    double total = _chartData.fold(0.0, (sum, item) => sum + item.value);
+  Widget buildPieChart() {
+    double total = chartData.fold(0.0, (sum, item) => sum + item.value);
 
     return Container(
       height: 250,
@@ -851,7 +845,7 @@ class _GrafikScreenState extends State<GrafikScreen>
             child: CustomPaint(
               size: const Size(150, 150),
               painter: PieChartPainter(
-                data: _chartData,
+                data: chartData,
                 total: total,
                 colors:
                     widget.chartType == 'apresiasi'
@@ -877,7 +871,7 @@ class _GrafikScreenState extends State<GrafikScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children:
-                  _chartData.asMap().entries.map((entry) {
+                  chartData.asMap().entries.map((entry) {
                     int index = entry.key;
                     ChartDataItem item = entry.value;
                     double percentage =
@@ -945,10 +939,10 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildLineChart() {
+  Widget buildLineChart() {
     double maxValue =
-        _chartData.isNotEmpty
-            ? _chartData.map((e) => e.value).reduce((a, b) => math.max(a, b))
+        chartData.isNotEmpty
+            ? chartData.map((e) => e.value).reduce((a, b) => math.max(a, b))
             : 1.0;
     if (maxValue <= 0) maxValue = 1.0;
 
@@ -1013,7 +1007,7 @@ class _GrafikScreenState extends State<GrafikScreen>
                 Expanded(
                   child: CustomPaint(
                     painter: LineChartPainter(
-                      data: _chartData,
+                      data: chartData,
                       maxValue: maxValue,
                       lineColor: baseColor,
                       fillColor: baseColor.withOpacity(0.15),
@@ -1032,7 +1026,7 @@ class _GrafikScreenState extends State<GrafikScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children:
-                      _chartData.map((item) {
+                      chartData.map((item) {
                         return Text(
                           item.label,
                           style: GoogleFonts.poppins(
@@ -1051,7 +1045,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildDetailedAnalysis() {
+  Widget buildDetailedAnalysis() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1102,16 +1096,16 @@ class _GrafikScreenState extends State<GrafikScreen>
             ],
           ),
           const SizedBox(height: 16),
-          if (_chartData.isEmpty)
-            _buildEmptyState('Tidak ada data untuk analisis')
+          if (chartData.isEmpty)
+            buildEmptyState('Tidak ada data untuk analisis')
           else
-            ..._chartData.map((item) => _buildDetailItem(item)).toList(),
+            ...chartData.map((item) => buildDetailItem(item)).toList(),
         ],
       ),
     );
   }
 
-  Widget _buildDetailItem(ChartDataItem item) {
+  Widget buildDetailItem(ChartDataItem item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -1176,16 +1170,16 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildTrendAnalysis() {
-    double total = _chartData.fold(0.0, (sum, item) => sum + item.value);
-    double average = _chartData.isNotEmpty ? total / _chartData.length : 0.0;
+  Widget buildTrendAnalysis() {
+    double total = chartData.fold(0.0, (sum, item) => sum + item.value);
+    double average = chartData.isNotEmpty ? total / chartData.length : 0.0;
 
     bool isIncreasing =
-        _chartData.length > 1 && _chartData.last.value > _chartData.first.value;
+        chartData.length > 1 && chartData.last.value > chartData.first.value;
     double changePercentage =
-        _chartData.length > 1
-            ? ((_chartData.last.value - _chartData.first.value) /
-                    _chartData.first.value *
+        chartData.length > 1
+            ? ((chartData.last.value - chartData.first.value) /
+                    chartData.first.value *
                     100)
                 .abs()
             : 0;
@@ -1242,7 +1236,7 @@ class _GrafikScreenState extends State<GrafikScreen>
           Row(
             children: [
               Expanded(
-                child: _buildTrendCard(
+                child: buildTrendCard(
                   'Status Tren',
                   isIncreasing ? 'Meningkat' : 'Menurun',
                   isIncreasing ? Icons.trending_up : Icons.trending_down,
@@ -1251,7 +1245,7 @@ class _GrafikScreenState extends State<GrafikScreen>
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildTrendCard(
+                child: buildTrendCard(
                   'Perubahan',
                   '${changePercentage.toInt()}%',
                   isIncreasing ? Icons.north : Icons.south,
@@ -1306,7 +1300,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildTrendCard(
+  Widget buildTrendCard(
     String title,
     String value,
     IconData icon,
@@ -1344,7 +1338,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  Widget _buildEmptyState(String message) {
+  Widget buildEmptyState(String message) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),

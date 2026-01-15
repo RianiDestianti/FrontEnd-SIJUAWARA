@@ -4,55 +4,54 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:skoring/config/api_config.dart';
-import 'package:skoring/models/walikelas/historyitem.dart';
+import 'package:skoring/config/api.dart';
+import 'package:skoring/models/types/history.dart';
 
 class HistoryScreen extends StatefulWidget {
   final Map<String, dynamic> student;
   const HistoryScreen({Key? key, required this.student}) : super(key: key);
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  State<HistoryScreen> createState() => HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen>
+class HistoryScreenState extends State<HistoryScreen>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  String _selectedFilter = 'Semua';
-  String _selectedTimeFilter = 'Semua';
-  bool _showOnlyNew = false;
+  late AnimationController animationController;
+  late Animation<double> fadeAnimation;
+  String selectedFilter = 'Semua';
+  String selectedTimeFilter = 'Semua';
+  bool showOnlyNew = false;
   List<HistoryItem> allHistory = [];
   bool isLoading = true;
   String? errorMessage;
   List<dynamic> aspekPenilaianData = [];
 
-  String _nipWalikelas = '';
-  String _idKelas = '';
+  String nipWalikelas = '';
+  String idKelas = '';
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
-    _animationController.forward();
-    _loadUserData();
+    animationController.forward();
+    loadUserData();
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _nipWalikelas = prefs.getString('walikelas_id') ?? '';
-      _idKelas = prefs.getString('id_kelas') ?? '';
+      nipWalikelas = prefs.getString('walikelas_id') ?? '';
+      idKelas = prefs.getString('id_kelas') ?? '';
     });
 
-    if (_nipWalikelas.isEmpty || _idKelas.isEmpty) {
+    if (nipWalikelas.isEmpty || idKelas.isEmpty) {
       setState(() {
         errorMessage = 'Data guru tidak lengkap. Silakan login ulang.';
         isLoading = false;
@@ -65,7 +64,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
+    animationController.dispose();
     super.dispose();
   }
 
@@ -76,7 +75,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     });
     try {
       final uri = Uri.parse(
-        '${ApiConfig.baseUrl}/aspekpenilaian?nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/aspekpenilaian?nip=$nipWalikelas&id_kelas=$idKelas',
       );
       final response = await http.get(
         uri,
@@ -118,10 +117,10 @@ class _HistoryScreenState extends State<HistoryScreen>
     });
     try {
       final skoringPenghargaanUri = Uri.parse(
-        '${ApiConfig.baseUrl}/skoring_penghargaan?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/skoring_penghargaan?nis=$nis&nip=$nipWalikelas&id_kelas=$idKelas',
       );
       var skoringPelanggaranUri = Uri.parse(
-        '${ApiConfig.baseUrl}/skoring_pelanggaran?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
+        '${ApiConfig.baseUrl}/skoring_pelanggaran?nis=$nis&nip=$nipWalikelas&id_kelas=$idKelas',
       );
 
       final skoringPenghargaanResponse = await http.get(
@@ -134,7 +133,7 @@ class _HistoryScreenState extends State<HistoryScreen>
       );
       if (skoringPelanggaranResponse.statusCode != 200) {
         skoringPelanggaranUri = Uri.parse(
-          '${ApiConfig.baseUrl}/skoring_2pelanggaran?nis=$nis&nip=$_nipWalikelas&id_kelas=$_idKelas',
+          '${ApiConfig.baseUrl}/skoring_2pelanggaran?nis=$nis&nip=$nipWalikelas&id_kelas=$idKelas',
         );
         skoringPelanggaranResponse = await http.get(
           skoringPelanggaranUri,
@@ -261,33 +260,33 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
   }
 
-  Future<void> _refreshData() async {
+  Future<void> refreshData() async {
     await fetchAspekPenilaian();
   }
 
-  void _sortHistory() {
+  void sortHistory() {
     allHistory.sort((a, b) {
       if (a.isNew != b.isNew) return a.isNew ? -1 : 1;
       return b.createdAt.compareTo(a.createdAt);
     });
   }
 
-  List<HistoryItem> _getFilteredHistory() {
+  List<HistoryItem> getFilteredHistory() {
     List<HistoryItem> filtered = List.from(allHistory);
 
-    if (_selectedFilter != 'Semua') {
-      if (_selectedFilter == 'Apresiasi') {
+    if (selectedFilter != 'Semua') {
+      if (selectedFilter == 'Apresiasi') {
         filtered = filtered.where((item) => !item.isPelanggaran).toList();
-      } else if (_selectedFilter == 'Pelanggaran') {
+      } else if (selectedFilter == 'Pelanggaran') {
         filtered = filtered.where((item) => item.isPelanggaran).toList();
       }
     }
 
-    if (_selectedTimeFilter != 'Semua') {
+    if (selectedTimeFilter != 'Semua') {
       DateTime now = DateTime.now();
       DateTime filterDate;
 
-      switch (_selectedTimeFilter) {
+      switch (selectedTimeFilter) {
         case '7 Hari':
           filterDate = now.subtract(const Duration(days: 7));
           break;
@@ -305,15 +304,15 @@ class _HistoryScreenState extends State<HistoryScreen>
           filtered.where((item) => item.createdAt.isAfter(filterDate)).toList();
     }
 
-    if (_showOnlyNew) {
+    if (showOnlyNew) {
       filtered = filtered.where((item) => item.isNew).toList();
     }
 
-    _sortHistory();
+    sortHistory();
     return filtered;
   }
 
-  void _showFilterBottomSheet() {
+  void showFilterBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -363,11 +362,11 @@ class _HistoryScreenState extends State<HistoryScreen>
                       spacing: 8,
                       children:
                           ['Semua', 'Apresiasi', 'Pelanggaran'].map((filter) {
-                            bool isSelected = _selectedFilter == filter;
+                            bool isSelected = selectedFilter == filter;
                             return GestureDetector(
                               onTap: () {
                                 setBottomSheetState(() {
-                                  _selectedFilter = filter;
+                                  selectedFilter = filter;
                                 });
                               },
                               child: Container(
@@ -420,11 +419,11 @@ class _HistoryScreenState extends State<HistoryScreen>
                           ['Semua', '7 Hari', '30 Hari', '3 Bulan'].map((
                             filter,
                           ) {
-                            bool isSelected = _selectedTimeFilter == filter;
+                            bool isSelected = selectedTimeFilter == filter;
                             return GestureDetector(
                               onTap: () {
                                 setBottomSheetState(() {
-                                  _selectedTimeFilter = filter;
+                                  selectedTimeFilter = filter;
                                 });
                               },
                               child: Container(
@@ -473,10 +472,10 @@ class _HistoryScreenState extends State<HistoryScreen>
                           ),
                         ),
                         Switch(
-                          value: _showOnlyNew,
+                          value: showOnlyNew,
                           onChanged: (value) {
                             setBottomSheetState(() {
-                              _showOnlyNew = value;
+                              showOnlyNew = value;
                             });
                           },
                           activeColor: const Color(0xFF0083EE),
@@ -518,7 +517,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  void _showSearchBottomSheet() {
+  void showSearchBottomSheet() {
     TextEditingController searchController = TextEditingController();
     List<HistoryItem> searchResults = [];
 
@@ -654,7 +653,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                             : ListView.builder(
                               itemCount: searchResults.length,
                               itemBuilder: (context, index) {
-                                return _buildSearchResultCard(
+                                return buildSearchResultCard(
                                   searchResults[index],
                                 );
                               },
@@ -669,7 +668,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildSearchResultCard(HistoryItem item) {
+  Widget buildSearchResultCard(HistoryItem item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -738,7 +737,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   @override
   Widget build(BuildContext context) {
-    List<HistoryItem> filteredHistory = _getFilteredHistory();
+    List<HistoryItem> filteredHistory = getFilteredHistory();
     List<HistoryItem> newItems =
         filteredHistory.where((item) => item.isNew).toList();
     List<HistoryItem> oldItems =
@@ -784,7 +783,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               child: SizedBox(
                 width: maxWidth,
                 child: FadeTransition(
-                  opacity: _fadeAnimation,
+                  opacity: fadeAnimation,
                   child: Column(
                     children: [
                       Container(
@@ -862,7 +861,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                               children: [
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: _showSearchBottomSheet,
+                                    onTap: showSearchBottomSheet,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 12,
@@ -897,7 +896,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: _showFilterBottomSheet,
+                                    onTap: showFilterBottomSheet,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 12,
@@ -934,9 +933,9 @@ class _HistoryScreenState extends State<HistoryScreen>
                           ],
                         ),
                       ),
-                      if (_selectedFilter != 'Semua' ||
-                          _selectedTimeFilter != 'Semua' ||
-                          _showOnlyNew)
+                      if (selectedFilter != 'Semua' ||
+                          selectedTimeFilter != 'Semua' ||
+                          showOnlyNew)
                         Container(
                           margin: const EdgeInsets.all(20),
                           padding: const EdgeInsets.all(12),
@@ -957,7 +956,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Filter aktif: ${_selectedFilter}${_selectedTimeFilter != 'Semua' ? ', $_selectedTimeFilter' : ''}${_showOnlyNew ? ', Data Terbaru' : ''}',
+                                  'Filter aktif: ${selectedFilter}${selectedTimeFilter != 'Semua' ? ', $selectedTimeFilter' : ''}${showOnlyNew ? ', Data Terbaru' : ''}',
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -968,9 +967,9 @@ class _HistoryScreenState extends State<HistoryScreen>
                               GestureDetector(
                                 onTap: () {
                                   setState(() {
-                                    _selectedFilter = 'Semua';
-                                    _selectedTimeFilter = 'Semua';
-                                    _showOnlyNew = false;
+                                    selectedFilter = 'Semua';
+                                    selectedTimeFilter = 'Semua';
+                                    showOnlyNew = false;
                                   });
                                 },
                                 child: const Icon(
@@ -984,7 +983,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                         ),
                       Expanded(
                         child: RefreshIndicator(
-                          onRefresh: _refreshData,
+                          onRefresh: refreshData,
                           child:
                               filteredHistory.isEmpty
                                   ? ListView(
@@ -1168,7 +1167,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                                           ...newItems
                                               .map(
                                                 (item) =>
-                                                    _buildHistoryCard(item),
+                                                    buildHistoryCard(item),
                                               )
                                               .toList(),
                                         ],
@@ -1286,7 +1285,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                                           ...oldItems
                                               .map(
                                                 (item) =>
-                                                    _buildHistoryCard(item),
+                                                    buildHistoryCard(item),
                                               )
                                               .toList(),
                                         ],
@@ -1306,7 +1305,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildHistoryCard(HistoryItem item) {
+  Widget buildHistoryCard(HistoryItem item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(

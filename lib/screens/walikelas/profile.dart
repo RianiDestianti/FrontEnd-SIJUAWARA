@@ -3,25 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:skoring/config/api_config.dart';
-import 'package:skoring/models/profile.dart';
+import 'package:skoring/config/api.dart';
+import 'package:skoring/models/types/profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
+class ProfileScreenState extends State<ProfileScreen>
     with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _buttonController;
-  late Animation<double> _fadeAnimation;
-  Profile? _profile;
-  bool _isLoading = true;
-  String? _errorMessage;
+  late AnimationController animationController;
+  late AnimationController buttonController;
+  late Animation<double> fadeAnimation;
+  Profile? profile;
+  bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -32,125 +32,127 @@ class _ProfileScreenState extends State<ProfileScreen>
         statusBarIconBrightness: Brightness.light,
       ),
     );
-    _animationController = AnimationController(
+    animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _buttonController = AnimationController(
+    buttonController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
     );
-    _loadProfile().then((_) => _animationController.forward());
+    loadProfile().then((unused) => animationController.forward());
   }
 
-Future<void> _loadProfile() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final nip = prefs.getString('walikelas_id') ?? 'Unknown';
-    final role = prefs.getString('role') ?? 'Unknown';
-    final name = prefs.getString('name') ?? 'Unknown';
-    final email = prefs.getString('email') ?? 'Unknown';
-    final joinDate = prefs.getString('joinDate') ?? 'Unknown';
+  Future<void> loadProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final nip = prefs.getString('walikelas_id') ?? 'Unknown';
+      final role = prefs.getString('role') ?? 'Unknown';
+      final name = prefs.getString('name') ?? 'Unknown';
+      final email = prefs.getString('email') ?? 'Unknown';
+      final joinDate = prefs.getString('joinDate') ?? 'Unknown';
 
-    String roleLabel = role == '3'
-        ? 'Wali Kelas'
-        : role == '4'
-            ? 'Kaprog'
-            : 'Unknown';
+      String roleLabel =
+          role == '3'
+              ? 'Wali Kelas'
+              : role == '4'
+              ? 'Kaprog'
+              : 'Unknown';
 
-    setState(() {
-      _profile = Profile(
-        name: name,
-        role: roleLabel,
-        nip: nip,
-        username: name,
-        email: email,
-        joinDate: joinDate,
-      );
-      _isLoading = false;
-    });
-  } catch (e) {
-    setState(() {
-      _errorMessage = 'Gagal memuat profil: $e';
-      _isLoading = false;
-    });
+      setState(() {
+        profile = Profile(
+          name: name,
+          role: roleLabel,
+          nip: nip,
+          username: name,
+          email: email,
+          joinDate: joinDate,
+        );
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Gagal memuat profil: $e';
+        isLoading = false;
+      });
+    }
   }
-}
+
   @override
   void dispose() {
-    _animationController.dispose();
-    _buttonController.dispose();
+    animationController.dispose();
+    buttonController.dispose();
     super.dispose();
   }
 
-  void _showLogoutDialog() {
+  void showLogoutDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext dialogContext) =>
-          LogoutDialog(
-            onLogout: _handleLogoutSuccess,
-            parentContext: context, 
+      builder:
+          (BuildContext dialogContext) => LogoutDialog(
+            onLogout: handleLogoutSuccess,
+            parentContext: context,
           ),
     );
   }
 
-  void _handleLogoutSuccess() {
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil('/login', (route) => false);
+  void handleLogoutSuccess() {
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0083EE)),
-            )
-          : _errorMessage != null
+      body:
+          isLoading
+              ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF0083EE)),
+              )
+              : errorMessage != null
               ? Center(
-                  child: Text(
-                    _errorMessage!,
-                    style: GoogleFonts.poppins(color: Colors.red),
-                  ),
-                )
+                child: Text(
+                  errorMessage!,
+                  style: GoogleFonts.poppins(color: Colors.red),
+                ),
+              )
               : Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
-                  child: SafeArea(
-                    top: true,
-                    bottom: false,
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Column(
-                        children: [
-                          HeaderSection(onBack: () => Navigator.pop(context)),
-                          if (_profile != null)
-                            Expanded(
-                              child: ProfileContentSection(
-                                profile: _profile!,
-                                profileFields: _getProfileFields(_profile!.role),
-                                onLogoutTap: _showLogoutDialog,
-                                buttonController: _buttonController,
-                              ),
+                ),
+                child: SafeArea(
+                  top: true,
+                  bottom: false,
+                  child: FadeTransition(
+                    opacity: fadeAnimation,
+                    child: Column(
+                      children: [
+                        HeaderSection(onBack: () => Navigator.pop(context)),
+                        if (profile != null)
+                          Expanded(
+                            child: ProfileContentSection(
+                              profile: profile!,
+                              profileFields: getProfileFields(profile!.role),
+                              onLogoutTap: showLogoutDialog,
+                              buttonController: buttonController,
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
+              ),
     );
   }
 
-  List<ProfileField> _getProfileFields(String role) {
+  List<ProfileField> getProfileFields(String role) {
     return [
       ProfileField(label: 'NIP', icon: Icons.badge_outlined, key: 'nip'),
       ProfileField(
@@ -261,16 +263,17 @@ class ProfileContentSection extends StatelessWidget {
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
-                  children: profileFields.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    ProfileField field = entry.value;
-                    return ProfileFieldCard(
-                      label: field.label,
-                      value: _getFieldValue(field.key, profile),
-                      icon: field.icon,
-                      index: index,
-                    );
-                  }).toList(),
+                  children:
+                      profileFields.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        ProfileField field = entry.value;
+                        return ProfileFieldCard(
+                          label: field.label,
+                          value: getFieldValue(field.key, profile),
+                          icon: field.icon,
+                          index: index,
+                        );
+                      }).toList(),
                 ),
               ),
             ),
@@ -285,7 +288,7 @@ class ProfileContentSection extends StatelessWidget {
     );
   }
 
-  String _getFieldValue(String key, Profile profile) {
+  String getFieldValue(String key, Profile profile) {
     switch (key) {
       case 'nip':
         return profile.nip;
@@ -589,8 +592,8 @@ class LogoutButton extends StatelessWidget {
     final iconSize = screenWidth * 0.05;
 
     return GestureDetector(
-      onTapDown: (_) => buttonController.forward(),
-      onTapUp: (_) => buttonController.reverse(),
+      onTapDown: (details) => buttonController.forward(),
+      onTapUp: (details) => buttonController.reverse(),
       onTapCancel: () => buttonController.reverse(),
       child: AnimatedBuilder(
         animation: buttonController,
@@ -630,8 +633,11 @@ class LogoutButton extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.logout_rounded,
-                            color: const Color(0xFFFF6B6B), size: iconSize * 1.3),
+                        Icon(
+                          Icons.logout_rounded,
+                          color: const Color(0xFFFF6B6B),
+                          size: iconSize * 1.3,
+                        ),
                         SizedBox(width: padding * 0.3),
                         Text(
                           'Keluar',
@@ -657,7 +663,7 @@ class LogoutButton extends StatelessWidget {
 
 class LogoutDialog extends StatefulWidget {
   final VoidCallback onLogout;
-  final BuildContext parentContext; 
+  final BuildContext parentContext;
 
   const LogoutDialog({
     super.key,
@@ -666,60 +672,58 @@ class LogoutDialog extends StatefulWidget {
   });
 
   @override
-  State<LogoutDialog> createState() => _LogoutDialogState();
+  State<LogoutDialog> createState() => LogoutDialogState();
 }
 
-class _LogoutDialogState extends State<LogoutDialog> {
-  bool _isLoggingOut = false;
+class LogoutDialogState extends State<LogoutDialog> {
+  bool isLoggingOut = false;
 
-Future<void> _logout() async {
-  setState(() => _isLoggingOut = true);
-  final prefs = await SharedPreferences.getInstance();
-  final nip = prefs.getString('walikelas_id') ?? '';
+  Future<void> logout() async {
+    setState(() => isLoggingOut = true);
+    final prefs = await SharedPreferences.getInstance();
+    final nip = prefs.getString('walikelas_id') ?? '';
 
-  if (nip.isEmpty) {
-    _showErrorSnackbar(widget.parentContext, 'Data guru tidak ditemukan.');
-    if (mounted) setState(() => _isLoggingOut = false);
-    return;
-  }
+    if (nip.isEmpty) {
+      showErrorSnackbar(widget.parentContext, 'Data guru tidak ditemukan.');
+      if (mounted) setState(() => isLoggingOut = false);
+      return;
+    }
 
-  try {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/logout?nip=$nip'),
-      headers: {
-        'Accept': 'application/json',
-      },
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/logout?nip=$nip'),
+        headers: {'Accept': 'application/json'},
+      );
 
-    print('Logout response: ${response.statusCode} - ${response.body}');
+      print('Logout response: ${response.statusCode} - ${response.body}');
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data['success'] == true) {
-        await prefs.clear();
-        widget.onLogout();
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          await prefs.clear();
+          widget.onLogout();
+        } else {
+          showErrorSnackbar(
+            widget.parentContext,
+            data['message'] ?? 'Gagal keluar.',
+          );
+        }
       } else {
-        _showErrorSnackbar(
+        final data = json.decode(response.body);
+        showErrorSnackbar(
           widget.parentContext,
           data['message'] ?? 'Gagal keluar.',
         );
       }
-    } else {
-      final data = json.decode(response.body);
-      _showErrorSnackbar(
-        widget.parentContext,
-        data['message'] ?? 'Gagal keluar.',
-      );
+    } catch (e) {
+      print('Logout error: $e');
+      showErrorSnackbar(widget.parentContext, 'Terjadi kesalahan: $e');
+    } finally {
+      if (mounted) setState(() => isLoggingOut = false);
     }
-  } catch (e) {
-    print('Logout error: $e');
-    _showErrorSnackbar(widget.parentContext, 'Terjadi kesalahan: $e');
-  } finally {
-    if (mounted) setState(() => _isLoggingOut = false);
   }
-}
 
-  void _showErrorSnackbar(BuildContext parentContext, String message) {
+  void showErrorSnackbar(BuildContext parentContext, String message) {
     ScaffoldMessenger.of(parentContext).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
@@ -728,24 +732,36 @@ Future<void> _logout() async {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Konfirmasi Keluar',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-      content: Text('Apakah Anda yakin ingin keluar?',
-          style: GoogleFonts.poppins()),
+      title: Text(
+        'Konfirmasi Keluar',
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      ),
+      content: Text(
+        'Apakah Anda yakin ingin keluar?',
+        style: GoogleFonts.poppins(),
+      ),
       actions: [
         TextButton(
-          onPressed: _isLoggingOut ? null : () => Navigator.pop(context),
-          child: Text('Batal',
-              style: GoogleFonts.poppins(color: Colors.grey[600])),
+          onPressed: isLoggingOut ? null : () => Navigator.pop(context),
+          child: Text(
+            'Batal',
+            style: GoogleFonts.poppins(color: Colors.grey[600]),
+          ),
         ),
         ElevatedButton(
-          onPressed: _isLoggingOut ? null : _logout,
+          onPressed: isLoggingOut ? null : logout,
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          child: _isLoggingOut
-              ? const SizedBox(
-                  width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text('Keluar',
-                  style: GoogleFonts.poppins(color: Colors.white)),
+          child:
+              isLoggingOut
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                  : Text(
+                    'Keluar',
+                    style: GoogleFonts.poppins(color: Colors.white),
+                  ),
         ),
       ],
     );
