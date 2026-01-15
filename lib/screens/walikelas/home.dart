@@ -12,6 +12,7 @@ import 'notification.dart';
 import 'package:skoring/screens/walikelas/profile.dart';
 import 'package:skoring/screens/walikelas/chart.dart';
 import 'package:skoring/screens/walikelas/activity.dart';
+import 'package:skoring/models/api/api_activity.dart';
 import 'detail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
