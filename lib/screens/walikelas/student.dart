@@ -312,7 +312,7 @@ class SiswaScreenState extends State<SiswaScreen>
                 errorMessageSiswa ??
                 'Gagal memuat data dari server',
             style: GoogleFonts.poppins(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14,
               fontWeight: FontWeight.w400,
             ),
@@ -342,7 +342,7 @@ class SiswaScreenState extends State<SiswaScreen>
           Text(
             'Jurusan: ${selectedKelas!.jurusan.toUpperCase()}',
             style: GoogleFonts.poppins(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14,
               fontWeight: FontWeight.w400,
             ),
@@ -351,7 +351,7 @@ class SiswaScreenState extends State<SiswaScreen>
           Text(
             'Total Siswa: $studentsInClass - Semester Ganjil 2025/2026',
             style: GoogleFonts.poppins(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -452,7 +452,7 @@ class SiswaScreenState extends State<SiswaScreen>
                                                 height: 40,
                                                 decoration: BoxDecoration(
                                                   color: Colors.white
-                                                      .withOpacity(0.2),
+                                                      .withValues(alpha: 0.2),
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                 ),
@@ -485,7 +485,7 @@ class SiswaScreenState extends State<SiswaScreen>
                                                   boxShadow: [
                                                     BoxShadow(
                                                       color: Colors.black
-                                                          .withOpacity(0.1),
+                                                          .withValues(alpha: 0.1),
                                                       blurRadius: 8,
                                                       offset: const Offset(
                                                         0,
@@ -524,9 +524,7 @@ class SiswaScreenState extends State<SiswaScreen>
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.08,
-                                              ),
+                                              color: Colors.black.withValues(alpha: 0.08,),
                                               blurRadius: 15,
                                               offset: const Offset(0, 5),
                                             ),
@@ -699,7 +697,7 @@ class SiswaScreenState extends State<SiswaScreen>
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: const Color(0xFFFF6B6D).withOpacity(0.1),
+              color: const Color(0xFFFF6B6D).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(50),
             ),
             child: const Icon(
@@ -742,13 +740,13 @@ class SiswaScreenState extends State<SiswaScreen>
           duration: const Duration(milliseconds: 200),
           height: 40,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.2),
+            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
             boxShadow:
                 isActive
                     ? [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -827,7 +825,7 @@ class SiswaScreenState extends State<SiswaScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -883,12 +881,12 @@ class SiswaScreenState extends State<SiswaScreen>
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: getStatusColor(student.status).withOpacity(0.2),
+            color: getStatusColor(student.status).withValues(alpha: 0.2),
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -981,7 +979,7 @@ class SiswaScreenState extends State<SiswaScreen>
               borderRadius: BorderRadius.circular(50),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0083EE).withOpacity(0.3),
+                  color: const Color(0xFF0083EE).withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -1025,7 +1023,7 @@ class SiswaScreenState extends State<SiswaScreen>
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0083EE).withOpacity(0.3),
+                    color: const Color(0xFF0083EE).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

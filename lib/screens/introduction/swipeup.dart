@@ -36,7 +36,7 @@ class SwipeUpButton extends StatelessWidget {
                         duration: const Duration(milliseconds: 200),
                         child: Icon(
                           Icons.keyboard_arrow_up,
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           size: 28,
                         ),
                       ),
@@ -73,7 +73,7 @@ class SwipeUpButton extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
                 ),

@@ -57,10 +57,10 @@ class FaqWidget extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFF0083EE).withOpacity(0.1),
+                color: const Color(0xFF0083EE).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF0083EE).withOpacity(0.2),
+                  color: const Color(0xFF0083EE).withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -231,7 +231,7 @@ class FaqWidget extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -289,7 +289,7 @@ class FaqWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withOpacity(0.1),
+              color: const Color(0xFF10B981).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: RichText(
@@ -338,7 +338,7 @@ class FaqWidget extends StatelessWidget {
         TextSpan(
           text: text.substring(index, index + searchQuery.length),
           style: baseStyle.copyWith(
-            backgroundColor: const Color(0xFFFFEB3B).withOpacity(0.3),
+            backgroundColor: const Color(0xFFFFEB3B).withValues(alpha: 0.3),
             fontWeight: FontWeight.w700,
           ),
         ),

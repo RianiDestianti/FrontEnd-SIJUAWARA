@@ -356,7 +356,7 @@ class GrafikScreenState extends State<GrafikScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -390,7 +390,7 @@ class GrafikScreenState extends State<GrafikScreen>
                       Text(
                         widget.subtitle,
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                         ),
@@ -401,7 +401,7 @@ class GrafikScreenState extends State<GrafikScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -468,7 +468,7 @@ class GrafikScreenState extends State<GrafikScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -480,7 +480,7 @@ class GrafikScreenState extends State<GrafikScreen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -515,7 +515,7 @@ class GrafikScreenState extends State<GrafikScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -583,7 +583,7 @@ class GrafikScreenState extends State<GrafikScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -651,7 +651,7 @@ class GrafikScreenState extends State<GrafikScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -1010,7 +1010,7 @@ class GrafikScreenState extends State<GrafikScreen>
                       data: chartData,
                       maxValue: maxValue,
                       lineColor: baseColor,
-                      fillColor: baseColor.withOpacity(0.15),
+                      fillColor: baseColor.withValues(alpha: 0.15),
                       pointColor: baseColor,
                     ),
                   ),
@@ -1053,7 +1053,7 @@ class GrafikScreenState extends State<GrafikScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -1099,7 +1099,7 @@ class GrafikScreenState extends State<GrafikScreen>
           if (chartData.isEmpty)
             buildEmptyState('Tidak ada data untuk analisis')
           else
-            ...chartData.map((item) => buildDetailItem(item)).toList(),
+            ...chartData.map((item) => buildDetailItem(item)),
         ],
       ),
     );
@@ -1171,9 +1171,6 @@ class GrafikScreenState extends State<GrafikScreen>
   }
 
   Widget buildTrendAnalysis() {
-    double total = chartData.fold(0.0, (sum, item) => sum + item.value);
-    double average = chartData.isNotEmpty ? total / chartData.length : 0.0;
-
     bool isIncreasing =
         chartData.length > 1 && chartData.last.value > chartData.first.value;
     double changePercentage =
@@ -1198,7 +1195,7 @@ class GrafikScreenState extends State<GrafikScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -1212,7 +1209,7 @@ class GrafikScreenState extends State<GrafikScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -1258,10 +1255,10 @@ class GrafikScreenState extends State<GrafikScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -1287,7 +1284,7 @@ class GrafikScreenState extends State<GrafikScreen>
                       : 'Tren menurun sangat baik! Pertahankan sistem pengawasan dan terus tingkatkan program kedisiplinan.',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontWeight: FontWeight.w400,
                     height: 1.4,
                   ),
@@ -1309,9 +1306,9 @@ class GrafikScreenState extends State<GrafikScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
       ),
       child: Column(
         children: [
@@ -1329,7 +1326,7 @@ class GrafikScreenState extends State<GrafikScreen>
             title,
             style: GoogleFonts.poppins(
               fontSize: 10,
-              color: textColor.withOpacity(0.8),
+              color: textColor.withValues(alpha: 0.8),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1358,7 +1355,7 @@ class GrafikScreenState extends State<GrafikScreen>
               borderRadius: BorderRadius.circular(40),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -1533,7 +1530,7 @@ class LineChartPainter extends CustomPainter {
         p,
         7,
         Paint()
-          ..color = pointColor.withOpacity(0.2)
+          ..color = pointColor.withValues(alpha: 0.2)
           ..style = PaintingStyle.fill,
       );
     }

@@ -56,6 +56,7 @@ class NotifikasiScreenState extends State<NotifikasiScreen>
           notificationsData = [];
           mostCriticalStatus = 'Aman';
         });
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -152,10 +153,11 @@ class NotifikasiScreenState extends State<NotifikasiScreen>
         throw Exception('Failed to load notifications: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching notifications: $e');
+      debugPrint('Error fetching notifications: $e');
       setState(() {
         isLoading = false;
       });
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -215,6 +217,7 @@ class NotifikasiScreenState extends State<NotifikasiScreen>
     final readStatuses =
         notificationsData.map((n) => n['id'].toString()).toList();
     await prefs.setStringList('notification_read_status', readStatuses);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -245,10 +248,25 @@ class NotifikasiScreenState extends State<NotifikasiScreen>
   void navigateToStudentDetail(Map<String, dynamic> notification) {
     final studentData = {
       'name': notification['student'],
-      'status': getStudentStatus(notification['statusChange']),
-      'nis': notification['nis'],
-      'class': 'Kelas Tidak Diketahui',
+      'nis': notification['nis'] ?? '-',
+      'kelas': notification['kelas'] ?? 'Kelas Tidak Diketahui',
+      'class': notification['class'] ?? 'Kelas Tidak Diketahui',
+      'programKeahlian': notification['programKeahlian'] ??
+          notification['program_keahlian'] ??
+          'Program Tidak Diketahui',
+      'points': notification['points'] ?? 0,
+      'poinApresiasi': notification['poinApresiasi'] ?? 0,
+      'poinPelanggaran': notification['poinPelanggaran'] ?? 0,
+      'spLevel': notification['spLevel'] ?? notification['sp_level'],
+      'phLevel': notification['phLevel'] ?? notification['ph_level'],
     };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetailScreen(student: studentData),
+      ),
+    );
   }
 
   @override
@@ -321,9 +339,7 @@ class NotifikasiScreenState extends State<NotifikasiScreen>
                                             vertical: padding * 0.4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(
-                                              0.2,
-                                            ),
+                                            color: Colors.white.withValues(alpha: 0.2,),
                                             borderRadius: BorderRadius.circular(
                                               20,
                                             ),
@@ -387,9 +403,7 @@ class NotifikasiScreenState extends State<NotifikasiScreen>
                                                 ? '$unreadCount belum dibaca'
                                                 : 'Semua sudah dibaca',
                                             style: GoogleFonts.poppins(
-                                              color: Colors.white.withOpacity(
-                                                0.9,
-                                              ),
+                                              color: Colors.white.withValues(alpha: 0.9,),
                                               fontSize: fontSize * 0.9,
                                               fontWeight: FontWeight.w400,
                                             ),
@@ -421,8 +435,9 @@ class NotifikasiScreenState extends State<NotifikasiScreen>
                                           ),
                                       onRefresh: fetchNotifications,
                                       onNotificationTap: (notif) {
-                                        if (!notif['isRead'])
+                                        if (!notif['isRead']) {
                                           markAsRead(notif['id']);
+                                        }
                                         showModalBottomSheet(
                                           context: context,
                                           isScrollControlled: true,
@@ -526,7 +541,7 @@ class ContentWidget extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFE5E7EB)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -772,15 +787,15 @@ class NotificationCardWidget extends StatelessWidget {
             color:
                 isRead
                     ? const Color(0xFFE5E7EB)
-                    : getTypeColor(status).withOpacity(0.3),
+                    : getTypeColor(status).withValues(alpha: 0.3),
             width: isRead ? 1 : 2,
           ),
           boxShadow: [
             BoxShadow(
               color:
                   isUrgent
-                      ? const Color(0xFFEA580C).withOpacity(0.1)
-                      : Colors.black.withOpacity(0.04),
+                      ? const Color(0xFFEA580C).withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.04),
               blurRadius: isUrgent ? 12 : 8,
               offset: const Offset(0, 2),
             ),
@@ -798,7 +813,7 @@ class NotificationCardWidget extends StatelessWidget {
                     width: fontSize * 3,
                     height: fontSize * 3,
                     decoration: BoxDecoration(
-                      color: getTypeColor(status).withOpacity(0.1),
+                      color: getTypeColor(status).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
@@ -820,7 +835,7 @@ class NotificationCardWidget extends StatelessWidget {
                                 vertical: padding * 0.2,
                               ),
                               decoration: BoxDecoration(
-                                color: getTypeColor(status).withOpacity(0.1),
+                                color: getTypeColor(status).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -907,7 +922,7 @@ class NotificationCardWidget extends StatelessWidget {
                         vertical: padding * 0.2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEA580C).withOpacity(0.1),
+                        color: const Color(0xFFEA580C).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -983,7 +998,7 @@ class NotificationDetailWidget extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: getTypeColor(
                     notification['statusChange'],
-                  ).withOpacity(0.1),
+                  ).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Icon(
@@ -1143,7 +1158,7 @@ class NotificationDetailWidget extends StatelessWidget {
                             vertical: padding * 0.2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0284C7).withOpacity(0.1),
+                            color: const Color(0xFF0284C7).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(

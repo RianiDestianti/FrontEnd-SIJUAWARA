@@ -186,10 +186,10 @@ class HeaderSection extends StatelessWidget {
               width: iconSize,
               height: iconSize,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(iconSize * 0.36),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -321,15 +321,15 @@ class ProfileHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF61B8FF).withOpacity(0.05),
-            const Color(0xFF0083EE).withOpacity(0.02),
+            const Color(0xFF61B8FF).withValues(alpha: 0.05),
+            const Color(0xFF0083EE).withValues(alpha: 0.02),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(padding * 0.75),
         border: Border.all(
-          color: const Color(0xFF61B8FF).withOpacity(0.1),
+          color: const Color(0xFF61B8FF).withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -349,7 +349,7 @@ class ProfileHeader extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0083EE).withOpacity(0.3),
+                      color: const Color(0xFF0083EE).withValues(alpha: 0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     ),
@@ -381,7 +381,7 @@ class ProfileHeader extends StatelessWidget {
                     border: Border.all(color: Colors.white, width: 3),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.4),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
                         blurRadius: 8,
                         offset: Offset(0, 2),
                       ),
@@ -423,7 +423,7 @@ class ProfileHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(padding * 0.4),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0083EE).withOpacity(0.3),
+                        color: const Color(0xFF0083EE).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: Offset(0, 2),
                       ),
@@ -484,17 +484,17 @@ class ProfileFieldCard extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(padding * 0.9),
                 border: Border.all(
-                  color: const Color(0xFF61B8FF).withOpacity(0.08),
+                  color: const Color(0xFF61B8FF).withValues(alpha: 0.08),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
                   BoxShadow(
-                    color: const Color(0xFF0083EE).withOpacity(0.02),
+                    color: const Color(0xFF0083EE).withValues(alpha: 0.02),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
@@ -508,13 +508,13 @@ class ProfileFieldCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFF61B8FF).withOpacity(0.1),
-                          const Color(0xFF0083EE).withOpacity(0.05),
+                          const Color(0xFF61B8FF).withValues(alpha: 0.1),
+                          const Color(0xFF0083EE).withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(iconSize * 0.3),
                       border: Border.all(
-                        color: const Color(0xFF61B8FF).withOpacity(0.1),
+                        color: const Color(0xFF61B8FF).withValues(alpha: 0.1),
                         width: 1,
                       ),
                     ),
@@ -555,7 +555,7 @@ class ProfileFieldCard extends StatelessWidget {
                     width: iconSize * 0.67,
                     height: iconSize * 0.67,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(iconSize * 0.2),
                     ),
                     child: const Icon(
@@ -606,18 +606,18 @@ class LogoutButton extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFFF6B6B).withOpacity(0.1),
-                    const Color(0xFFFF8E8E).withOpacity(0.05),
+                    const Color(0xFFFF6B6B).withValues(alpha: 0.1),
+                    const Color(0xFFFF8E8E).withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(padding * 0.5),
                 border: Border.all(
-                  color: const Color(0xFFFF6B6B).withOpacity(0.3),
+                  color: const Color(0xFFFF6B6B).withValues(alpha: 0.3),
                   width: 2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF6B6B).withOpacity(0.1),
+                    color: const Color(0xFFFF6B6B).withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

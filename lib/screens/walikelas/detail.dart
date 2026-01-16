@@ -486,9 +486,7 @@ class DetailScreenState extends State<DetailScreen>
                                         borderRadius: BorderRadius.circular(24),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              0.1,
-                                            ),
+                                            color: Colors.black.withValues(alpha: 0.1,),
                                             blurRadius: 20,
                                             offset: const Offset(0, 8),
                                           ),
@@ -507,7 +505,7 @@ class DetailScreenState extends State<DetailScreen>
                                                 BoxShadow(
                                                   color: const Color(
                                                     0xFFEA580C,
-                                                  ).withOpacity(0.2),
+                                                  ).withValues(alpha: 0.2),
                                                   blurRadius: 15,
                                                   offset: const Offset(0, 5),
                                                 ),
@@ -580,7 +578,7 @@ class DetailScreenState extends State<DetailScreen>
                                                         BoxShadow(
                                                           color: const Color(
                                                             0xFF0083EE,
-                                                          ).withOpacity(0.3),
+                                                          ).withValues(alpha: 0.3),
                                                           blurRadius: 8,
                                                           offset: const Offset(
                                                             0,
@@ -652,7 +650,7 @@ class DetailScreenState extends State<DetailScreen>
                                                         BoxShadow(
                                                           color: const Color(
                                                             0xFFFF6B6D,
-                                                          ).withOpacity(0.3),
+                                                          ).withValues(alpha: 0.3),
                                                           blurRadius: 8,
                                                           offset: const Offset(
                                                             0,
@@ -713,7 +711,7 @@ class DetailScreenState extends State<DetailScreen>
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
                                   ),
@@ -784,7 +782,7 @@ class DetailScreenState extends State<DetailScreen>
                                 borderRadius: BorderRadius.circular(25),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
                                   ),
@@ -826,7 +824,7 @@ class DetailScreenState extends State<DetailScreen>
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFF0083EE).withOpacity(0.1),
+              color: const Color(0xFF0083EE).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, size: 16, color: const Color(0xFF0083EE)),
@@ -1013,10 +1011,10 @@ class DetailScreenState extends State<DetailScreen>
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: item.color.withOpacity(0.2), width: 2),
+          border: Border.all(color: item.color.withValues(alpha: 0.2), width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -1031,7 +1029,7 @@ class DetailScreenState extends State<DetailScreen>
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: item.color.withOpacity(0.1),
+                    color: item.color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(item.icon, color: item.color, size: 24),
@@ -1160,7 +1158,7 @@ class DetailScreenState extends State<DetailScreen>
         border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1205,10 +1203,10 @@ class DetailScreenState extends State<DetailScreen>
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B6D).withOpacity(0.1),
+                    color: const Color(0xFFFF6B6D).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFFFF6B6D).withOpacity(0.2),
+                      color: const Color(0xFFFF6B6D).withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -1244,10 +1242,10 @@ class DetailScreenState extends State<DetailScreen>
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF10B981).withOpacity(0.2),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -1283,10 +1281,10 @@ class DetailScreenState extends State<DetailScreen>
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0083EE).withOpacity(0.1),
+                    color: const Color(0xFF0083EE).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF0083EE).withOpacity(0.2),
+                      color: const Color(0xFF0083EE).withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -1382,7 +1380,7 @@ class DetailScreenState extends State<DetailScreen>
               borderRadius: BorderRadius.circular(40),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0083EE).withOpacity(0.3),
+                  color: const Color(0xFF0083EE).withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),

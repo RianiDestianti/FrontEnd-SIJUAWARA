@@ -358,7 +358,7 @@ class ActivityScreenState extends State<ActivityScreen>
                       Text(
                         'Aktivitas skoring terbaru di kelas Anda',
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                         ),
@@ -369,7 +369,7 @@ class ActivityScreenState extends State<ActivityScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -389,7 +389,7 @@ class ActivityScreenState extends State<ActivityScreen>
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -449,7 +449,7 @@ class ActivityScreenState extends State<ActivityScreen>
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -515,7 +515,7 @@ class ActivityScreenState extends State<ActivityScreen>
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -553,7 +553,7 @@ class ActivityScreenState extends State<ActivityScreen>
                             child: Icon(
                               Icons.close,
                               size: 16,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                             ),
                           ),
                         ],
@@ -625,12 +625,12 @@ class ActivityScreenState extends State<ActivityScreen>
           border: Border.all(
             color: LinearGradient(
               colors: activity.gradient,
-            ).colors.first.withOpacity(0.1),
+            ).colors.first.withValues(alpha: 0.1),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -651,7 +651,7 @@ class ActivityScreenState extends State<ActivityScreen>
                       BoxShadow(
                         color: LinearGradient(
                           colors: activity.gradient,
-                        ).colors.first.withOpacity(0.3),
+                        ).colors.first.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -682,10 +682,10 @@ class ActivityScreenState extends State<ActivityScreen>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: activity.statusColor.withOpacity(0.1),
+                              color: activity.statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: activity.statusColor.withOpacity(0.3),
+                                color: activity.statusColor.withValues(alpha: 0.3),
                                 width: 1,
                               ),
                             ),
@@ -807,7 +807,7 @@ class ActivityScreenState extends State<ActivityScreen>
                                 BoxShadow(
                                   color: LinearGradient(
                                     colors: activity.gradient,
-                                  ).colors.first.withOpacity(0.3),
+                                  ).colors.first.withValues(alpha: 0.3),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -839,14 +839,10 @@ class ActivityScreenState extends State<ActivityScreen>
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: activity.statusColor.withOpacity(
-                                      0.1,
-                                    ),
+                                    color: activity.statusColor.withValues(alpha: 0.1,),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: activity.statusColor.withOpacity(
-                                        0.3,
-                                      ),
+                                      color: activity.statusColor.withValues(alpha: 0.3,),
                                       width: 1,
                                     ),
                                   ),

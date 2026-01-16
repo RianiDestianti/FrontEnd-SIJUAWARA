@@ -683,7 +683,7 @@ class HistoryScreenState extends State<HistoryScreen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: item.color.withOpacity(0.1),
+              color: item.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(item.icon, color: item.color, size: 20),
@@ -828,7 +828,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                       Text(
                                         '${widget.student['name']}',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.white.withOpacity(0.9),
+                                          color: Colors.white.withValues(alpha: 0.9),
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -842,7 +842,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: Colors.white.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -867,7 +867,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                         vertical: 12,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
@@ -902,7 +902,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                         vertical: 12,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
@@ -940,10 +940,10 @@ class HistoryScreenState extends State<HistoryScreen>
                           margin: const EdgeInsets.all(20),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0083EE).withOpacity(0.1),
+                            color: const Color(0xFF0083EE).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFF0083EE).withOpacity(0.2),
+                              color: const Color(0xFF0083EE).withValues(alpha: 0.2),
                             ),
                           ),
                           child: Row(
@@ -1088,7 +1088,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                                   ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white
-                                                        .withOpacity(0.2),
+                                                        .withValues(alpha: 0.2),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           10,
@@ -1129,9 +1129,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                                                       .w500,
                                                               color: Colors
                                                                   .white
-                                                                  .withOpacity(
-                                                                    0.8,
-                                                                  ),
+                                                                  .withValues(alpha: 0.8,),
                                                             ),
                                                       ),
                                                     ],
@@ -1145,7 +1143,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                                       ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white
-                                                        .withOpacity(0.2),
+                                                        .withValues(alpha: 0.2),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           12,
@@ -1206,7 +1204,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                                   ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white
-                                                        .withOpacity(0.2),
+                                                        .withValues(alpha: 0.2),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           10,
@@ -1247,9 +1245,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                                                       .w500,
                                                               color: Colors
                                                                   .white
-                                                                  .withOpacity(
-                                                                    0.8,
-                                                                  ),
+                                                                  .withValues(alpha: 0.8,),
                                                             ),
                                                       ),
                                                     ],
@@ -1263,7 +1259,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                                       ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white
-                                                        .withOpacity(0.2),
+                                                        .withValues(alpha: 0.2),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           12,
@@ -1311,10 +1307,10 @@ class HistoryScreenState extends State<HistoryScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: item.color.withOpacity(0.2), width: 2),
+        border: Border.all(color: item.color.withValues(alpha: 0.2), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1331,10 +1327,10 @@ class HistoryScreenState extends State<HistoryScreen>
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: item.color.withOpacity(0.15),
+                    color: item.color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: item.color.withOpacity(0.3),
+                      color: item.color.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -1385,9 +1381,9 @@ class HistoryScreenState extends State<HistoryScreen>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: item.color.withOpacity(0.1),
+                        color: item.color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: item.color.withOpacity(0.3)),
+                        border: Border.all(color: item.color.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         '${item.points > 0 ? '+' : '-'}${item.points.abs()}',

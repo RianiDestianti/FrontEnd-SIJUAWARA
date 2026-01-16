@@ -244,7 +244,7 @@ class BKNotePopupState extends State<BKNotePopup>
     return FadeTransition(
       opacity: fadeAnimation,
       child: Container(
-        color: Colors.black.withOpacity(0.6),
+        color: Colors.black.withValues(alpha: 0.6),
         child: Center(
           child: SlideTransition(
             position: slideAnimation,
@@ -309,7 +309,7 @@ class NoteDialogContent extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -431,7 +431,7 @@ class HeaderSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -457,7 +457,7 @@ class HeaderSection extends StatelessWidget {
                   'Catat hal penting untuk penanganan',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -468,7 +468,7 @@ class HeaderSection extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.close, color: Colors.white, size: 20),
@@ -510,7 +510,7 @@ class CustomTextField extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: (fillColor == null ? Colors.black : const Color(0xFFEF4444))
-                .withOpacity(0.1),
+                .withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 3),
           ),
@@ -651,7 +651,7 @@ class ActionButtons extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFEF4444).withOpacity(0.3),
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),

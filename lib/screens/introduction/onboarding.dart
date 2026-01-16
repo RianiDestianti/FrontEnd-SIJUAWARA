@@ -406,7 +406,7 @@ class FinalPage extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: isWeb ? 18 : 16,
                             fontWeight: FontWeight.w400,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             height: 1.5,
                           ),
                           textAlign: TextAlign.center,
@@ -445,19 +445,19 @@ class LayeredImage extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
       ),
       child: Container(
         margin: EdgeInsets.all(size * 0.07),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
         ),
         child: Container(
           margin: EdgeInsets.all(size * 0.07),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.25),
+            color: Colors.white.withValues(alpha: 0.25),
           ),
           child: Center(
             child: Image.asset(
@@ -493,10 +493,10 @@ class DescriptionBox extends StatelessWidget {
         vertical: isWeb ? 20 : 14,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFF61B8FF).withOpacity(0.1),
+        color: const Color(0xFF61B8FF).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(25),
         border: Border.all(
-          color: const Color(0xFF61B8FF).withOpacity(0.2),
+          color: const Color(0xFF61B8FF).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -584,12 +584,12 @@ class SkipButton extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF61B8FF).withOpacity(0.2),
+              color: const Color(0xFF61B8FF).withValues(alpha: 0.2),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0083EE).withOpacity(0.1),
+                color: const Color(0xFF0083EE).withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -1055,7 +1055,7 @@ class GradientButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0083EE).withOpacity(0.3),
+              color: const Color(0xFF0083EE).withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),

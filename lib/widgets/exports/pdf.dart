@@ -34,7 +34,7 @@ class PdfExport {
               style: const pw.TextStyle(fontSize: 10),
             ),
             pw.SizedBox(height: 20),
-            pw.Table.fromTextArray(
+            pw.TableHelper.fromTextArray(
               headers: ['Nama', 'Total Poin', 'Apresiasi', 'Pelanggaran'],
               data: students.map((student) => [
                     student['name'],
@@ -51,7 +51,7 @@ class PdfExport {
                 children: [
                   pw.SizedBox(height: 10),
                   pw.Text(student['name'], style: const pw.TextStyle(fontSize: 14)),
-                  pw.Table.fromTextArray(
+                  pw.TableHelper.fromTextArray(
                     headers: ['Keterangan', 'Tanggal', 'Poin', 'Tipe'],
                     data: (student['scores'] as List<Map<String, dynamic>>)
                         .map((score) => [
@@ -64,7 +64,7 @@ class PdfExport {
                   ),
                 ],
               );
-            }).toList(),
+            }),
           ];
         },
       ),
