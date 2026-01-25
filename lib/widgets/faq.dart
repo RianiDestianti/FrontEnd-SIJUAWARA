@@ -21,6 +21,9 @@ class FaqWidget extends StatelessWidget {
     final apresiasiEntries = entriesForType(filteredFaqData, 'apresiasi');
     final pelanggaranEntries = entriesForType(filteredFaqData, 'pelanggaran');
     final otherEntries = entriesForOtherTypes(filteredFaqData);
+    final apresiasiGroups = groupEntriesByTitle(apresiasiEntries);
+    final pelanggaranGroups = groupEntriesByTitle(pelanggaranEntries);
+    final otherGroups = groupEntriesByTitle(otherEntries);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,35 +86,17 @@ class FaqWidget extends StatelessWidget {
           ],
           if (apresiasiEntries.isNotEmpty) ...[
             sectionTitle('Lembar 1 - Penghargaan dan Apresiasi'),
-            ...apresiasiEntries.map(
-              (entry) => buildFaqSection(
-                entry.key,
-                entry.value['title']?.toString() ?? '',
-                buildItems(entry.value['items']),
-              ),
-            ),
+            buildCategoryTable(apresiasiGroups),
             const SizedBox(height: 24),
           ],
           if (pelanggaranEntries.isNotEmpty) ...[
             sectionTitle('Lembar 2 - Pelanggaran dan Sanksi'),
-            ...pelanggaranEntries.map(
-              (entry) => buildFaqSection(
-                entry.key,
-                entry.value['title']?.toString() ?? '',
-                buildItems(entry.value['items']),
-              ),
-            ),
+            buildCategoryTable(pelanggaranGroups),
             const SizedBox(height: 24),
           ],
           if (otherEntries.isNotEmpty) ...[
             sectionTitle('Lembar 3 - Lainnya'),
-            ...otherEntries.map(
-              (entry) => buildFaqSection(
-                entry.key,
-                entry.value['title']?.toString() ?? '',
-                buildItems(entry.value['items']),
-              ),
-            ),
+            buildCategoryTable(otherGroups),
             const SizedBox(height: 16),
           ],
           if (searchQuery.isEmpty) ...[
@@ -194,18 +179,24 @@ class FaqWidget extends StatelessWidget {
     }).toList();
   }
 
-  List<Widget> buildItems(dynamic items) {
-    final list = items as List<dynamic>? ?? [];
-    return list
-        .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
-        .map(
-          (item) => buildFaqItem(
-            item['text']?.toString() ?? '',
-            item['points']?.toString() ?? '',
-          ),
-        )
-        .toList();
+  Map<String, List<_FaqRow>> groupEntriesByTitle(
+    List<MapEntry<String, Map<String, dynamic>>> entries,
+  ) {
+    final Map<String, List<_FaqRow>> grouped = {};
+    for (final entry in entries) {
+      final title = entry.value['title']?.toString().trim();
+      final keyTitle = (title == null || title.isEmpty) ? 'Lainnya' : title;
+      final items = entry.value['items'] as List<dynamic>? ?? [];
+      for (final item in items.whereType<Map>()) {
+        final row = _FaqRow(
+          code: entry.key,
+          text: item['text']?.toString() ?? '',
+          points: item['points']?.toString() ?? '',
+        );
+        grouped.putIfAbsent(keyTitle, () => []).add(row);
+      }
+    }
+    return grouped;
   }
 
   Widget sectionTitle(String title) {
@@ -222,91 +213,199 @@ class FaqWidget extends StatelessWidget {
     );
   }
 
-  Widget buildFaqSection(String code, String title, List<Widget> items) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ExpansionTile(
-        initiallyExpanded: expandedSections[code] ?? false,
-        onExpansionChanged: (expanded) => onExpansionChanged(code, expanded),
-        title: RichText(
-          text: TextSpan(
-            children: highlightSearchText(
-              '$code - $title',
-              searchQuery,
-              GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1F2937),
+  Widget buildCategoryTable(Map<String, List<_FaqRow>> groups) {
+    final borderColor = const Color(0xFFE5E7EB);
+    if (groups.isEmpty) {
+      return buildEmptyTable();
+    }
+    int itemIndex = 0;
+    final children = <Widget>[
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0083EE).withValues(alpha: 0.08),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+          border: Border(bottom: BorderSide(color: borderColor)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 56,
+              child: Text(
+                'Kode',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2937),
+                ),
               ),
             ),
-          ),
-        ),
-        iconColor: const Color(0xFF0083EE),
-        collapsedIconColor: const Color(0xFF6B7280),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(children: items),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildFaqItem(String question, String answer) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                children: highlightSearchText(
-                  question,
-                  searchQuery,
-                  GoogleFonts.poppins(
-                    fontSize: 14,
+            Expanded(
+              flex: 5,
+              child: Text(
+                'Aturan',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2937),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 72,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  'Poin',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF1F2937),
                   ),
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    ];
+
+    for (final group in groups.entries) {
+      children.add(
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F4F6),
+            border: Border(bottom: BorderSide(color: borderColor)),
           ),
-          const SizedBox(width: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: RichText(
-              text: TextSpan(
-                children: highlightSearchText(
-                  answer,
-                  searchQuery,
-                  GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF10B981),
-                  ),
+          child: RichText(
+            text: TextSpan(
+              children: highlightSearchText(
+                group.key,
+                searchQuery,
+                GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1F2937),
                 ),
               ),
             ),
           ),
-        ],
+        ),
+      );
+
+      for (final row in group.value) {
+        final isStriped = itemIndex.isOdd;
+        itemIndex += 1;
+        children.add(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isStriped ? const Color(0xFFF9FAFB) : Colors.white,
+              border: Border(bottom: BorderSide(color: borderColor)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 56,
+                  child: RichText(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      children: highlightSearchText(
+                        row.code,
+                        searchQuery,
+                        GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1F2937),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 5,
+                  child: RichText(
+                    text: TextSpan(
+                      children: highlightSearchText(
+                        row.text,
+                        searchQuery,
+                        GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: const Color(0xFF1F2937),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 72,
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: RichText(
+                        text: TextSpan(
+                          children: highlightSearchText(
+                            row.points,
+                            searchQuery,
+                            GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF10B981),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget buildEmptyTable() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Center(
+        child: Text(
+          'Tidak ada poin untuk bagian ini.',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: const Color(0xFF6B7280),
+          ),
+        ),
       ),
     );
   }
@@ -354,4 +453,16 @@ class FaqWidget extends StatelessWidget {
 
     return spans;
   }
+}
+
+class _FaqRow {
+  final String code;
+  final String text;
+  final String points;
+
+  const _FaqRow({
+    required this.code,
+    required this.text,
+    required this.points,
+  });
 }

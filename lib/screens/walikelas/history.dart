@@ -17,11 +17,13 @@ class HistoryScreen extends StatefulWidget {
 
 class HistoryScreenState extends State<HistoryScreen>
     with TickerProviderStateMixin {
+  static const int _academicYearStartMonth = 7; // July
   late AnimationController animationController;
   late Animation<double> fadeAnimation;
   String selectedFilter = 'Semua';
   String selectedTimeFilter = 'Semua';
   bool showOnlyNew = false;
+  DateTimeRange? customDateRange;
   List<HistoryItem> allHistory = [];
   bool isLoading = true;
   String? errorMessage;
@@ -283,25 +285,26 @@ class HistoryScreenState extends State<HistoryScreen>
     }
 
     if (selectedTimeFilter != 'Semua') {
-      DateTime now = DateTime.now();
-      DateTime filterDate;
-
-      switch (selectedTimeFilter) {
-        case '7 Hari':
-          filterDate = now.subtract(const Duration(days: 7));
-          break;
-        case '30 Hari':
-          filterDate = now.subtract(const Duration(days: 30));
-          break;
-        case '3 Bulan':
-          filterDate = now.subtract(const Duration(days: 90));
-          break;
-        default:
-          filterDate = DateTime.fromMillisecondsSinceEpoch(0);
+      final now = DateTime.now();
+      _TimeRange? range;
+      if (selectedTimeFilter == 'Rentang Tanggal') {
+        if (customDateRange != null) {
+          range = _rangeFromCustom(customDateRange!);
+        }
+      } else {
+        range = _resolveTimeRange(now, selectedTimeFilter);
       }
-
-      filtered =
-          filtered.where((item) => item.createdAt.isAfter(filterDate)).toList();
+      if (range != null) {
+        final activeRange = range;
+        filtered =
+            filtered
+                .where(
+                  (item) =>
+                      !_isBeforeDay(item.createdAt, activeRange.start) &&
+                      item.createdAt.isBefore(activeRange.end),
+                )
+                .toList();
+      }
     }
 
     if (showOnlyNew) {
@@ -310,6 +313,62 @@ class HistoryScreenState extends State<HistoryScreen>
 
     sortHistory();
     return filtered;
+  }
+
+  _TimeRange? _resolveTimeRange(DateTime now, String filter) {
+    final today = DateTime(now.year, now.month, now.day);
+    switch (filter) {
+      case 'Mingguan':
+        final start = today.subtract(Duration(days: today.weekday - 1));
+        final end = start.add(const Duration(days: 7));
+        return _TimeRange(start, end);
+      case 'Bulanan':
+        final start = DateTime(today.year, today.month, 1);
+        final end = DateTime(today.year, today.month + 1, 1);
+        return _TimeRange(start, end);
+      case 'Semester':
+        final yearStart = _academicYearStartFor(today);
+        final semester1Start = DateTime(yearStart, _academicYearStartMonth, 1);
+        final semester1End = DateTime(yearStart + 1, 1, 1);
+        final semester2Start = semester1End;
+        final semester2End =
+            DateTime(yearStart + 1, _academicYearStartMonth, 1);
+        if (!today.isBefore(semester1Start) && today.isBefore(semester1End)) {
+          return _TimeRange(semester1Start, semester1End);
+        }
+        return _TimeRange(semester2Start, semester2End);
+      case 'Tahunan':
+        final yearStart = _academicYearStartFor(today);
+        final start = DateTime(yearStart, _academicYearStartMonth, 1);
+        final end = DateTime(yearStart + 1, _academicYearStartMonth, 1);
+        return _TimeRange(start, end);
+      default:
+        return null;
+    }
+  }
+
+  _TimeRange _rangeFromCustom(DateTimeRange range) {
+    final start = DateTime(range.start.year, range.start.month, range.start.day);
+    final endInclusive =
+        DateTime(range.end.year, range.end.month, range.end.day);
+    final endExclusive = endInclusive.add(const Duration(days: 1));
+    return _TimeRange(start, endExclusive);
+  }
+
+  int _academicYearStartFor(DateTime date) {
+    return date.month >= _academicYearStartMonth ? date.year : date.year - 1;
+  }
+
+  bool _isBeforeDay(DateTime value, DateTime day) {
+    final normalized = DateTime(value.year, value.month, value.day);
+    return normalized.isBefore(day);
+  }
+
+  String _formatDate(DateTime date) {
+    final y = date.year.toString();
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   void showFilterBottomSheet() {
@@ -416,7 +475,14 @@ class HistoryScreenState extends State<HistoryScreen>
                       spacing: 8,
                       runSpacing: 8,
                       children:
-                          ['Semua', '7 Hari', '30 Hari', '3 Bulan'].map((
+                          [
+                            'Semua',
+                            'Mingguan',
+                            'Bulanan',
+                            'Semester',
+                            'Tahunan',
+                            'Rentang Tanggal',
+                          ].map((
                             filter,
                           ) {
                             bool isSelected = selectedTimeFilter == filter;
@@ -459,6 +525,73 @@ class HistoryScreenState extends State<HistoryScreen>
                             );
                           }).toList(),
                     ),
+                    if (selectedTimeFilter == 'Rentang Tanggal') ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.date_range,
+                              size: 18,
+                              color: Color(0xFF6B7280),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                customDateRange == null
+                                    ? 'Pilih rentang tanggal'
+                                    : '${_formatDate(customDateRange!.start)} s/d ${_formatDate(customDateRange!.end)}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF374151),
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                final now = DateTime.now();
+                                final initialRange =
+                                    customDateRange ??
+                                    DateTimeRange(
+                                      start: DateTime(now.year, now.month, 1),
+                                      end: DateTime(now.year, now.month, now.day),
+                                    );
+                                final picked = await showDateRangePicker(
+                                  context: context,
+                                  firstDate: DateTime(now.year - 5, 1, 1),
+                                  lastDate: DateTime(now.year + 1, 12, 31),
+                                  initialDateRange: initialRange,
+                                  helpText: 'Pilih Rentang Tanggal',
+                                );
+                                if (picked != null) {
+                                  setBottomSheetState(() {
+                                    customDateRange = picked;
+                                  });
+                                }
+                              },
+                              child: Text(
+                                'Pilih',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF0083EE),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1162,12 +1295,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                               ],
                                             ),
                                           ),
-                                          ...newItems
-                                              .map(
-                                                (item) =>
-                                                    buildHistoryCard(item),
-                                              )
-                                              .toList(),
+                                          buildHistoryTable(newItems),
                                         ],
                                         if (oldItems.isNotEmpty) ...[
                                           if (newItems.isNotEmpty)
@@ -1278,12 +1406,7 @@ class HistoryScreenState extends State<HistoryScreen>
                                               ],
                                             ),
                                           ),
-                                          ...oldItems
-                                              .map(
-                                                (item) =>
-                                                    buildHistoryCard(item),
-                                              )
-                                              .toList(),
+                                          buildHistoryTable(oldItems),
                                         ],
                                       ],
                                     ),
@@ -1301,13 +1424,18 @@ class HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget buildHistoryCard(HistoryItem item) {
+  Widget buildHistoryTable(List<HistoryItem> items) {
+    final borderColor = const Color(0xFFE5E7EB);
+    if (items.isEmpty) {
+      return buildEmptyHistoryTable();
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: item.color.withValues(alpha: 0.2), width: 2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -1316,150 +1444,246 @@ class HistoryScreenState extends State<HistoryScreen>
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: item.color.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: item.color.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(item.icon, color: item.color, size: 28),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.type,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1F2937),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.description,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF6B7280),
-                          height: 1.4,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Kategori: ${item.kategori}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: item.color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: item.color.withValues(alpha: 0.3)),
-                      ),
-                      child: Text(
-                        '${item.points > 0 ? '+' : '-'}${item.points.abs()}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: item.color,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0083EE).withValues(alpha: 0.08),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border(bottom: BorderSide(color: borderColor)),
             ),
-            const SizedBox(height: 16),
-            Row(
+            child: Row(
               children: [
-                const Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: Color(0xFF9CA3AF),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '${item.date} • ${item.time}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF9CA3AF),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.person, size: 16, color: Color(0xFF9CA3AF)),
-                const SizedBox(width: 6),
-                Flexible(
+                SizedBox(
+                  width: 92,
                   child: Text(
-                    item.isPelanggaran
-                        ? 'Pelapor: ${item.pelapor ?? 'Tidak diketahui'}'
-                        : 'Oleh: ${item.pemberi ?? 'Tidak diketahui'}',
+                    'Tanggal',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF9CA3AF),
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1F2937),
                     ),
-                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(
+                  width: 82,
+                  child: Text(
+                    'Kategori',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Keterangan',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 56,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      'Poin',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1F2937),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-            if (item.isPelanggaran && item.pelanggaranKe != null) ...[
-              const SizedBox(height: 8),
-              Row(
+          ),
+          ...items.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            final isLast = index == items.length - 1;
+            final isStriped = index.isOdd;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isStriped ? const Color(0xFFF9FAFB) : Colors.white,
+                border:
+                    isLast ? null : Border(bottom: BorderSide(color: borderColor)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.warning, size: 16, color: Color(0xFF9CA3AF)),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      'Pelanggaran ke: ${item.pelanggaranKe}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF9CA3AF),
+                  SizedBox(
+                    width: 92,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.date,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                        ),
+                        Text(
+                          item.time,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: 82,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.kategori,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: item.color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: item.color.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Text(
+                            item.isPelanggaran ? 'Pelanggaran' : 'Apresiasi',
+                            style: GoogleFonts.poppins(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: item.color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.description,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.isPelanggaran
+                              ? 'Pelapor: ${item.pelapor ?? 'Tidak diketahui'}'
+                              : 'Oleh: ${item.pemberi ?? 'Tidak diketahui'}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                        if (item.isPelanggaran &&
+                            item.pelanggaranKe != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Pelanggaran ke: ${item.pelanggaranKe}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: 56,
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: item.color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: item.color.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Text(
+                          '${item.points > 0 ? '+' : '-'}${item.points.abs()}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: item.color,
+                          ),
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-            ],
-          ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget buildEmptyHistoryTable() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Center(
+        child: Text(
+          'Tidak ada data riwayat.',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF6B7280),
+          ),
         ),
       ),
     );
   }
+
+}
+
+class _TimeRange {
+  final DateTime start;
+  final DateTime end;
+
+  const _TimeRange(this.start, this.end);
 }
