@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:skoring/models/types/introduction.dart';
-import 'package:skoring/screens/introduction/swipeup.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,18 +19,18 @@ class IntroductionScreen extends StatefulWidget {
 class IntroductionScreenState extends State<IntroductionScreen>
     with TickerProviderStateMixin {
   late final AnimationController animationController;
-  late final AnimationController swipeController;
   late final AnimationController loginController;
   late final Animation<double> fadeAnimation;
   late final Animation<Offset> slideAnimation;
   late final Animation<double> scaleAnimation;
-  late final Animation<double> swipeAnimation;
   late final Animation<Offset> loginSlideAnimation;
   late final Animation<double> loginFadeAnimation;
+
   final PageController pageController = PageController();
   int currentPage = 0;
-  double swipeOffset = 0.0;
   bool showLoginOverlay = false;
+  bool isSwipeDetected = false;
+  double swipeStartY = 0;
 
   final List<PageData> pages = [
     PageData(
@@ -73,10 +72,7 @@ class IntroductionScreenState extends State<IntroductionScreen>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    swipeController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
+
     loginController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -85,25 +81,25 @@ class IntroductionScreenState extends State<IntroductionScreen>
     fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
+
     slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.5),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: animationController, curve: Curves.easeOutBack),
     );
+
     scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic),
     );
-    swipeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: swipeController, curve: Curves.easeOut));
+
     loginSlideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: loginController, curve: Curves.easeOutCubic),
     );
+
     loginFadeAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
       CurvedAnimation(parent: loginController, curve: Curves.easeInOut),
     );
@@ -118,7 +114,6 @@ class IntroductionScreenState extends State<IntroductionScreen>
   @override
   void dispose() {
     animationController.dispose();
-    swipeController.dispose();
     loginController.dispose();
     pageController.dispose();
     super.dispose();
@@ -152,28 +147,23 @@ class IntroductionScreenState extends State<IntroductionScreen>
     });
   }
 
+  void onPanStart(DragStartDetails details) {
+    swipeStartY = details.globalPosition.dy;
+    isSwipeDetected = false;
+  }
+
   void onPanUpdate(DragUpdateDetails details) {
-    setState(() {
-      if (details.delta.dy < 0) {
-        swipeOffset += details.delta.dy;
-      } else {
-        swipeOffset = swipeOffset * 0.9;
-      }
-      swipeOffset = swipeOffset.clamp(-100.0, 0.0);
-    });
+    // Check if user swiped up at least 50 pixels
+    if (!isSwipeDetected && 
+        swipeStartY - details.globalPosition.dy > 50) {
+      isSwipeDetected = true;
+      showLogin();
+    }
   }
 
   void onPanEnd(DragEndDetails details) {
-    if (swipeOffset < -50) {
-      swipeController.forward().then((unused) {
-        showLogin();
-        swipeController.reset();
-        setState(() => swipeOffset = 0.0);
-      });
-    } else {
-      swipeController.reverse();
-      setState(() => swipeOffset = 0.0);
-    }
+    // Reset for next swipe
+    isSwipeDetected = false;
   }
 
   @override
@@ -187,10 +177,9 @@ class IntroductionScreenState extends State<IntroductionScreen>
     );
 
     return Scaffold(
-      backgroundColor:
-          currentPage == pages.length - 1
-              ? const Color(0xFF1E6BB8)
-              : Colors.white,
+      backgroundColor: currentPage == pages.length - 1
+          ? const Color(0xFF1E6BB8)
+          : Colors.white,
       body: SafeArea(
         top: false,
         child: Stack(
@@ -201,24 +190,21 @@ class IntroductionScreenState extends State<IntroductionScreen>
                   child: PageView.builder(
                     controller: pageController,
                     itemCount: pages.length,
-                    itemBuilder:
-                        (context, index) =>
-                            index == pages.length - 1
-                                ? FinalPage(
-                                  pageData: pages[index],
-                                  scaleAnimation: scaleAnimation,
-                                  fadeAnimation: fadeAnimation,
-                                  swipeAnimation: swipeAnimation,
-                                  swipeOffset: swipeOffset,
-                                  onPanUpdate: onPanUpdate,
-                                  onPanEnd: onPanEnd,
-                                )
-                                : RegularPage(
-                                  pageData: pages[index],
-                                  fadeAnimation: fadeAnimation,
-                                  slideAnimation: slideAnimation,
-                                  scaleAnimation: scaleAnimation,
-                                ),
+                    itemBuilder: (context, index) => index == pages.length - 1
+                        ? FinalPage(
+                            pageData: pages[index],
+                            scaleAnimation: scaleAnimation,
+                            fadeAnimation: fadeAnimation,
+                            onPanStart: onPanStart,
+                            onPanUpdate: onPanUpdate,
+                            onPanEnd: onPanEnd,
+                          )
+                        : RegularPage(
+                            pageData: pages[index],
+                            fadeAnimation: fadeAnimation,
+                            slideAnimation: slideAnimation,
+                            scaleAnimation: scaleAnimation,
+                          ),
                   ),
                 ),
                 if (currentPage != pages.length - 1)
@@ -253,6 +239,7 @@ class RegularPage extends StatelessWidget {
   final Animation<double> scaleAnimation;
 
   const RegularPage({
+    super.key,
     required this.pageData,
     required this.fadeAnimation,
     required this.slideAnimation,
@@ -326,17 +313,16 @@ class FinalPage extends StatelessWidget {
   final PageData pageData;
   final Animation<double> scaleAnimation;
   final Animation<double> fadeAnimation;
-  final Animation<double> swipeAnimation;
-  final double swipeOffset;
+  final Function(DragStartDetails) onPanStart;
   final Function(DragUpdateDetails) onPanUpdate;
   final Function(DragEndDetails) onPanEnd;
 
   const FinalPage({
+    super.key,
     required this.pageData,
     required this.scaleAnimation,
     required this.fadeAnimation,
-    required this.swipeAnimation,
-    required this.swipeOffset,
+    required this.onPanStart,
     required this.onPanUpdate,
     required this.onPanEnd,
   });
@@ -347,36 +333,39 @@ class FinalPage extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final isWeb = screenWidth > 800;
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment.center,
-          radius: 1.0,
-          colors: [Color(0xFF4A90E2), Color(0xFF1E6BB8), Color(0xFF0F4A8C)],
-          stops: [0.3, 0.7, 1.0],
+    return GestureDetector(
+      onPanStart: onPanStart,
+      onPanUpdate: onPanUpdate,
+      onPanEnd: onPanEnd,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.0,
+            colors: [Color(0xFF4A90E2), Color(0xFF1E6BB8), Color(0xFF0F4A8C)],
+            stops: [0.3, 0.7, 1.0],
+          ),
         ),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Container(
-                padding: EdgeInsets.fromLTRB(
-                  isWeb ? screenWidth * 0.1 : 24.0,
-                  MediaQuery.of(context).padding.top + 20,
-                  isWeb ? screenWidth * 0.1 : 24.0,
-                  24.0,
-                ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isWeb ? screenWidth * 0.1 : 24.0,
+              vertical: 20.0,
+            ),
+            child: Center(
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(height: screenHeight * 0.05),
                     ScaleTransition(
                       scale: scaleAnimation,
                       child: LayeredImage(
                         image: pageData.image!,
-                        size: isWeb ? 400 : screenWidth * 0.85,
+                        size: isWeb ? 400 : screenWidth * 0.7,
                       ),
                     ),
                     SizedBox(height: isWeb ? 60 : 40),
@@ -385,7 +374,7 @@ class FinalPage extends StatelessWidget {
                       child: Text(
                         pageData.title,
                         style: GoogleFonts.poppins(
-                          fontSize: isWeb ? 36 : screenWidth * 0.08,
+                          fontSize: isWeb ? 36 : 24,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                           height: 1.2,
@@ -404,29 +393,50 @@ class FinalPage extends StatelessWidget {
                         child: Text(
                           pageData.description,
                           style: GoogleFonts.poppins(
-                            fontSize: isWeb ? 18 : 16,
+                            fontSize: isWeb ? 18 : 14,
                             fontWeight: FontWeight.w400,
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.white.withOpacity(0.8),
                             height: 1.5,
                           ),
                           textAlign: TextAlign.center,
                         ),
                       ),
                     ),
-                    SizedBox(height: isWeb ? 80 : 60),
-                    SwipeUpButton(
-                      swipeOffset: swipeOffset,
-                      swipeAnimation: swipeAnimation,
-                      onPanUpdate: onPanUpdate,
-                      onPanEnd: onPanEnd,
+                    SizedBox(height: isWeb ? 60 : 40),
+                    // Swipe up indicator
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.keyboard_arrow_up,
+                          color: Colors.white.withOpacity(0.6),
+                          size: 28,
+                        ),
+                        Transform.translate(
+                          offset: const Offset(0, -8),
+                          child: Icon(
+                            Icons.keyboard_arrow_up,
+                            color: Colors.white.withOpacity(0.9),
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Geser ke atas untuk masuk',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: screenHeight * 0.05),
                   ],
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -436,7 +446,7 @@ class LayeredImage extends StatelessWidget {
   final String image;
   final double size;
 
-  const LayeredImage({required this.image, required this.size});
+  const LayeredImage({super.key, required this.image, required this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -445,19 +455,19 @@ class LayeredImage extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.15),
+        color: Colors.white.withOpacity(0.15),
       ),
       child: Container(
         margin: EdgeInsets.all(size * 0.07),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withOpacity(0.2),
         ),
         child: Container(
           margin: EdgeInsets.all(size * 0.07),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.25),
+            color: Colors.white.withOpacity(0.25),
           ),
           child: Center(
             child: Image.asset(
@@ -479,6 +489,7 @@ class DescriptionBox extends StatelessWidget {
   final double screenWidth;
 
   const DescriptionBox({
+    super.key,
     required this.description,
     required this.isWeb,
     required this.screenWidth,
@@ -493,10 +504,10 @@ class DescriptionBox extends StatelessWidget {
         vertical: isWeb ? 20 : 14,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFF61B8FF).withValues(alpha: 0.1),
+        color: const Color(0xFF61B8FF).withOpacity(0.1),
         borderRadius: BorderRadius.circular(25),
         border: Border.all(
-          color: const Color(0xFF61B8FF).withValues(alpha: 0.2),
+          color: const Color(0xFF61B8FF).withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -519,6 +530,7 @@ class BottomNavigation extends StatelessWidget {
   final VoidCallback onNext;
 
   const BottomNavigation({
+    super.key,
     required this.currentPage,
     required this.pagesLength,
     required this.onNext,
@@ -543,10 +555,9 @@ class BottomNavigation extends StatelessWidget {
                 width: currentPage == index ? 12 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color:
-                      currentPage == index
-                          ? const Color(0xFF0083EE)
-                          : const Color(0xFF9CA3AF),
+                  color: currentPage == index
+                      ? const Color(0xFF0083EE)
+                      : const Color(0xFF9CA3AF),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -563,7 +574,7 @@ class BottomNavigation extends StatelessWidget {
 class SkipButton extends StatelessWidget {
   final VoidCallback onSkip;
 
-  const SkipButton({required this.onSkip});
+  const SkipButton({super.key, required this.onSkip});
 
   @override
   Widget build(BuildContext context) {
@@ -584,12 +595,12 @@ class SkipButton extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF61B8FF).withValues(alpha: 0.2),
+              color: const Color(0xFF61B8FF).withOpacity(0.2),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0083EE).withValues(alpha: 0.1),
+                color: const Color(0xFF0083EE).withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -617,6 +628,7 @@ class LoginOverlay extends StatelessWidget {
   final VoidCallback onLogin;
 
   const LoginOverlay({
+    super.key,
     required this.loginController,
     required this.loginFadeAnimation,
     required this.loginSlideAnimation,
@@ -660,7 +672,7 @@ class LoginForm extends StatefulWidget {
   final VoidCallback onClose;
   final VoidCallback onLogin;
 
-  const LoginForm({required this.onClose, required this.onLogin});
+  const LoginForm({super.key, required this.onClose, required this.onLogin});
 
   @override
   State<LoginForm> createState() => LoginFormState();
@@ -689,28 +701,30 @@ class LoginFormState extends State<LoginForm> {
   }
 
   void showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   void handleLogin() async {
     String nip = nipController.text.trim();
     String password = passwordController.text.trim();
+
     if (nip.isEmpty || password.isEmpty) {
       showSnackBar(context, "Harap isi NIP dan password");
       return;
     }
+
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/login'),
         body: {"nip": nip, "password": password},
       );
+
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['status'] == true) {
         final prefs = await SharedPreferences.getInstance();
-
         await prefs.setString(
           'walikelas_id',
           data['detail']['nip_walikelas']?.toString() ?? '',
@@ -736,9 +750,12 @@ class LoginFormState extends State<LoginForm> {
         );
         await prefs.setString('biometric_nip', nip);
         await prefs.setString('biometric_password', password);
+
         await FcmTokenService.instance.syncToken();
 
         String role = data['role'].toString();
+        if (!mounted) return;
+
         if (role == '3') {
           Navigator.pushNamedAndRemoveUntil(
             context,
@@ -758,8 +775,11 @@ class LoginFormState extends State<LoginForm> {
         showSnackBar(context, data['message'] ?? 'Gagal masuk');
       }
     } catch (e) {
-      showSnackBar(context, "Terjadi kesalahan: $e");
+      if (mounted) {
+        showSnackBar(context, "Terjadi kesalahan: $e");
+      }
     }
+
     widget.onLogin();
   }
 
@@ -775,6 +795,7 @@ class LoginFormState extends State<LoginForm> {
       final prefs = await SharedPreferences.getInstance();
       final savedNip = prefs.getString('biometric_nip') ?? '';
       final savedPassword = prefs.getString('biometric_password') ?? '';
+
       if (savedNip.isEmpty || savedPassword.isEmpty) {
         showSnackBar(
           context,
@@ -787,13 +808,16 @@ class LoginFormState extends State<LoginForm> {
         localizedReason: 'Autentikasi dengan sidik jari untuk login cepat',
         options: const AuthenticationOptions(biometricOnly: true),
       );
+
       if (!didAuth) return;
 
       nipController.text = savedNip;
       passwordController.text = savedPassword;
       handleLogin();
     } catch (e) {
-      showSnackBar(context, "Biometrik gagal: $e");
+      if (mounted) {
+        showSnackBar(context, "Biometrik gagal: $e");
+      }
     }
   }
 
@@ -839,10 +863,9 @@ class LoginFormState extends State<LoginForm> {
                     hintText: 'Masukkan password anda',
                     icon: Icons.lock_outline,
                     obscureText: !isPasswordVisible,
-                    suffixIcon:
-                        isPasswordVisible
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
+                    suffixIcon: isPasswordVisible
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     controller: passwordController,
                     isWeb: isWeb,
                     onSuffixIconTap: () {
@@ -896,7 +919,7 @@ class LoginFormState extends State<LoginForm> {
 class HandleBar extends StatelessWidget {
   final VoidCallback onTap;
 
-  const HandleBar({required this.onTap});
+  const HandleBar({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -920,7 +943,7 @@ class HandleBar extends StatelessWidget {
 class LoginHeader extends StatelessWidget {
   final bool isWeb;
 
-  const LoginHeader({required this.isWeb});
+  const LoginHeader({super.key, required this.isWeb});
 
   @override
   Widget build(BuildContext context) {
@@ -983,6 +1006,7 @@ class LoginTextField extends StatelessWidget {
   final VoidCallback? onSuffixIconTap;
 
   const LoginTextField({
+    super.key,
     required this.hintText,
     required this.icon,
     this.obscureText = false,
@@ -1010,13 +1034,12 @@ class LoginTextField extends StatelessWidget {
             color: Colors.grey[500],
           ),
           prefixIcon: Icon(icon, color: Colors.grey[400]),
-          suffixIcon:
-              suffixIcon != null
-                  ? GestureDetector(
-                    onTap: onSuffixIconTap,
-                    child: Icon(suffixIcon, color: Colors.grey[400]),
-                  )
-                  : null,
+          suffixIcon: suffixIcon != null
+              ? GestureDetector(
+                  onTap: onSuffixIconTap,
+                  child: Icon(suffixIcon, color: Colors.grey[400]),
+                )
+              : null,
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
             horizontal: 16,
@@ -1034,6 +1057,7 @@ class GradientButton extends StatelessWidget {
   final bool isWeb;
 
   const GradientButton({
+    super.key,
     required this.text,
     required this.onTap,
     required this.isWeb,
@@ -1055,7 +1079,7 @@ class GradientButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0083EE).withValues(alpha: 0.3),
+              color: const Color(0xFF0083EE).withOpacity(0.3),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
