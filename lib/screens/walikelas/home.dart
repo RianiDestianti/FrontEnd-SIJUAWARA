@@ -197,41 +197,40 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             siswaJson['data'] ?? [],
           );
 
-          final classStudents =
-              siswaData.map((siswa) {
-                final idKelas = siswa['id_kelas']?.toString() ?? '';
-                final poin =
-                    int.tryParse(siswa['poin_total']?.toString() ?? '') ?? 0;
-                final spLevel = resolveSpLevel(
-                  poin,
-                  siswa['sp_level']?.toString(),
-                );
-                final phLevel = resolvePhLevel(
-                  poin,
-                  siswa['ph_level']?.toString(),
-                );
-                final status =
-                    poin >= 0
-                        ? 'Aman'
-                        : (poin <= -20 ? 'Prioritas' : 'Bermasalah');
+          final classStudents = siswaData.map((siswa) {
+            final idKelas = siswa['id_kelas']?.toString() ?? '';
+            final poin =
+                int.tryParse(siswa['poin_total']?.toString() ?? '') ?? 0;
+            final spLevel = resolveSpLevel(
+              poin,
+              siswa['sp_level']?.toString(),
+            );
+            final phLevel = resolvePhLevel(
+              poin,
+              siswa['ph_level']?.toString(),
+            );
+            final status =
+                poin >= 0
+                    ? 'Aman'
+                    : (poin <= -20 ? 'Prioritas' : 'Bermasalah');
 
-                return Student(
-                  name: siswa['nama_siswa']?.toString() ?? 'Unknown',
-                  kelas: kelasMap[idKelas] ?? idKelas,
-                  programKeahlian:
-                      jurusanMap[idKelas] ??
-                      siswa['program_keahlian']?.toString() ??
-                      'Unknown',
-                  poin: poin,
-                  prestasi: '-',
-                  avatar: Icons.person,
-                  rank: 0,
-                  status: status,
-                  nis: int.tryParse(siswa['nis']?.toString() ?? '') ?? 0,
-                  spLevel: spLevel,
-                  phLevel: phLevel,
-                );
-              }).toList();
+            return Student(
+              name: siswa['nama_siswa']?.toString() ?? 'Unknown',
+              kelas: kelasMap[idKelas] ?? idKelas,
+              programKeahlian:
+                  jurusanMap[idKelas] ??
+                  siswa['program_keahlian']?.toString() ??
+                  'Unknown',
+              poin: poin,
+              prestasi: '-',
+              avatar: Icons.person,
+              rank: 0,
+              status: status,
+              nis: int.tryParse(siswa['nis']?.toString() ?? '') ?? 0,
+              spLevel: spLevel,
+              phLevel: phLevel,
+            );
+          }).toList();
 
           final phStudents =
               classStudents.where((s) => s.phLevel != null).toList()
@@ -410,32 +409,30 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         filteredSiswaBerat = siswaBerat;
       } else {
         final searchLower = query.toLowerCase();
-        filteredSiswaTerbaik =
-            siswaTerbaik.where((siswa) {
-              final namaLower = siswa.name.toLowerCase();
-              final kelasLower = siswa.kelas.toLowerCase();
-              final prestasiLower = siswa.prestasi.toLowerCase();
-              final statusLower = siswa.status.toLowerCase();
-              final nisString = siswa.nis.toString();
-              return namaLower.contains(searchLower) ||
-                  kelasLower.contains(searchLower) ||
-                  prestasiLower.contains(searchLower) ||
-                  statusLower.contains(searchLower) ||
-                  nisString.contains(searchLower);
-            }).toList();
-        filteredSiswaBerat =
-            siswaBerat.where((siswa) {
-              final namaLower = siswa.name.toLowerCase();
-              final kelasLower = siswa.kelas.toLowerCase();
-              final prestasiLower = siswa.prestasi.toLowerCase();
-              final statusLower = siswa.status.toLowerCase();
-              final nisString = siswa.nis.toString();
-              return namaLower.contains(searchLower) ||
-                  kelasLower.contains(searchLower) ||
-                  prestasiLower.contains(searchLower) ||
-                  statusLower.contains(searchLower) ||
-                  nisString.contains(searchLower);
-            }).toList();
+        filteredSiswaTerbaik = siswaTerbaik.where((siswa) {
+          final namaLower = siswa.name.toLowerCase();
+          final kelasLower = siswa.kelas.toLowerCase();
+          final prestasiLower = siswa.prestasi.toLowerCase();
+          final statusLower = siswa.status.toLowerCase();
+          final nisString = siswa.nis.toString();
+          return namaLower.contains(searchLower) ||
+              kelasLower.contains(searchLower) ||
+              prestasiLower.contains(searchLower) ||
+              statusLower.contains(searchLower) ||
+              nisString.contains(searchLower);
+        }).toList();
+        filteredSiswaBerat = siswaBerat.where((siswa) {
+          final namaLower = siswa.name.toLowerCase();
+          final kelasLower = siswa.kelas.toLowerCase();
+          final prestasiLower = siswa.prestasi.toLowerCase();
+          final statusLower = siswa.status.toLowerCase();
+          final nisString = siswa.nis.toString();
+          return namaLower.contains(searchLower) ||
+              kelasLower.contains(searchLower) ||
+              prestasiLower.contains(searchLower) ||
+              statusLower.contains(searchLower) ||
+              nisString.contains(searchLower);
+        }).toList();
       }
     });
 
@@ -452,19 +449,18 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => DetailScreen(
-              student: {
-                'name': siswa.name,
-                'status': siswa.status,
-                'nis': siswa.nis.toString(),
-                'kelas': siswa.kelas,
-                'programKeahlian': siswa.kelas,
-                'poinApresiasi': siswa.poin > 0 ? siswa.poin : 0,
-                'poinPelanggaran': siswa.poin < 0 ? siswa.poin.abs() : 0,
-                'points': siswa.poin,
-              },
-            ),
+        builder: (context) => DetailScreen(
+          student: {
+            'name': siswa.name,
+            'status': siswa.status,
+            'nis': siswa.nis.toString(),
+            'kelas': siswa.kelas,
+            'programKeahlian': siswa.kelas,
+            'poinApresiasi': siswa.poin > 0 ? siswa.poin : 0,
+            'poinPelanggaran': siswa.poin < 0 ? siswa.poin.abs() : 0,
+            'points': siswa.poin,
+          },
+        ),
       ),
     ).then((unused) {
       addLocalActivity(
@@ -477,6 +473,15 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Responsive sizing based on screen height
+    final isSmallScreen = screenHeight < 700;
+    final headerPadding = isSmallScreen ? 16.0 : 20.0;
+    final cardPadding = isSmallScreen ? 14.0 : 16.0;
+    final sectionSpacing = isSmallScreen ? 12.0 : 16.0;
+
     final apresiasiChartData = aggregateChartData(
       apresiasiRawData,
       apresiasiChartTab,
@@ -508,6 +513,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Column(
                         children: [
+                          // Compact Header
                           Container(
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
@@ -516,113 +522,68 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 end: Alignment.bottomRight,
                               ),
                               borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(32),
-                                bottomRight: Radius.circular(32),
+                                bottomLeft: Radius.circular(24),
+                                bottomRight: Radius.circular(24),
                               ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Color(0x200083EE),
-                                  blurRadius: 20,
-                                  offset: Offset(0, 10),
+                                  blurRadius: 15,
+                                  offset: Offset(0, 8),
                                 ),
                               ],
                             ),
                             child: Padding(
                               padding: EdgeInsets.fromLTRB(
-                                24,
-                                MediaQuery.of(context).padding.top + 20,
-                                24,
-                                32,
+                                headerPadding,
+                                MediaQuery.of(context).padding.top +
+                                    (isSmallScreen ? 12 : 16),
+                                headerPadding,
+                                isSmallScreen ? 20 : 24,
                               ),
                               child: Column(
                                 children: [
+                                  // Top icons row
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const SizedBox(width: 40, height: 40),
+                                      const SizedBox(width: 36, height: 36),
                                       Row(
                                         children: [
-                                          GestureDetector(
-                                            onTap: () {
+                                          _buildCompactIconButton(
+                                            Icons.notifications_rounded,
+                                            () {
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder:
-                                                      (context) =>
-                                                          const NotifikasiScreen(),
+                                                  builder: (context) =>
+                                                      const NotifikasiScreen(),
                                                 ),
-                                              ).then((unused) {
-                                                addLocalActivity(
-                                                  'Navigasi',
-                                                  'Notifikasi',
-                                                  'Mengakses halaman notifikasi',
-                                                );
-                                              });
+                                              );
                                             },
-                                            child: Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withValues(alpha: 0.2,),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: const Center(
-                                                child: Icon(
-                                                  Icons.notifications_rounded,
-                                                  color: Colors.white,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                            ),
+                                            isSmallScreen,
                                           ),
-                                          const SizedBox(width: 8),
-                                          GestureDetector(
-                                            onTap: () {
+                                          SizedBox(
+                                              width: isSmallScreen ? 6 : 8),
+                                          _buildCompactProfileButton(
+                                            () {
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder:
-                                                      (context) =>
-                                                          const ProfileScreen(),
+                                                  builder: (context) =>
+                                                      const ProfileScreen(),
                                                 ),
-                                              ).then((unused) {
-                                                addLocalActivity(
-                                                  'Navigasi',
-                                                  'Profil',
-                                                  'Mengakses halaman profil',
-                                                );
-                                              });
+                                              );
                                             },
-                                            child: Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black
-                                                        .withValues(alpha: 0.1),
-                                                    blurRadius: 8,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: const Icon(
-                                                Icons.person_rounded,
-                                                color: Color(0xFF0083EE),
-                                                size: 24,
-                                              ),
-                                            ),
+                                            isSmallScreen,
                                           ),
                                         ],
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 24),
+                                  SizedBox(height: isSmallScreen ? 16 : 20),
+                                  // Greeting
                                   Align(
                                     alignment: Alignment.centerLeft,
                                     child: Column(
@@ -633,92 +594,35 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           'Hello, $teacherName! 👋',
                                           style: GoogleFonts.poppins(
                                             color: Colors.white,
-                                            fontSize: 26,
+                                            fontSize: isSmallScreen ? 20 : 24,
                                             fontWeight: FontWeight.w700,
                                             height: 1.2,
                                           ),
                                         ),
-                                        const SizedBox(height: 6),
+                                        SizedBox(height: isSmallScreen ? 4 : 6),
                                         Text(
-                                          'Semoga harimu penuh berkah dan menyenangkan',
+                                          'Semoga harimu penuh berkah',
                                           style: GoogleFonts.poppins(
-                                            color: Colors.white.withValues(alpha: 0.9,),
-                                            fontSize: 14,
+                                            color:
+                                                Colors.white.withOpacity(0.9),
+                                            fontSize: isSmallScreen ? 12 : 13,
                                             fontWeight: FontWeight.w400,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 24),
-                                  Container(
-                                    height: 50,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(25),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.08),
-                                          blurRadius: 15,
-                                          offset: const Offset(0, 5),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF61B8FF),
-                                                Color(0xFF0083EE),
-                                              ],
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              30,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.search,
-                                            color: Colors.white,
-                                            size: 18,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: TextField(
-                                            onChanged: filterSiswa,
-                                            decoration: InputDecoration(
-                                              hintText:
-                                                  'Cari siswa, kelas, atau aktivitas...',
-                                              hintStyle: GoogleFonts.poppins(
-                                                color: const Color(0xFF9CA3AF),
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w400,
-                                              ),
-                                              border: InputBorder.none,
-                                              contentPadding: EdgeInsets.zero,
-                                            ),
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 15,
-                                              color: const Color(0xFF1F2937),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
+                                  SizedBox(height: isSmallScreen ? 16 : 20),
+                                  // Compact Search Bar
+                                  _buildCompactSearchBar(isSmallScreen),
+                                  SizedBox(height: isSmallScreen ? 12 : 16),
+                                  // Action Buttons
                                   Row(
                                     children: [
                                       buildActionButton('Umum', 0),
-                                      const SizedBox(width: 10),
+                                      const SizedBox(width: 8),
                                       buildActionButton('PH', 2),
-                                      const SizedBox(width: 10),
+                                      const SizedBox(width: 8),
                                       buildActionButton('SP', 3),
                                     ],
                                   ),
@@ -726,25 +630,28 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
+                          // Content sections
                           Padding(
-                            padding: const EdgeInsets.all(20),
+                            padding: EdgeInsets.all(headerPadding),
                             child: Column(
                               children: [
                                 if (selectedTab == 2) ...[
-                                  buildSiswaTerbaikSection(),
-                                  const SizedBox(height: 20),
+                                  buildCompactSiswaTerbaikSection(
+                                      isSmallScreen, cardPadding),
+                                  SizedBox(height: sectionSpacing),
                                 ] else if (selectedTab == 3) ...[
-                                  buildSiswaBeratSection(),
-                                  const SizedBox(height: 20),
+                                  buildCompactSiswaBeratSection(
+                                      isSmallScreen, cardPadding),
+                                  SizedBox(height: sectionSpacing),
                                 ] else ...[
-                                  buildEnhancedChartCard(
+                                  buildCompactChartCard(
                                     'Grafik Apresiasi Siswa',
-                                    'Pencapaian positif minggu ini',
+                                    'Pencapaian positif',
                                     Icons.trending_up,
                                     const LinearGradient(
                                       colors: [
                                         Color(0xFF61B8FF),
-                                        Color(0xFF0083EE),
+                                        Color(0xFF0083EE)
                                       ],
                                     ),
                                     buildBarChart(
@@ -752,25 +659,26 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       const LinearGradient(
                                         colors: [
                                           Color(0xFF61B8FF),
-                                          Color(0xFF0083EE),
+                                          Color(0xFF0083EE)
                                         ],
                                       ),
                                     ),
                                     apresiasiChartTab,
                                     (index) => setState(
-                                      () => apresiasiChartTab = index,
-                                    ),
+                                        () => apresiasiChartTab = index),
                                     true,
+                                    isSmallScreen,
+                                    cardPadding,
                                   ),
-                                  const SizedBox(height: 20),
-                                  buildEnhancedChartCard(
+                                  SizedBox(height: sectionSpacing),
+                                  buildCompactChartCard(
                                     'Grafik Pelanggaran Siswa',
-                                    'Monitoring pelanggaran minggu ini',
+                                    'Monitoring pelanggaran',
                                     Icons.warning_amber_rounded,
                                     const LinearGradient(
                                       colors: [
                                         Color(0xFFF2D6D7),
-                                        Color(0xFFFF6B6D),
+                                        Color(0xFFFF6B6D)
                                       ],
                                     ),
                                     buildBarChart(
@@ -778,151 +686,20 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       const LinearGradient(
                                         colors: [
                                           Color(0xFFFF6B6D),
-                                          Color(0xFFFF8E8F),
+                                          Color(0xFFFF8E8F)
                                         ],
                                       ),
                                     ),
                                     pelanggaranChartTab,
                                     (index) => setState(
-                                      () => pelanggaranChartTab = index,
-                                    ),
+                                        () => pelanggaranChartTab = index),
                                     false,
+                                    isSmallScreen,
+                                    cardPadding,
                                   ),
-                                  const SizedBox(height: 20),
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) =>
-                                                  const ActivityScreen(),
-                                        ),
-                                      ).then((unused) {
-                                        addLocalActivity(
-                                          'Navigasi',
-                                          'Aktivitas',
-                                          'Mengakses halaman aktivitas',
-                                        );
-                                      });
-                                    },
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(24),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.06,),
-                                            blurRadius: 20,
-                                            offset: const Offset(0, 5),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(
-                                                  12,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  gradient:
-                                                      const LinearGradient(
-                                                        colors: [
-                                                          Color(0xFF61B8FF),
-                                                          Color(0xFF0083EE),
-                                                        ],
-                                                      ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.history,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Aktivitas Terkini',
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                            fontSize: 18,
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                            color: Color(
-                                                              0xFF1F2937,
-                                                            ),
-                                                          ),
-                                                    ),
-                                                    Text(
-                                                      'Update terbaru dari aktivitas skoring',
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                            fontSize: 12,
-                                                            color: Color(
-                                                              0xFF6B7280,
-                                                            ),
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Container(
-                                                padding: const EdgeInsets.all(
-                                                  8,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: Color(0xFFF8FAFC),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.arrow_forward_ios,
-                                                  size: 14,
-                                                  color: Color(0xFF9CA3AF),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 24),
-                                          if (activityData.isEmpty)
-                                            Text(
-                                              'Belum ada aktivitas skoring.',
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 13,
-                                                color: const Color(0xFF9CA3AF),
-                                              ),
-                                            )
-                                          else
-                                            ...activityData
-                                                .take(3)
-                                                .map(
-                                                  (activity) => Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                          bottom: 16,
-                                                        ),
-                                                    child:
-                                                        buildEnhancedActivityItem(
-                                                          activity,
-                                                        ),
-                                                  ),
-                                                ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
+                                  SizedBox(height: sectionSpacing),
+                                  buildCompactActivityCard(
+                                      isSmallScreen, cardPadding),
                                 ],
                               ],
                             ),
@@ -940,50 +717,155 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget buildSiswaTerbaikSection() {
+  // Helper widgets for compact layout
+  Widget _buildCompactIconButton(
+      IconData icon, VoidCallback onTap, bool isSmall) {
+    final size = isSmall ? 36.0 : 40.0;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: isSmall ? 20 : 22,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactProfileButton(VoidCallback onTap, bool isSmall) {
+    final size = isSmall ? 36.0 : 40.0;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(size / 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(
+          Icons.person_rounded,
+          color: const Color(0xFF0083EE),
+          size: isSmall ? 20 : 22,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactSearchBar(bool isSmall) {
+    return Container(
+      height: isSmall ? 44 : 48,
+      padding: EdgeInsets.symmetric(horizontal: isSmall ? 14 : 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(isSmall ? 20 : 24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(isSmall ? 6 : 7),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.search,
+              color: Colors.white,
+              size: isSmall ? 16 : 17,
+            ),
+          ),
+          SizedBox(width: isSmall ? 10 : 12),
+          Expanded(
+            child: TextField(
+              onChanged: filterSiswa,
+              decoration: InputDecoration(
+                hintText: 'Cari siswa atau kelas...',
+                hintStyle: GoogleFonts.poppins(
+                  color: const Color(0xFF9CA3AF),
+                  fontSize: isSmall ? 13 : 14,
+                  fontWeight: FontWeight.w400,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: GoogleFonts.poppins(
+                fontSize: isSmall ? 13 : 14,
+                color: const Color(0xFF1F2937),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildCompactSiswaTerbaikSection(bool isSmall, double padding) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isSmall ? 16 : 18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
                 colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(isSmall ? 16 : 18),
+                topRight: Radius.circular(isSmall ? 16 : 18),
               ),
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: EdgeInsets.all(isSmall ? 8 : 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.emoji_events,
                     color: Colors.white,
-                    size: 24,
+                    size: isSmall ? 20 : 22,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: isSmall ? 10 : 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -991,7 +873,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         'PH (Penghargaan)',
                         style: GoogleFonts.poppins(
-                          fontSize: 18,
+                          fontSize: isSmall ? 15 : 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
@@ -999,8 +881,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         'Siswa dengan status PH1–PH3',
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: isSmall ? 10 : 11,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -1011,32 +893,30 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(padding),
             child: Column(
-              children:
-                  filteredSiswaTerbaik.isEmpty
-                      ? [
-                        Text(
-                          'Tidak ada hasil ditemukan',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: const Color(0xFF6B7280),
-                          ),
+              children: filteredSiswaTerbaik.isEmpty
+                  ? [
+                      Text(
+                        'Tidak ada hasil ditemukan',
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmall ? 12 : 13,
+                          color: const Color(0xFF6B7280),
                         ),
-                      ]
-                      : filteredSiswaTerbaik.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        Student siswa = entry.value;
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom:
-                                index < filteredSiswaTerbaik.length - 1
-                                    ? 16
-                                    : 0,
-                          ),
-                          child: buildSiswaTerbaikItem(siswa),
-                        );
-                      }).toList(),
+                      ),
+                    ]
+                  : filteredSiswaTerbaik.asMap().entries.map((entry) {
+                      int index = entry.key;
+                      Student siswa = entry.value;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index < filteredSiswaTerbaik.length - 1
+                              ? (isSmall ? 10 : 12)
+                              : 0,
+                        ),
+                        child: buildCompactSiswaTerbaikItem(siswa, isSmall),
+                      );
+                    }).toList(),
             ),
           ),
         ],
@@ -1044,50 +924,50 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget buildSiswaBeratSection() {
+  Widget buildCompactSiswaBeratSection(bool isSmall, double padding) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isSmall ? 16 : 18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
                 colors: [Color(0xFFFF6B6D), Color(0xFFFF8E8F)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(isSmall ? 16 : 18),
+                topRight: Radius.circular(isSmall ? 16 : 18),
               ),
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: EdgeInsets.all(isSmall ? 8 : 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.warning_amber_rounded,
                     color: Colors.white,
-                    size: 24,
+                    size: isSmall ? 20 : 22,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: isSmall ? 10 : 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1095,7 +975,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         'SP (Pelanggaran)',
                         style: GoogleFonts.poppins(
-                          fontSize: 18,
+                          fontSize: isSmall ? 15 : 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
@@ -1103,8 +983,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         'Siswa dengan status SP1–SP3',
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: isSmall ? 10 : 11,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -1115,30 +995,30 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(padding),
             child: Column(
-              children:
-                  filteredSiswaBerat.isEmpty
-                      ? [
-                        Text(
-                          'Tidak ada hasil ditemukan',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: const Color(0xFF6B7280),
-                          ),
+              children: filteredSiswaBerat.isEmpty
+                  ? [
+                      Text(
+                        'Tidak ada hasil ditemukan',
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmall ? 12 : 13,
+                          color: const Color(0xFF6B7280),
                         ),
-                      ]
-                      : filteredSiswaBerat.asMap().entries.map((entry) {
-                        int index = entry.key;
-                        Student siswa = entry.value;
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom:
-                                index < filteredSiswaBerat.length - 1 ? 16 : 0,
-                          ),
-                          child: buildSiswaBeratItem(siswa),
-                        );
-                      }).toList(),
+                      ),
+                    ]
+                  : filteredSiswaBerat.asMap().entries.map((entry) {
+                      int index = entry.key;
+                      Student siswa = entry.value;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index < filteredSiswaBerat.length - 1
+                              ? (isSmall ? 10 : 12)
+                              : 0,
+                        ),
+                        child: buildCompactSiswaBeratItem(siswa, isSmall),
+                      );
+                    }).toList(),
             ),
           ),
         ],
@@ -1146,22 +1026,23 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget buildSiswaTerbaikItem(Student siswa) {
+  Widget buildCompactSiswaTerbaikItem(Student siswa, bool isSmall) {
     Color rankColor = getRankColor(siswa.rank);
     IconData rankIcon = getRankIcon(siswa.rank);
+    final avatarSize = isSmall ? 42.0 : 46.0;
 
     return GestureDetector(
       onTap: () => navigateToDetailScreen(siswa),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isSmall ? 10 : 12),
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: rankColor.withValues(alpha: 0.2), width: 2),
+          borderRadius: BorderRadius.circular(isSmall ? 12 : 14),
+          border: Border.all(color: rankColor.withOpacity(0.2), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: rankColor.withValues(alpha: 0.1),
-              blurRadius: 8,
+              color: rankColor.withOpacity(0.08),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
@@ -1169,20 +1050,19 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: avatarSize,
+              height: avatarSize,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors:
-                      siswa.rank <= 3
-                          ? [const Color(0xFFFFD700), const Color(0xFFFFA500)]
-                          : [const Color(0xFF61B8FF), const Color(0xFF0083EE)],
+                  colors: siswa.rank <= 3
+                      ? [const Color(0xFFFFD700), const Color(0xFFFFA500)]
+                      : [const Color(0xFF61B8FF), const Color(0xFF0083EE)],
                 ),
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(avatarSize / 2),
                 boxShadow: [
                   BoxShadow(
-                    color: rankColor.withValues(alpha: 0.3),
-                    blurRadius: 8,
+                    color: rankColor.withOpacity(0.25),
+                    blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -1190,26 +1070,28 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Icon(Icons.person, color: Colors.white, size: 24),
+                  Icon(Icons.person,
+                      color: Colors.white, size: isSmall ? 20 : 22),
                   if (siswa.rank <= 3)
                     Positioned(
                       top: -2,
                       right: -2,
                       child: Container(
-                        width: 20,
-                        height: 20,
+                        width: isSmall ? 16 : 18,
+                        height: isSmall ? 16 : 18,
                         decoration: BoxDecoration(
                           color: rankColor,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 2),
+                          borderRadius: BorderRadius.circular(9),
+                          border: Border.all(color: Colors.white, width: 1.5),
                         ),
-                        child: Icon(rankIcon, color: Colors.white, size: 10),
+                        child: Icon(rankIcon,
+                            color: Colors.white, size: isSmall ? 8 : 9),
                       ),
                     ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: isSmall ? 10 : 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1217,15 +1099,15 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmall ? 6 : 7,
+                          vertical: isSmall ? 2 : 3,
                         ),
                         decoration: BoxDecoration(
-                          color: rankColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          color: rankColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: rankColor.withValues(alpha: 0.3),
+                            color: rankColor.withOpacity(0.3),
                             width: 1,
                           ),
                         ),
@@ -1233,85 +1115,75 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           '#${siswa.rank}',
                           style: GoogleFonts.poppins(
                             color: rankColor,
-                            fontSize: 10,
+                            fontSize: isSmall ? 9 : 10,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: isSmall ? 6 : 8),
                       Expanded(
                         child: Text(
                           siswa.name,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
+                            fontSize: isSmall ? 13 : 14,
                             color: const Color(0xFF1F2937),
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: isSmall ? 3 : 4),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmall ? 5 : 6,
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0083EE).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color: const Color(0xFF0083EE).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           siswa.kelas,
                           style: GoogleFonts.poppins(
                             color: const Color(0xFF0083EE),
-                            fontSize: 10,
+                            fontSize: isSmall ? 9 : 10,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
+                      SizedBox(width: isSmall ? 6 : 8),
+                      Icon(
                         Icons.star,
-                        color: Color(0xFFFFD700),
-                        size: 14,
+                        color: const Color(0xFFFFD700),
+                        size: isSmall ? 12 : 13,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: isSmall ? 3 : 4),
                       Text(
                         '${siswa.poin} poin',
                         style: GoogleFonts.poppins(
                           color: const Color(0xFF6B7280),
-                          fontSize: 12,
+                          fontSize: isSmall ? 10 : 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    siswa.prestasi,
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF6B7280),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: isSmall ? 8 : 10),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(isSmall ? 6 : 7),
               decoration: BoxDecoration(
-                color: rankColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: rankColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.trending_up, color: rankColor, size: 20),
+              child: Icon(Icons.trending_up,
+                  color: rankColor, size: isSmall ? 16 : 18),
             ),
           ],
         ),
@@ -1319,21 +1191,22 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget buildSiswaBeratItem(Student siswa) {
+  Widget buildCompactSiswaBeratItem(Student siswa, bool isSmall) {
     Color rankColor = getRankColor(siswa.rank);
+    final avatarSize = isSmall ? 42.0 : 46.0;
 
     return GestureDetector(
       onTap: () => navigateToDetailScreen(siswa),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isSmall ? 10 : 12),
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: rankColor.withValues(alpha: 0.2), width: 2),
+          borderRadius: BorderRadius.circular(isSmall ? 12 : 14),
+          border: Border.all(color: rankColor.withOpacity(0.2), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: rankColor.withValues(alpha: 0.1),
-              blurRadius: 8,
+              color: rankColor.withOpacity(0.08),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
@@ -1341,17 +1214,17 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Row(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: avatarSize,
+              height: avatarSize,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFFFF6B6D), Color(0xFFFF8E8F)],
                 ),
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(avatarSize / 2),
                 boxShadow: [
                   BoxShadow(
-                    color: rankColor.withValues(alpha: 0.3),
-                    blurRadius: 8,
+                    color: rankColor.withOpacity(0.25),
+                    blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -1359,30 +1232,31 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Icon(Icons.person, color: Colors.white, size: 24),
+                  Icon(Icons.person,
+                      color: Colors.white, size: isSmall ? 20 : 22),
                   if (siswa.rank <= 3)
                     Positioned(
                       top: -2,
                       right: -2,
                       child: Container(
-                        width: 20,
-                        height: 20,
+                        width: isSmall ? 16 : 18,
+                        height: isSmall ? 16 : 18,
                         decoration: BoxDecoration(
                           color: rankColor,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 2),
+                          borderRadius: BorderRadius.circular(9),
+                          border: Border.all(color: Colors.white, width: 1.5),
                         ),
                         child: Icon(
                           getRankIcon(siswa.rank),
                           color: Colors.white,
-                          size: 10,
+                          size: isSmall ? 8 : 9,
                         ),
                       ),
                     ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: isSmall ? 10 : 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1390,15 +1264,15 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmall ? 6 : 7,
+                          vertical: isSmall ? 2 : 3,
                         ),
                         decoration: BoxDecoration(
-                          color: rankColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          color: rankColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: rankColor.withValues(alpha: 0.3),
+                            color: rankColor.withOpacity(0.3),
                             width: 1,
                           ),
                         ),
@@ -1406,70 +1280,335 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           '#${siswa.rank}',
                           style: GoogleFonts.poppins(
                             color: rankColor,
-                            fontSize: 10,
+                            fontSize: isSmall ? 9 : 10,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: isSmall ? 6 : 8),
                       Expanded(
                         child: Text(
                           siswa.name,
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
+                            fontSize: isSmall ? 13 : 14,
                             color: const Color(0xFF1F2937),
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: isSmall ? 3 : 4),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmall ? 5 : 6,
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0083EE).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color: const Color(0xFF0083EE).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           siswa.kelas,
                           style: GoogleFonts.poppins(
                             color: const Color(0xFF0083EE),
-                            fontSize: 10,
+                            fontSize: isSmall ? 9 : 10,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
+                      SizedBox(width: isSmall ? 6 : 8),
+                      Icon(
                         Icons.warning_amber_rounded,
-                        color: Color(0xFFFF6B6D),
-                        size: 14,
+                        color: const Color(0xFFFF6B6D),
+                        size: isSmall ? 12 : 13,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: isSmall ? 3 : 4),
                       Text(
                         '${siswa.poin} poin',
                         style: GoogleFonts.poppins(
                           color: const Color(0xFFFF6B6D),
-                          fontSize: 12,
+                          fontSize: isSmall ? 10 : 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                ],
+              ),
+            ),
+            SizedBox(width: isSmall ? 8 : 10),
+            Container(
+              padding: EdgeInsets.all(isSmall ? 6 : 7),
+              decoration: BoxDecoration(
+                color: rankColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.trending_down,
+                  color: rankColor, size: isSmall ? 16 : 18),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildCompactChartCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Gradient gradient,
+    Widget chart,
+    int selectedTab,
+    Function(int) onTabChanged,
+    bool isFirst,
+    bool isSmall,
+    double padding,
+  ) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(isSmall ? 16 : 18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(isSmall ? 16 : 18),
+                topRight: Radius.circular(isSmall ? 16 : 18),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isSmall ? 8 : 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: isSmall ? 20 : 22),
+                ),
+                SizedBox(width: isSmall ? 10 : 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmall ? 14 : 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: isSmall ? 10 : 11,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                buildSwipeableChartButtons(selectedTab, onTabChanged),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(padding),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GrafikScreen(
+                      chartType: isFirst ? 'apresiasi' : 'pelanggaran',
+                      title: title,
+                      subtitle: subtitle,
+                    ),
+                  ),
+                );
+              },
+              child: chart,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildCompactActivityCard(bool isSmall, double padding) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ActivityScreen()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(isSmall ? 16 : 18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(isSmall ? 9 : 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.history,
+                    color: Colors.white,
+                    size: isSmall ? 18 : 19,
+                  ),
+                ),
+                SizedBox(width: isSmall ? 10 : 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Aktivitas Terkini',
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmall ? 15 : 16,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1F2937),
+                        ),
+                      ),
+                      Text(
+                        'Update terbaru',
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmall ? 10 : 11,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.all(isSmall ? 6 : 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    size: isSmall ? 12 : 13,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: isSmall ? 14 : 16),
+            if (activityData.isEmpty)
+              Text(
+                'Belum ada aktivitas skoring.',
+                style: GoogleFonts.poppins(
+                  fontSize: isSmall ? 11 : 12,
+                  color: const Color(0xFF9CA3AF),
+                ),
+              )
+            else
+              ...activityData.take(3).map(
+                    (activity) => Padding(
+                      padding: EdgeInsets.only(bottom: isSmall ? 10 : 12),
+                      child: buildCompactActivityItem(activity, isSmall),
+                    ),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildCompactActivityItem(Activity activity, bool isSmall) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ActivityScreen()),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(isSmall ? 10 : 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(isSmall ? 12 : 14),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: isSmall ? 40 : 44,
+              height: isSmall ? 40 : 44,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: activity.gradient),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(activity.icon,
+                  color: Colors.white, size: isSmall ? 20 : 22),
+            ),
+            SizedBox(width: isSmall ? 10 : 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    siswa.prestasi,
+                    activity.title,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: isSmall ? 13 : 14,
+                      color: const Color(0xFF1F2937),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: isSmall ? 2 : 3),
+                  Text(
+                    activity.subtitle,
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF6B7280),
-                      fontSize: 12,
+                      fontSize: isSmall ? 10 : 11,
                       fontWeight: FontWeight.w400,
-                      fontStyle: FontStyle.italic,
+                      height: 1.3,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1477,14 +1616,43 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: rankColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.trending_down, color: rankColor, size: 20),
+            SizedBox(width: isSmall ? 8 : 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${activity.time}',
+                  style: GoogleFonts.poppins(
+                    color: const Color(0xFF9CA3AF),
+                    fontSize: isSmall ? 9 : 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: isSmall ? 4 : 5),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isSmall ? 6 : 7,
+                    vertical: isSmall ? 2 : 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: activity.statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: activity.statusColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    activity.status,
+                    style: GoogleFonts.poppins(
+                      color: activity.statusColor,
+                      fontSize: isSmall ? 7 : 8,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1573,18 +1741,18 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           duration: const Duration(milliseconds: 200),
           height: 40,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.2),
+            color:
+                isActive ? Colors.white : Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
-            boxShadow:
-                isActive
-                    ? [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                    : null,
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1633,7 +1801,8 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
-                      color: isActive ? const Color(0xFF1F2937) : Colors.white,
+                      color:
+                          isActive ? const Color(0xFF1F2937) : Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -1643,108 +1812,6 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget buildEnhancedChartCard(
-    String title,
-    String subtitle,
-    IconData icon,
-    Gradient gradient,
-    Widget chart,
-    int selectedTab,
-    Function(int) onTabChanged,
-    bool isFirst,
-  ) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: gradient,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: GoogleFonts.poppins(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                buildSwipeableChartButtons(selectedTab, onTabChanged),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => GrafikScreen(
-                          chartType: isFirst ? 'apresiasi' : 'pelanggaran',
-                          title: title,
-                          subtitle: subtitle,
-                        ),
-                  ),
-                ).then((unused) {
-                  addLocalActivity(
-                    'Navigasi',
-                    'Grafik ${isFirst ? 'Apresiasi' : 'Pelanggaran'}',
-                    'Mengakses grafik ${isFirst ? 'apresiasi' : 'pelanggaran'}',
-                  );
-                });
-              },
-              child: chart,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1778,9 +1845,10 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Container(
         height: 32,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+          border:
+              Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1804,16 +1872,15 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: isActive ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
-          boxShadow:
-              isActive
-                  ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                  : null,
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Center(
           child: Text(
@@ -1830,15 +1897,14 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget buildBarChart(List<Map<String, dynamic>> data, Gradient gradient) {
-    double maxValue =
-        data.isNotEmpty
-            ? data
-                .map((e) => (e['value'] as double?) ?? 0.0)
-                .reduce((a, b) => a > b ? a : b)
-            : 1.0;
+    double maxValue = data.isNotEmpty
+        ? data
+            .map((e) => (e['value'] as double?) ?? 0.0)
+            .reduce((a, b) => a > b ? a : b)
+        : 1.0;
 
     return Container(
-      height: 160,
+      height: 140,
       child: Column(
         children: [
           Expanded(
@@ -1846,7 +1912,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Container(
-                  width: 30,
+                  width: 28,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -1854,7 +1920,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         '${maxValue.toInt()}',
                         style: GoogleFonts.poppins(
-                          fontSize: 10,
+                          fontSize: 9,
                           color: const Color(0xFF9CA3AF),
                           fontWeight: FontWeight.w500,
                         ),
@@ -1862,7 +1928,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         '${(maxValue * 0.75).toInt()}',
                         style: GoogleFonts.poppins(
-                          fontSize: 10,
+                          fontSize: 9,
                           color: const Color(0xFF9CA3AF),
                           fontWeight: FontWeight.w500,
                         ),
@@ -1870,7 +1936,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         '${(maxValue * 0.5).toInt()}',
                         style: GoogleFonts.poppins(
-                          fontSize: 10,
+                          fontSize: 9,
                           color: const Color(0xFF9CA3AF),
                           fontWeight: FontWeight.w500,
                         ),
@@ -1878,7 +1944,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         '${(maxValue * 0.25).toInt()}',
                         style: GoogleFonts.poppins(
-                          fontSize: 10,
+                          fontSize: 9,
                           color: const Color(0xFF9CA3AF),
                           fontWeight: FontWeight.w500,
                         ),
@@ -1886,7 +1952,7 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         '0',
                         style: GoogleFonts.poppins(
-                          fontSize: 10,
+                          fontSize: 9,
                           color: const Color(0xFF9CA3AF),
                           fontWeight: FontWeight.w500,
                         ),
@@ -1894,171 +1960,58 @@ class HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children:
-                        data.map((item) {
-                          double value = (item['value'] as double?) ?? 0.0;
-                          double height =
-                              maxValue > 0 ? (value / maxValue) * 120 : 0;
-                          return Container(
-                            width: 24,
-                            height: height,
-                            decoration: BoxDecoration(
-                              gradient: gradient,
-                              borderRadius: BorderRadius.circular(6),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                    children: data.map((item) {
+                      double value = (item['value'] as double?) ?? 0.0;
+                      double height =
+                          maxValue > 0 ? (value / maxValue) * 100 : 0;
+                      return Container(
+                        width: 20,
+                        height: height,
+                        decoration: BoxDecoration(
+                          gradient: gradient,
+                          borderRadius: BorderRadius.circular(5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 3,
+                              offset: const Offset(0, 2),
                             ),
-                          );
-                        }).toList(),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Row(
             children: [
-              const SizedBox(width: 42),
+              const SizedBox(width: 38),
               Expanded(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children:
-                      data.map((item) {
-                        return Text(
-                          (item['label'] as String?) ?? '',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: const Color(0xFF6B7280),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        );
-                      }).toList(),
+                  children: data.map((item) {
+                    return Text(
+                      (item['label'] as String?) ?? '',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: const Color(0xFF6B7280),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget buildEnhancedActivityItem(Activity activity) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ActivityScreen()),
-        ).then((unused) {
-          addLocalActivity(
-            'Navigasi',
-            'Aktivitas',
-            'Mengakses halaman aktivitas dari item',
-          );
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: activity.gradient),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(activity.icon, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    activity.title,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: const Color(0xFF1F2937),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    activity.subtitle,
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF6B7280),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${activity.time} • ${activity.date}',
-                  style: GoogleFonts.poppins(
-                    color: const Color(0xFF9CA3AF),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: activity.statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: activity.statusColor.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    activity.status,
-                    style: GoogleFonts.poppins(
-                      color: activity.statusColor,
-                      fontSize: 8,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

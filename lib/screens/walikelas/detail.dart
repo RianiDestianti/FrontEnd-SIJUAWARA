@@ -12,7 +12,8 @@ import 'note.dart';
 import 'history.dart';
 
 class DetailScreen extends StatefulWidget {
-  final Map<String, dynamic> student;
+  final Map student;
+
   const DetailScreen({Key? key, required this.student}) : super(key: key);
 
   @override
@@ -24,18 +25,23 @@ class DetailScreenState extends State<DetailScreen>
   late AnimationController animationController;
   late Animation<double> fadeAnimation;
   late Animation<Offset> slideAnimation;
+
   static const int maxHistoryPreview = 5;
   int selectedTab = 0;
+
   late Student detailedStudent;
   List<ViolationHistory> pelanggaranHistory = [];
   List<AppreciationHistory> apresiasiHistory = [];
   List<AccumulationHistory> akumulasiHistory = [];
+
   bool isLoadingAppreciations = true;
   bool isLoadingViolations = true;
   bool isLoadingStudent = true;
+
   String? errorMessageAppreciations;
   String? errorMessageViolations;
   String? errorMessageStudent;
+
   List<dynamic> aspekPenilaianData = [];
   String nipWalikelas = '';
   String idKelas = '';
@@ -44,18 +50,21 @@ class DetailScreenState extends State<DetailScreen>
   void initState() {
     super.initState();
     animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
+
     fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
+
     slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(0, 0.2),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOutBack),
+      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
     );
+
     animationController.forward();
     loadUserData();
   }
@@ -81,6 +90,11 @@ class DetailScreenState extends State<DetailScreen>
 
   Future<void> refreshData() async {
     await loadUserData();
+  }
+
+  // Method untuk dipanggil dari popup setelah berhasil menambah skoring
+  void onSkoringAdded() {
+    refreshData();
   }
 
   void initializeStudentData() {
@@ -147,6 +161,7 @@ class DetailScreenState extends State<DetailScreen>
     setState(() {
       errorMessageStudent = null;
     });
+
     try {
       final uri = Uri.parse(
         '${ApiConfig.baseUrl}/aspekpenilaian?nip=$nipWalikelas&id_kelas=$idKelas',
@@ -170,7 +185,8 @@ class DetailScreenState extends State<DetailScreen>
         }
       } else {
         setState(() {
-          errorMessageStudent = 'Gagal mengambil data (${response.statusCode})';
+          errorMessageStudent =
+              'Gagal mengambil data (${response.statusCode})';
         });
       }
     } catch (e) {
@@ -185,6 +201,7 @@ class DetailScreenState extends State<DetailScreen>
       isLoadingAppreciations = true;
       errorMessageAppreciations = null;
     });
+
     try {
       final uri = Uri.parse(
         '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$nipWalikelas&id_kelas=$idKelas',
@@ -204,55 +221,49 @@ class DetailScreenState extends State<DetailScreen>
       }
 
       final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
-      final List<dynamic> evaluations =
-          (jsonData['penilaian']?['data'] as List<dynamic>? ?? [])
-              .where((e) => e['nis'].toString() == nis)
-              .toList();
+      final List evaluations = (jsonData['penilaian']?['data'] as List? ?? [])
+          .where((e) => e['nis'].toString() == nis)
+          .toList();
 
-      final historiesWithDate =
-          evaluations.map<Map<String, dynamic>>((eval) {
-              final aspek = aspekPenilaianData.firstWhere(
-                (a) =>
-                    a['id_aspekpenilaian'].toString() ==
-                    eval['id_aspekpenilaian'].toString(),
-                orElse:
-                    () => {
-                      'uraian': 'Apresiasi',
-                      'indikator_poin': 0,
-                      'kategori': 'Umum',
-                      'jenis_poin': 'Apresiasi',
-                    },
-              );
-              final createdAt =
-                  DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
-              return {
-                'createdAt': createdAt,
-                'history': AppreciationHistory(
-                  type: aspek['kategori']?.toString() ?? 'Apresiasi',
-                  description: aspek['uraian']?.toString() ?? 'Apresiasi',
-                  date: DateFormat('dd MMM yyyy').format(createdAt),
-                  time: DateFormat('HH:mm').format(createdAt),
-                  points:
-                      ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
-                  icon: Icons.star,
-                  color: const Color(0xFF10B981),
-                  kategori: aspek['kategori'] ?? 'Umum',
-                ),
-              };
-            }).toList()
-            ..sort(
-              (a, b) => (b['createdAt'] as DateTime).compareTo(
-                a['createdAt'] as DateTime,
-              ),
-            );
+      final historiesWithDate = evaluations.map<Map<String, dynamic>>((eval) {
+        final aspek = aspekPenilaianData.firstWhere(
+          (a) =>
+              a['id_aspekpenilaian'].toString() ==
+              eval['id_aspekpenilaian'].toString(),
+          orElse: () => {
+            'uraian': 'Apresiasi',
+            'indikator_poin': 0,
+            'kategori': 'Umum',
+            'jenis_poin': 'Apresiasi',
+          },
+        );
+
+        final createdAt =
+            DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
+
+        return {
+          'createdAt': createdAt,
+          'history': AppreciationHistory(
+            type: aspek['kategori']?.toString() ?? 'Apresiasi',
+            description: aspek['uraian']?.toString() ?? 'Apresiasi',
+            date: DateFormat('dd MMM yyyy').format(createdAt),
+            time: DateFormat('HH:mm').format(createdAt),
+            points: ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
+            icon: Icons.star,
+            color: const Color(0xFF10B981),
+            kategori: aspek['kategori'] ?? 'Umum',
+          ),
+        };
+      }).toList()
+        ..sort(
+          (a, b) => (b['createdAt'] as DateTime)
+              .compareTo(a['createdAt'] as DateTime),
+        );
 
       setState(() {
-        apresiasiHistory =
-            historiesWithDate
-                .map<AppreciationHistory>(
-                  (e) => e['history'] as AppreciationHistory,
-                )
-                .toList();
+        apresiasiHistory = historiesWithDate
+            .map((e) => e['history'] as AppreciationHistory)
+            .toList();
         isLoadingAppreciations = false;
         calculateAccumulations();
       });
@@ -300,55 +311,49 @@ class DetailScreenState extends State<DetailScreen>
       }
 
       final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
-      final List<dynamic> evaluations =
-          (jsonData['penilaian']?['data'] as List<dynamic>? ?? [])
-              .where((e) => e['nis'].toString() == nis)
-              .toList();
+      final List evaluations = (jsonData['penilaian']?['data'] as List? ?? [])
+          .where((e) => e['nis'].toString() == nis)
+          .toList();
 
-      final historiesWithDate =
-          evaluations.map<Map<String, dynamic>>((eval) {
-              final aspek = aspekPenilaianData.firstWhere(
-                (a) =>
-                    a['id_aspekpenilaian'].toString() ==
-                    eval['id_aspekpenilaian'].toString(),
-                orElse:
-                    () => {
-                      'uraian': 'Pelanggaran',
-                      'indikator_poin': 0,
-                      'kategori': 'Umum',
-                      'jenis_poin': 'Pelanggaran',
-                    },
-              );
+      final historiesWithDate = evaluations.map<Map<String, dynamic>>((eval) {
+        final aspek = aspekPenilaianData.firstWhere(
+          (a) =>
+              a['id_aspekpenilaian'].toString() ==
+              eval['id_aspekpenilaian'].toString(),
+          orElse: () => {
+            'uraian': 'Pelanggaran',
+            'indikator_poin': 0,
+            'kategori': 'Umum',
+            'jenis_poin': 'Pelanggaran',
+          },
+        );
 
-              final createdAt =
-                  DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
-              return {
-                'createdAt': createdAt,
-                'history': ViolationHistory(
-                  type: aspek['kategori']?.toString() ?? 'Pelanggaran',
-                  description: aspek['uraian']?.toString() ?? 'Pelanggaran',
-                  date: DateFormat('dd MMM yyyy').format(createdAt),
-                  time: DateFormat('HH:mm').format(createdAt),
-                  points:
-                      ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
-                  icon: Icons.warning,
-                  color: const Color(0xFFFF6B6D),
-                  pelanggaranKe: null,
-                  kategori: aspek['kategori'] ?? 'Umum',
-                ),
-              };
-            }).toList()
-            ..sort(
-              (a, b) => (b['createdAt'] as DateTime).compareTo(
-                a['createdAt'] as DateTime,
-              ),
-            );
+        final createdAt =
+            DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
+
+        return {
+          'createdAt': createdAt,
+          'history': ViolationHistory(
+            type: aspek['kategori']?.toString() ?? 'Pelanggaran',
+            description: aspek['uraian']?.toString() ?? 'Pelanggaran',
+            date: DateFormat('dd MMM yyyy').format(createdAt),
+            time: DateFormat('HH:mm').format(createdAt),
+            points: ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
+            icon: Icons.warning,
+            color: const Color(0xFFFF6B6D),
+            pelanggaranKe: null,
+            kategori: aspek['kategori'] ?? 'Umum',
+          ),
+        };
+      }).toList()
+        ..sort(
+          (a, b) => (b['createdAt'] as DateTime)
+              .compareTo(a['createdAt'] as DateTime),
+        );
 
       setState(() {
         pelanggaranHistory =
-            historiesWithDate
-                .map<ViolationHistory>((e) => e['history'] as ViolationHistory)
-                .toList();
+            historiesWithDate.map((e) => e['history'] as ViolationHistory).toList();
         isLoadingViolations = false;
         calculateAccumulations();
       });
@@ -362,15 +367,14 @@ class DetailScreenState extends State<DetailScreen>
 
   void calculateAccumulations() {
     try {
-      final totalApresiasiPoints = apresiasiHistory.fold<int>(
+      final totalApresiasiPoints = apresiasiHistory.fold(
         0,
         (sum, item) => sum + item.points,
       );
-      final totalPelanggaranPoints = pelanggaranHistory.fold<int>(
+      final totalPelanggaranPoints = pelanggaranHistory.fold(
         0,
         (sum, item) => sum + item.points,
       );
-
       final totalPoints = totalApresiasiPoints - totalPelanggaranPoints;
 
       setState(() {
@@ -401,7 +405,11 @@ class DetailScreenState extends State<DetailScreen>
   @override
   Widget build(BuildContext context) {
     if (isLoadingStudent) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
 
     if (errorMessageStudent != null) {
@@ -414,6 +422,7 @@ class DetailScreenState extends State<DetailScreen>
                 errorMessageStudent!,
                 style: GoogleFonts.poppins(color: Colors.red),
               ),
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => initializeStudentData(),
                 child: Text('Coba Lagi', style: GoogleFonts.poppins()),
@@ -430,7 +439,7 @@ class DetailScreenState extends State<DetailScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle(
+        value: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
@@ -438,6 +447,7 @@ class DetailScreenState extends State<DetailScreen>
           builder: (context, constraints) {
             double maxWidth = constraints.maxWidth;
             if (maxWidth > 600) maxWidth = 600;
+
             return Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
@@ -451,7 +461,7 @@ class DetailScreenState extends State<DetailScreen>
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
+                              gradient: const LinearGradient(
                                 colors: backgroundGradient,
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -469,11 +479,13 @@ class DetailScreenState extends State<DetailScreen>
                               ],
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                              padding:
+                                  const EdgeInsets.fromLTRB(24, 0, 24, 32),
                               child: Column(
                                 children: [
                                   SizedBox(
-                                    height: MediaQuery.of(context).padding.top,
+                                    height:
+                                        MediaQuery.of(context).padding.top,
                                   ),
                                   const SizedBox(height: 32),
                                   SlideTransition(
@@ -483,10 +495,12 @@ class DetailScreenState extends State<DetailScreen>
                                       padding: const EdgeInsets.all(24),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.circular(24),
+                                        borderRadius:
+                                            BorderRadius.circular(24),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.1,),
+                                            color: Colors.black
+                                                .withOpacity(0.1),
                                             blurRadius: 20,
                                             offset: const Offset(0, 8),
                                           ),
@@ -498,16 +512,18 @@ class DetailScreenState extends State<DetailScreen>
                                             width: 80,
                                             height: 80,
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFFEDBCC),
+                                              color:
+                                                  const Color(0xFFFEDBCC),
                                               borderRadius:
                                                   BorderRadius.circular(24),
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: const Color(
-                                                    0xFFEA580C,
-                                                  ).withValues(alpha: 0.2),
+                                                  color:
+                                                      const Color(0xFFEA580C)
+                                                          .withOpacity(0.2),
                                                   blurRadius: 15,
-                                                  offset: const Offset(0, 5),
+                                                  offset:
+                                                      const Offset(0, 5),
                                                 ),
                                               ],
                                             ),
@@ -517,10 +533,10 @@ class DetailScreenState extends State<DetailScreen>
                                                     .toUpperCase(),
                                                 style: GoogleFonts.poppins(
                                                   fontSize: 32,
-                                                  fontWeight: FontWeight.w800,
+                                                  fontWeight:
+                                                      FontWeight.w800,
                                                   color: const Color(
-                                                    0xFFEA580C,
-                                                  ),
+                                                      0xFFEA580C),
                                                 ),
                                               ),
                                             ),
@@ -531,7 +547,8 @@ class DetailScreenState extends State<DetailScreen>
                                             style: GoogleFonts.poppins(
                                               fontSize: 24,
                                               fontWeight: FontWeight.w700,
-                                              color: const Color(0xFF1F2937),
+                                              color:
+                                                  const Color(0xFF1F2937),
                                             ),
                                           ),
                                           const SizedBox(height: 8),
@@ -540,7 +557,8 @@ class DetailScreenState extends State<DetailScreen>
                                             style: GoogleFonts.poppins(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF374151),
+                                              color:
+                                                  const Color(0xFF374151),
                                             ),
                                           ),
                                           const SizedBox(height: 16),
@@ -549,41 +567,45 @@ class DetailScreenState extends State<DetailScreen>
                                             children: [
                                               Expanded(
                                                 child: GestureDetector(
-                                                  onTap: () {
+                                                  onTap: () async {
                                                     showPointPopup(
                                                       context,
                                                       detailedStudent.name,
                                                       detailedStudent.nis,
                                                       detailedStudent.kelas,
                                                     );
+                                                    // Auto refresh setelah modal ditutup
+                                                    await Future.delayed(const Duration(milliseconds: 500));
+                                                    refreshData();
                                                   },
                                                   child: Container(
                                                     padding:
-                                                        const EdgeInsets.symmetric(
-                                                          vertical: 14,
-                                                        ),
-                                                    decoration: BoxDecoration(
+                                                        const EdgeInsets
+                                                            .symmetric(
+                                                      vertical: 14,
+                                                    ),
+                                                    decoration:
+                                                        BoxDecoration(
                                                       gradient:
                                                           const LinearGradient(
-                                                            colors: [
-                                                              Color(0xFF61B8FF),
-                                                              Color(0xFF0083EE),
-                                                            ],
-                                                          ),
+                                                        colors: [
+                                                          Color(0xFF61B8FF),
+                                                          Color(0xFF0083EE),
+                                                        ],
+                                                      ),
                                                       borderRadius:
-                                                          BorderRadius.circular(
-                                                            16,
-                                                          ),
+                                                          BorderRadius
+                                                              .circular(16),
                                                       boxShadow: [
                                                         BoxShadow(
                                                           color: const Color(
-                                                            0xFF0083EE,
-                                                          ).withValues(alpha: 0.3),
+                                                                  0xFF0083EE)
+                                                              .withOpacity(
+                                                                  0.3),
                                                           blurRadius: 8,
-                                                          offset: const Offset(
-                                                            0,
-                                                            4,
-                                                          ),
+                                                          offset:
+                                                              const Offset(
+                                                                  0, 4),
                                                         ),
                                                       ],
                                                     ),
@@ -598,20 +620,18 @@ class DetailScreenState extends State<DetailScreen>
                                                           size: 18,
                                                         ),
                                                         const SizedBox(
-                                                          width: 8,
-                                                        ),
+                                                            width: 8),
                                                         Text(
                                                           'Berikan Poin',
-                                                          style:
-                                                              GoogleFonts.poppins(
-                                                                fontSize: 14,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color:
-                                                                    Colors
-                                                                        .white,
-                                                              ),
+                                                          style: GoogleFonts
+                                                              .poppins(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600,
+                                                            color:
+                                                                Colors.white,
+                                                          ),
                                                         ),
                                                       ],
                                                     ),
@@ -621,41 +641,45 @@ class DetailScreenState extends State<DetailScreen>
                                               const SizedBox(width: 12),
                                               Expanded(
                                                 child: GestureDetector(
-                                                  onTap: () {
+                                                  onTap: () async {
                                                     showBKNotePopup(
                                                       context,
                                                       detailedStudent.name,
                                                       detailedStudent.nis,
                                                       detailedStudent.kelas,
                                                     );
+                                                    // Auto refresh setelah modal ditutup
+                                                    await Future.delayed(const Duration(milliseconds: 500));
+                                                    refreshData();
                                                   },
                                                   child: Container(
                                                     padding:
-                                                        const EdgeInsets.symmetric(
-                                                          vertical: 14,
-                                                        ),
-                                                    decoration: BoxDecoration(
+                                                        const EdgeInsets
+                                                            .symmetric(
+                                                      vertical: 14,
+                                                    ),
+                                                    decoration:
+                                                        BoxDecoration(
                                                       gradient:
                                                           const LinearGradient(
-                                                            colors: [
-                                                              Color(0xFFFF6B6D),
-                                                              Color(0xFFEA580C),
-                                                            ],
-                                                          ),
+                                                        colors: [
+                                                          Color(0xFFFF6B6D),
+                                                          Color(0xFFEA580C),
+                                                        ],
+                                                      ),
                                                       borderRadius:
-                                                          BorderRadius.circular(
-                                                            16,
-                                                          ),
+                                                          BorderRadius
+                                                              .circular(16),
                                                       boxShadow: [
                                                         BoxShadow(
                                                           color: const Color(
-                                                            0xFFFF6B6D,
-                                                          ).withValues(alpha: 0.3),
+                                                                  0xFFFF6B6D)
+                                                              .withOpacity(
+                                                                  0.3),
                                                           blurRadius: 8,
-                                                          offset: const Offset(
-                                                            0,
-                                                            4,
-                                                          ),
+                                                          offset:
+                                                              const Offset(
+                                                                  0, 4),
                                                         ),
                                                       ],
                                                     ),
@@ -671,20 +695,18 @@ class DetailScreenState extends State<DetailScreen>
                                                           size: 18,
                                                         ),
                                                         const SizedBox(
-                                                          width: 8,
-                                                        ),
+                                                            width: 8),
                                                         Text(
                                                           'Penanganan',
-                                                          style:
-                                                              GoogleFonts.poppins(
-                                                                fontSize: 14,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color:
-                                                                    Colors
-                                                                        .white,
-                                                              ),
+                                                          style: GoogleFonts
+                                                              .poppins(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600,
+                                                            color:
+                                                                Colors.white,
+                                                          ),
                                                         ),
                                                       ],
                                                     ),
@@ -711,14 +733,15 @@ class DetailScreenState extends State<DetailScreen>
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
+                                    color: Colors.black.withOpacity(0.05),
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Biodata Siswa',
@@ -774,7 +797,8 @@ class DetailScreenState extends State<DetailScreen>
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20),
                             child: Container(
                               height: 50,
                               decoration: BoxDecoration(
@@ -782,7 +806,7 @@ class DetailScreenState extends State<DetailScreen>
                                 borderRadius: BorderRadius.circular(25),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.05),
+                                    color: Colors.black.withOpacity(0.05),
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
                                   ),
@@ -824,7 +848,7 @@ class DetailScreenState extends State<DetailScreen>
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFF0083EE).withValues(alpha: 0.1),
+              color: const Color(0xFF0083EE).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, size: 16, color: const Color(0xFF0083EE)),
@@ -900,10 +924,10 @@ class DetailScreenState extends State<DetailScreen>
   }
 
   Widget buildPelanggaranContent() {
-    final displayed =
-        pelanggaranHistory.length > maxHistoryPreview
-            ? pelanggaranHistory.take(maxHistoryPreview).toList()
-            : pelanggaranHistory;
+    final displayed = pelanggaranHistory.length > maxHistoryPreview
+        ? pelanggaranHistory.take(maxHistoryPreview).toList()
+        : pelanggaranHistory;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -917,7 +941,12 @@ class DetailScreenState extends State<DetailScreen>
         ),
         const SizedBox(height: 16),
         if (isLoadingViolations)
-          const Center(child: CircularProgressIndicator())
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          )
         else if (errorMessageViolations != null)
           buildEmptyState(errorMessageViolations!, Icons.error)
         else if (pelanggaranHistory.isEmpty)
@@ -934,10 +963,10 @@ class DetailScreenState extends State<DetailScreen>
   }
 
   Widget buildApresiasiContent() {
-    final displayed =
-        apresiasiHistory.length > maxHistoryPreview
-            ? apresiasiHistory.take(maxHistoryPreview).toList()
-            : apresiasiHistory;
+    final displayed = apresiasiHistory.length > maxHistoryPreview
+        ? apresiasiHistory.take(maxHistoryPreview).toList()
+        : apresiasiHistory;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -951,7 +980,12 @@ class DetailScreenState extends State<DetailScreen>
         ),
         const SizedBox(height: 16),
         if (isLoadingAppreciations)
-          const Center(child: CircularProgressIndicator())
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          )
         else if (errorMessageAppreciations != null)
           buildEmptyState(errorMessageAppreciations!, Icons.error)
         else if (apresiasiHistory.isEmpty)
@@ -980,7 +1014,12 @@ class DetailScreenState extends State<DetailScreen>
         ),
         const SizedBox(height: 16),
         if (isLoadingAppreciations || isLoadingViolations)
-          const Center(child: CircularProgressIndicator())
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+          )
         else if (errorMessageAppreciations != null ||
             errorMessageViolations != null)
           buildEmptyState(
@@ -1001,7 +1040,9 @@ class DetailScreenState extends State<DetailScreen>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => HistoryScreen(student: widget.student),
+            builder: (context) => HistoryScreen(
+              student: Map<String, dynamic>.from(widget.student),
+            ),
           ),
         );
       },
@@ -1011,10 +1052,10 @@ class DetailScreenState extends State<DetailScreen>
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: item.color.withValues(alpha: 0.2), width: 2),
+          border: Border.all(color: item.color.withOpacity(0.2), width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -1029,7 +1070,7 @@ class DetailScreenState extends State<DetailScreen>
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: item.color.withValues(alpha: 0.1),
+                    color: item.color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(item.icon, color: item.color, size: 24),
@@ -1086,25 +1127,21 @@ class DetailScreenState extends State<DetailScreen>
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 16,
-                        color: const Color(0xFF6B7280),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${item.date} - ${item.time}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 16,
+                    color: Color(0xFF6B7280),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${item.date} - ${item.time}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF6B7280),
+                    ),
                   ),
                 ],
               ),
@@ -1125,7 +1162,9 @@ class DetailScreenState extends State<DetailScreen>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => HistoryScreen(student: widget.student),
+                builder: (context) => HistoryScreen(
+                  student: Map<String, dynamic>.from(widget.student),
+                ),
               ),
             );
           },
@@ -1158,7 +1197,7 @@ class DetailScreenState extends State<DetailScreen>
         border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1203,17 +1242,17 @@ class DetailScreenState extends State<DetailScreen>
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B6D).withValues(alpha: 0.1),
+                    color: const Color(0xFFFF6B6D).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFFFF6B6D).withValues(alpha: 0.2),
+                      color: const Color(0xFFFF6B6D).withOpacity(0.2),
                     ),
                   ),
                   child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.trending_down,
-                        color: const Color(0xFFFF6B6D),
+                        color: Color(0xFFFF6B6D),
                         size: 20,
                       ),
                       const SizedBox(height: 4),
@@ -1242,17 +1281,17 @@ class DetailScreenState extends State<DetailScreen>
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                    color: const Color(0xFF10B981).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      color: const Color(0xFF10B981).withOpacity(0.2),
                     ),
                   ),
                   child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.trending_up,
-                        color: const Color(0xFF10B981),
+                        color: Color(0xFF10B981),
                         size: 20,
                       ),
                       const SizedBox(height: 4),
@@ -1281,17 +1320,17 @@ class DetailScreenState extends State<DetailScreen>
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0083EE).withValues(alpha: 0.1),
+                    color: const Color(0xFF0083EE).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF0083EE).withValues(alpha: 0.2),
+                      color: const Color(0xFF0083EE).withOpacity(0.2),
                     ),
                   ),
                   child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.calculate,
-                        color: const Color(0xFF0083EE),
+                        color: Color(0xFF0083EE),
                         size: 20,
                       ),
                       const SizedBox(height: 4),
@@ -1332,6 +1371,7 @@ class DetailScreenState extends State<DetailScreen>
                     totalPoints > 0 ? item.pelanggaran / totalPoints : 0;
                 double greenFraction =
                     totalPoints > 0 ? item.apresiasi / totalPoints : 0;
+
                 return Stack(
                   children: [
                     Container(
@@ -1380,7 +1420,7 @@ class DetailScreenState extends State<DetailScreen>
               borderRadius: BorderRadius.circular(40),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0083EE).withValues(alpha: 0.3),
+                  color: const Color(0xFF0083EE).withOpacity(0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
