@@ -441,6 +441,7 @@ class NotifikasiScreenState extends State<NotifikasiScreen>
                                         showModalBottomSheet(
                                           context: context,
                                           isScrollControlled: true,
+                                          backgroundColor: Colors.white,
                                           shape: const RoundedRectangleBorder(
                                             borderRadius: BorderRadius.vertical(
                                               top: Radius.circular(20),
