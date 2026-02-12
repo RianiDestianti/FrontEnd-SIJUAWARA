@@ -1173,8 +1173,8 @@ class LaporanScreenState extends State<LaporanScreen>
                                           buildViewButton('Rekap', 'Rekap'),
                                           const SizedBox(width: 10),
                                           buildViewButton(
-                                            'FAQ Poin',
-                                            'FAQ Poin',
+                                            'Aspek Poin',
+                                            'Aspek Poin',
                                           ),
                                         ],
                                       ),
@@ -1525,7 +1525,7 @@ class LaporanScreenState extends State<LaporanScreen>
                     shape: BoxShape.circle,
                   ),
                 ),
-              if (isActive && view == 'FAQ Poin')
+              if (isActive && view == 'Aspek Poin')
                 Container(
                   width: 8,
                   height: 8,
