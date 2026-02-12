@@ -489,6 +489,7 @@ class ActivityScreenState extends State<ActivityScreen>
                                 ),
                               );
                             }).toList(),
+                            dropdownColor: Colors.white,
                         onChanged: (String? newValue) {
                           if (newValue != null) {
                             setState(() {
