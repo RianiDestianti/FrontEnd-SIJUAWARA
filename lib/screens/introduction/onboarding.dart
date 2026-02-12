@@ -54,9 +54,9 @@ class IntroductionScreenState extends State<IntroductionScreen>
     ),
     PageData(
       image: 'assets/backpack.png',
-      title: 'SIJUAWARA',
+      title: 'SIJUWARA',
       description:
-          'Geser ke atas untuk masuk ke SIJUAWARA (SISTEM INFORMASI JURNAL SISWA AKTIF) dan kelola penilaian siswa dengan mudah!',
+          'Geser ke atas untuk masuk ke SIJUWARA (SISTEM JURNAL SISWA AKTIF) dan kelola penilaian siswa dengan mudah!',
     ),
   ];
 
@@ -956,7 +956,7 @@ class LoginHeader extends StatelessWidget {
                 ),
                 SizedBox(height: isWeb ? 12 : 8),
                 Text(
-                  'Yuk, lanjutkan aktivitasmu di SIJUAWARA (SISTEM INFORMASI JURNAL SISWA AKTIF)!',
+                  'Yuk, lanjutkan aktivitasmu di SIJUWARA (SISTEM JURNAL SISWA AKTIF)!',
                   style: GoogleFonts.poppins(
                     fontSize: isWeb ? 16 : 13,
                     fontWeight: FontWeight.w400,
