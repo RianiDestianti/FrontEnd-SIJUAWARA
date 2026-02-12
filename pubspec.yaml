@@ -32,7 +32,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
-  google_fonts: ^6.2.1
+  google_fonts: ^6.1.0
   pdf: ^3.10.0
   printing: ^5.12.0
   docx_template: ^0.4.0
