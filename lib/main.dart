@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:skoring/screens/introduction/onboarding.dart';
-import 'package:skoring/screens/walikelas/home.dart';
+
 import 'package:skoring/firebase/notification.dart';
 import 'package:skoring/firebase/tokenfcm.dart';
+import 'package:skoring/screens/walikelas/home/home.dart';
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -13,15 +14,12 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   FirebaseMessaging.onMessage.listen((message) {
     NotificationService.instance.showNotificationFromMessage(message);
   });
-
   await NotificationService.instance.init();
   await FcmTokenService.instance.init();
-
   runApp(const MyApp());
 }
 
@@ -41,7 +39,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/introduction',
       routes: {
         '/introduction': (context) => const IntroductionScreen(),
-        '/walikelas': (context) => const WalikelasMainScreen(),
+        '/walikelas': (context) => const HomeScreen ()
       },
       onUnknownRoute: (settings) {
         return MaterialPageRoute(
