@@ -61,9 +61,8 @@ class SiswaHeaderWidgets {
     }
 
     if (selectedKelas != null) {
-      final studentsInClass = studentsList
-          .where((s) => s.idKelas == selectedKelas.idKelas)
-          .length;
+      final studentsInClass =
+          studentsList.where((s) => s.idKelas == selectedKelas.idKelas).length;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -172,7 +171,11 @@ class SiswaHeaderWidgets {
               onTap: onClear,
               child: Container(
                 padding: const EdgeInsets.all(4),
-                child: const Icon(Icons.clear, color: Color(0xFF6B7280), size: 16),
+                child: const Icon(
+                  Icons.clear,
+                  color: Color(0xFF6B7280),
+                  size: 16,
+                ),
               ),
             ),
         ],
@@ -188,16 +191,10 @@ class SiswaHeaderWidgets {
   }) {
     final bool isActive = selectedFilter == index;
 
-    final dotGradients = [
-      const [Color(0xFF61B8FF), Color(0xFF0083EE)],
-      const [Color(0xFFFFD700), Color(0xFFFFA500)],
-      const [Color(0xFFEA580C), Color(0xFFFF6B6D)],
-    ];
-
     final activeTextColors = [
-      const Color(0xFF1F2937),
-      const Color(0xFFB45309),
-      const Color(0xFFEA580C),
+      const Color.fromARGB(255, 82, 125, 184),
+      const Color.fromARGB(255, 25, 158, 43),
+      const Color.fromARGB(255, 219, 82, 8),
     ];
 
     return Expanded(
@@ -207,31 +204,23 @@ class SiswaHeaderWidgets {
           duration: const Duration(milliseconds: 200),
           height: 40,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.2),
+            color:
+                isActive ? Colors.white : Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
+            boxShadow:
+                isActive
+                    ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                    : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (isActive)
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: dotGradients[index]),
-                    shape: BoxShape.circle,
-                  ),
-                ),
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -242,7 +231,7 @@ class SiswaHeaderWidgets {
                     style: GoogleFonts.poppins(
                       color: isActive ? activeTextColors[index] : Colors.white,
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: 10,
                     ),
                   ),
                 ),
