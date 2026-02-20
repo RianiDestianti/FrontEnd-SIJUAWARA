@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HeaderWidgets {
+
   static Widget buildCompactIconButton(
     IconData icon,
     VoidCallback onTap,
@@ -88,6 +89,7 @@ class HeaderWidgets {
             ),
           ),
           SizedBox(width: isSmall ? 10 : 12),
+          
           Expanded(
             child: TextField(
               onChanged: onChanged,

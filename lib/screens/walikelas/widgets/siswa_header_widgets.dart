@@ -71,28 +71,34 @@ class SiswaHeaderWidgets {
             'Daftar Siswa ${selectedKelas.namaKelas}',
             style: GoogleFonts.poppins(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
               height: 1.2,
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Jurusan: ${selectedKelas.jurusan.toUpperCase()}',
-            style: GoogleFonts.poppins(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
-            'Total Siswa: $studentsInClass - Semester Ganjil 2025/2026',
+            '${selectedKelas.jurusan.toUpperCase()}',
+            style: GoogleFonts.poppins(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '$studentsInClass siswa • Ganjil 2025/2026',
             style: GoogleFonts.poppins(
               color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       );
@@ -182,12 +188,16 @@ class SiswaHeaderWidgets {
   }) {
     final bool isActive = selectedFilter == index;
 
-   
+    final dotGradients = [
+      const [Color(0xFF61B8FF), Color(0xFF0083EE)],
+      const [Color(0xFFFFD700), Color(0xFFFFA500)],
+      const [Color(0xFFEA580C), Color(0xFFFF6B6D)],
+    ];
 
     final activeTextColors = [
-      const Color.fromARGB(255, 82, 125, 184),
-      const Color.fromARGB(255, 25, 158, 43),
-      const Color.fromARGB(255, 219, 82, 8),
+      const Color(0xFF1F2937),
+      const Color(0xFFB45309),
+      const Color(0xFFEA580C),
     ];
 
     return Expanded(
@@ -212,7 +222,16 @@ class SiswaHeaderWidgets {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              
+              if (isActive)
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: dotGradients[index]),
+                    shape: BoxShape.circle,
+                  ),
+                ),
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -223,7 +242,7 @@ class SiswaHeaderWidgets {
                     style: GoogleFonts.poppins(
                       color: isActive ? activeTextColors[index] : Colors.white,
                       fontWeight: FontWeight.w600,
-                      fontSize: 10,
+                      fontSize: 14,
                     ),
                   ),
                 ),

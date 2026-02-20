@@ -261,22 +261,56 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SiswaHeaderWidgets.buildTopBar(
-              onNotificationTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const NotifikasiScreen())),
-              onProfileTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen())),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: SiswaHeaderWidgets.buildHeaderContent(
-                isLoading: isLoading,
-                hasError: hasError,
-                errorMessage: errorMessageKelas ?? errorMessageSiswa,
-                selectedKelas: selectedKelas,
-                studentsList: studentsList,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: SiswaHeaderWidgets.buildHeaderContent(
+                    isLoading: isLoading,
+                    hasError: hasError,
+                    errorMessage: errorMessageKelas ?? errorMessageSiswa,
+                    selectedKelas: selectedKelas,
+                    studentsList: studentsList,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const NotifikasiScreen())),
+                      child: Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.notifications_rounded, color: Colors.white, size: 22),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                      child: Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.person_rounded, color: Color(0xFF0083EE), size: 22),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
             if (!isLoading && !hasError) ...[
               const SizedBox(height: 24),
