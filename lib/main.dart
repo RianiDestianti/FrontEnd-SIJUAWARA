@@ -5,7 +5,7 @@ import 'package:skoring/screens/introduction/onboarding.dart';
 
 import 'package:skoring/firebase/notification.dart';
 import 'package:skoring/firebase/tokenfcm.dart';
-import 'package:skoring/screens/walikelas/home/home.dart';
+import 'package:skoring/screens/walikelas/home.dart';
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
