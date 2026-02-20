@@ -40,7 +40,7 @@ class WalikelasNavigationState extends State<WalikelasNavigation> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
       height: 70,
       decoration: BoxDecoration(
         color: Colors.white,
