@@ -63,9 +63,10 @@ class SiswaCardWidgets {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
                     student.namaSiswa,
                     style: GoogleFonts.poppins(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF1F2937),
                     ),
