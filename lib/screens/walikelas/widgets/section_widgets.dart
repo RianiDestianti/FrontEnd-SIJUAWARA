@@ -60,6 +60,8 @@ class SectionWidgets {
                     children: [
                       Text(
                         'PH (Penghargaan)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
                           fontSize: isSmall ? 15 : 16,
                           fontWeight: FontWeight.w700,
@@ -68,6 +70,8 @@ class SectionWidgets {
                       ),
                       Text(
                         'Siswa dengan status PH1–PH3',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: isSmall ? 10 : 11,
@@ -171,6 +175,8 @@ class SectionWidgets {
                     children: [
                       Text(
                         'SP (Pelanggaran)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
                           fontSize: isSmall ? 15 : 16,
                           fontWeight: FontWeight.w700,
@@ -179,6 +185,8 @@ class SectionWidgets {
                       ),
                       Text(
                         'Siswa dengan status SP1–SP3',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: isSmall ? 10 : 11,
@@ -255,6 +263,7 @@ class SectionWidgets {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.all(padding),
@@ -266,6 +275,7 @@ class SectionWidgets {
               ),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
                   padding: EdgeInsets.all(isSmall ? 8 : 10),
@@ -282,6 +292,8 @@ class SectionWidgets {
                     children: [
                       Text(
                         title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
                           fontSize: isSmall ? 14 : 15,
                           fontWeight: FontWeight.w700,
@@ -290,8 +302,10 @@ class SectionWidgets {
                       ),
                       Text(
                         subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withOpacity(0.85),
                           fontSize: isSmall ? 10 : 11,
                           fontWeight: FontWeight.w400,
                         ),
@@ -299,12 +313,30 @@ class SectionWidgets {
                     ],
                   ),
                 ),
-                chartButtons,
               ],
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(padding),
+            padding: EdgeInsets.fromLTRB(padding, padding * 0.8, padding, 0),
+            child: Row(
+              children: [
+                Text(
+                  'Tampilkan:',
+                  style: GoogleFonts.poppins(
+                    fontSize: isSmall ? 11 : 12,
+                    color: const Color(0xFF9CA3AF),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                chartButtons,
+              ],
+            ),
+          ),
+
+          // Chart area
+          Padding(
+            padding: EdgeInsets.fromLTRB(padding, padding * 0.5, padding, padding),
             child: GestureDetector(
               onTap: onChartTap,
               child: chart,
@@ -315,7 +347,7 @@ class SectionWidgets {
     );
   }
 
-  static Widget buildCompactActivityCard(
+    static Widget buildCompactActivityCard(
     bool isSmall,
     double padding,
     List<Activity> activityData,
@@ -364,6 +396,8 @@ class SectionWidgets {
                     children: [
                       Text(
                         'Aktivitas Terkini',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
                           fontSize: isSmall ? 15 : 16,
                           fontWeight: FontWeight.w700,
@@ -372,6 +406,8 @@ class SectionWidgets {
                       ),
                       Text(
                         'Update terbaru',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
                           fontSize: isSmall ? 10 : 11,
                           color: const Color(0xFF6B7280),
@@ -461,6 +497,7 @@ class SectionWidgets {
                       fontSize: isSmall ? 13 : 14,
                       color: const Color(0xFF1F2937),
                     ),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: isSmall ? 2 : 3),
