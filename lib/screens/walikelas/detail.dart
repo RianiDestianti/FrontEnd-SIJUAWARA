@@ -1,443 +1,189 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
-import 'package:skoring/config/api.dart';
 import 'package:skoring/models/api/api_detail.dart';
 import 'point.dart';
 import 'note.dart';
 import 'history.dart';
+import 'services/student_detail_service.dart'; 
+import 'utils/detail_colors.dart';
+import 'utils/point_detail_utils.dart';         
+import 'widgets/biodata_row.dart';
+import 'widgets/history_card.dart';
+import 'widgets/akumulasi_card.dart';
+import 'widgets/empty_detail_state.dart';
+import 'widgets/student_profile_headers.dart';
 
 class DetailScreen extends StatefulWidget {
   final Map student;
-
   const DetailScreen({Key? key, required this.student}) : super(key: key);
 
   @override
   State<DetailScreen> createState() => DetailScreenState();
 }
 
-class DetailScreenState extends State<DetailScreen>
-    with TickerProviderStateMixin {
-  late AnimationController animationController;
-  late Animation<double> fadeAnimation;
-  late Animation<Offset> slideAnimation;
+class DetailScreenState extends State<DetailScreen> with TickerProviderStateMixin {
+  static const int _maxPreview = 5;
 
-  static const int maxHistoryPreview = 5;
-  int selectedTab = 0;
+  late AnimationController _headerCtrl;
+  late AnimationController _contentCtrl;
+  late Animation<double> _headerFade;
+  late Animation<Offset> _headerSlide;
+  late Animation<double> _contentFade;
 
-  late Student detailedStudent;
-  List<ViolationHistory> pelanggaranHistory = [];
-  List<AppreciationHistory> apresiasiHistory = [];
-  List<AccumulationHistory> akumulasiHistory = [];
+  int _tab = 0;
 
-  bool isLoadingAppreciations = true;
-  bool isLoadingViolations = true;
-  bool isLoadingStudent = true;
+  late Student _student;
+  bool _loadingStudent = true;
+  String? _errorStudent;
 
-  String? errorMessageAppreciations;
-  String? errorMessageViolations;
-  String? errorMessageStudent;
+  List<ViolationHistory> _violations = [];
+  List<AppreciationHistory> _appreciations = [];
+  AccumulationHistory? _accumulation;
 
-  List<dynamic> aspekPenilaianData = [];
-  String nipWalikelas = '';
-  String idKelas = '';
+  bool _loadingViolations = true;
+  bool _loadingAppreciations = true;
+  String? _errorViolations;
+  String? _errorAppreciations;
+
+  StudentService? _service;
 
   @override
   void initState() {
     super.initState();
-    animationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-
-    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
-    );
-
-    slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
-    );
-
-    animationController.forward();
-    loadUserData();
-  }
-
-  Future<void> loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      nipWalikelas = prefs.getString('walikelas_id') ?? '';
-      idKelas = prefs.getString('id_kelas') ?? '';
-    });
-
-    if (nipWalikelas.isEmpty || idKelas.isEmpty) {
-      setState(() {
-        errorMessageStudent = 'Data guru tidak lengkap. Silakan login ulang.';
-        isLoadingStudent = false;
-      });
-      return;
-    }
-
-    await fetchAspekPenilaian();
-    initializeStudentData();
-  }
-
-  Future<void> refreshData() async {
-    await loadUserData();
-  }
-
-  // Method untuk dipanggil dari popup setelah berhasil menambah skoring
-  void onSkoringAdded() {
-    refreshData();
-  }
-
-  void initializeStudentData() {
-    setState(() {
-      isLoadingStudent = true;
-      errorMessageStudent = null;
-    });
-
-    try {
-      final data = widget.student;
-      final poinTotal = int.tryParse(data['points']?.toString() ?? '') ?? 0;
-      final spLevelRaw = data['spLevel'] ?? data['sp_level'];
-      final phLevelRaw = data['phLevel'] ?? data['ph_level'];
-      final spLevel = resolveSpLevel(spLevelRaw?.toString(), poinTotal);
-      final phLevel = resolvePhLevel(phLevelRaw?.toString(), poinTotal);
-
-      detailedStudent = Student(
-        name: data['name'] ?? 'Unknown',
-        nis: data['nis'] ?? '0',
-        programKeahlian: data['programKeahlian'] ?? data['kelas'] ?? 'Unknown',
-        kelas: data['kelas'] ?? 'Unknown',
-        poinApresiasi: data['poinApresiasi'] ?? 0,
-        poinPelanggaran: (data['poinPelanggaran'] ?? 0).abs(),
-        poinTotal: poinTotal,
-        spLevel: spLevel,
-        phLevel: phLevel,
-      );
-
-      setState(() => isLoadingStudent = false);
-      fetchAppreciations(data['nis']);
-      fetchViolations(data['nis']);
-    } catch (e) {
-      setState(() {
-        errorMessageStudent = 'Gagal memuat detail siswa: $e';
-        isLoadingStudent = false;
-      });
-    }
-  }
-
-  String resolveSpLevel(String? spLevel, int poinTotal) {
-    final sp = spLevel?.trim();
-    if (sp != null && sp.isNotEmpty) {
-      return sp;
-    }
-    if (poinTotal <= -76) return 'SP3';
-    if (poinTotal <= -51) return 'SP2';
-    if (poinTotal <= -25) return 'SP1';
-    return '-';
-  }
-
-  String resolvePhLevel(String? phLevel, int poinTotal) {
-    if (poinTotal <= -25) return '-';
-    final ph = phLevel?.trim();
-    if (ph != null && ph.isNotEmpty) {
-      return ph;
-    }
-    if (poinTotal >= 151) return 'PH3';
-    if (poinTotal >= 126) return 'PH2';
-    if (poinTotal >= 100) return 'PH1';
-    return '-';
-  }
-
-  Future<void> fetchAspekPenilaian() async {
-    setState(() {
-      errorMessageStudent = null;
-    });
-
-    try {
-      final uri = Uri.parse(
-        '${ApiConfig.baseUrl}/aspekpenilaian?nip=$nipWalikelas&id_kelas=$idKelas',
-      );
-      final response = await http.get(
-        uri,
-        headers: {'Accept': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
-        if (jsonData['success']) {
-          setState(() {
-            aspekPenilaianData = jsonData['data'];
-          });
-        } else {
-          setState(() {
-            errorMessageStudent =
-                jsonData['message'] ?? 'Gagal memuat aspek penilaian';
-          });
-        }
-      } else {
-        setState(() {
-          errorMessageStudent =
-              'Gagal mengambil data (${response.statusCode})';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessageStudent = 'Terjadi kesalahan: $e';
-      });
-    }
-  }
-
-  Future<void> fetchAppreciations(String nis) async {
-    setState(() {
-      isLoadingAppreciations = true;
-      errorMessageAppreciations = null;
-    });
-
-    try {
-      final uri = Uri.parse(
-        '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$nipWalikelas&id_kelas=$idKelas',
-      );
-      final response = await http.get(
-        uri,
-        headers: {'Accept': 'application/json'},
-      );
-
-      if (response.statusCode != 200) {
-        setState(() {
-          errorMessageAppreciations =
-              'Gagal mengambil penilaian (${response.statusCode})';
-          isLoadingAppreciations = false;
-        });
-        return;
-      }
-
-      final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
-      final List evaluations = (jsonData['penilaian']?['data'] as List? ?? [])
-          .where((e) => e['nis'].toString() == nis)
-          .toList();
-
-      final historiesWithDate = evaluations.map<Map<String, dynamic>>((eval) {
-        final aspek = aspekPenilaianData.firstWhere(
-          (a) =>
-              a['id_aspekpenilaian'].toString() ==
-              eval['id_aspekpenilaian'].toString(),
-          orElse: () => {
-            'uraian': 'Apresiasi',
-            'indikator_poin': 0,
-            'kategori': 'Umum',
-            'jenis_poin': 'Apresiasi',
-          },
-        );
-
-        final createdAt =
-            DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
-
-        return {
-          'createdAt': createdAt,
-          'history': AppreciationHistory(
-            type: aspek['kategori']?.toString() ?? 'Apresiasi',
-            description: aspek['uraian']?.toString() ?? 'Apresiasi',
-            date: DateFormat('dd MMM yyyy').format(createdAt),
-            time: DateFormat('HH:mm').format(createdAt),
-            points: ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
-            icon: Icons.star,
-            color: const Color(0xFF10B981),
-            kategori: aspek['kategori'] ?? 'Umum',
-          ),
-        };
-      }).toList()
-        ..sort(
-          (a, b) => (b['createdAt'] as DateTime)
-              .compareTo(a['createdAt'] as DateTime),
-        );
-
-      setState(() {
-        apresiasiHistory = historiesWithDate
-            .map((e) => e['history'] as AppreciationHistory)
-            .toList();
-        isLoadingAppreciations = false;
-        calculateAccumulations();
-      });
-    } catch (e) {
-      setState(() {
-        errorMessageAppreciations = 'Terjadi kesalahan: $e';
-        isLoadingAppreciations = false;
-      });
-    }
-  }
-
-  Future<void> fetchViolations(String nis) async {
-    setState(() {
-      isLoadingViolations = true;
-      errorMessageViolations = null;
-    });
-
-    try {
-      Future<http.Response> loadPelanggaran() {
-        return http.get(
-          Uri.parse(
-            '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$nipWalikelas&id_kelas=$idKelas',
-          ),
-          headers: {'Accept': 'application/json'},
-        );
-      }
-
-      var response = await loadPelanggaran();
-      if (response.statusCode != 200) {
-        response = await http.get(
-          Uri.parse(
-            '${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$nipWalikelas&id_kelas=$idKelas',
-          ),
-          headers: {'Accept': 'application/json'},
-        );
-      }
-
-      if (response.statusCode != 200) {
-        setState(() {
-          errorMessageViolations =
-              'Gagal mengambil penilaian (${response.statusCode})';
-          isLoadingViolations = false;
-        });
-        return;
-      }
-
-      final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
-      final List evaluations = (jsonData['penilaian']?['data'] as List? ?? [])
-          .where((e) => e['nis'].toString() == nis)
-          .toList();
-
-      final historiesWithDate = evaluations.map<Map<String, dynamic>>((eval) {
-        final aspek = aspekPenilaianData.firstWhere(
-          (a) =>
-              a['id_aspekpenilaian'].toString() ==
-              eval['id_aspekpenilaian'].toString(),
-          orElse: () => {
-            'uraian': 'Pelanggaran',
-            'indikator_poin': 0,
-            'kategori': 'Umum',
-            'jenis_poin': 'Pelanggaran',
-          },
-        );
-
-        final createdAt =
-            DateTime.tryParse(eval['created_at'] ?? '') ?? DateTime.now();
-
-        return {
-          'createdAt': createdAt,
-          'history': ViolationHistory(
-            type: aspek['kategori']?.toString() ?? 'Pelanggaran',
-            description: aspek['uraian']?.toString() ?? 'Pelanggaran',
-            date: DateFormat('dd MMM yyyy').format(createdAt),
-            time: DateFormat('HH:mm').format(createdAt),
-            points: ((aspek['indikator_poin'] as num? ?? 0).abs()).toInt(),
-            icon: Icons.warning,
-            color: const Color(0xFFFF6B6D),
-            pelanggaranKe: null,
-            kategori: aspek['kategori'] ?? 'Umum',
-          ),
-        };
-      }).toList()
-        ..sort(
-          (a, b) => (b['createdAt'] as DateTime)
-              .compareTo(a['createdAt'] as DateTime),
-        );
-
-      setState(() {
-        pelanggaranHistory =
-            historiesWithDate.map((e) => e['history'] as ViolationHistory).toList();
-        isLoadingViolations = false;
-        calculateAccumulations();
-      });
-    } catch (e) {
-      setState(() {
-        errorMessageViolations = 'Terjadi kesalahan: $e';
-        isLoadingViolations = false;
-      });
-    }
-  }
-
-  void calculateAccumulations() {
-    try {
-      final totalApresiasiPoints = apresiasiHistory.fold(
-        0,
-        (sum, item) => sum + item.points,
-      );
-      final totalPelanggaranPoints = pelanggaranHistory.fold(
-        0,
-        (sum, item) => sum + item.points,
-      );
-      final totalPoints = totalApresiasiPoints - totalPelanggaranPoints;
-
-      setState(() {
-        akumulasiHistory = [
-          AccumulationHistory(
-            periode: 'Total Keseluruhan',
-            pelanggaran: totalPelanggaranPoints,
-            apresiasi: totalApresiasiPoints,
-            total: totalPoints,
-            date: 'Sampai ${DateFormat('dd MMM yyyy').format(DateTime.now())}',
-          ),
-        ];
-      });
-    } catch (e) {
-      setState(() {
-        errorMessageAppreciations =
-            'Terjadi kesalahan dalam menghitung akumulasi: $e';
-      });
-    }
+    _initAnimations();
+    _load();
   }
 
   @override
   void dispose() {
-    animationController.dispose();
+    _headerCtrl.dispose();
+    _contentCtrl.dispose();
     super.dispose();
+  }
+
+  void _initAnimations() {
+    _headerCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 480));
+    _contentCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 380));
+
+    _headerFade = CurvedAnimation(parent: _headerCtrl, curve: Curves.easeOut);
+    _headerSlide = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _headerCtrl, curve: Curves.easeOut));
+    _contentFade = CurvedAnimation(parent: _contentCtrl, curve: Curves.easeIn);
+
+    _headerCtrl.forward();
+    Future.delayed(const Duration(milliseconds: 180), () {
+      if (mounted) _contentCtrl.forward();
+    });
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final nip = prefs.getString('walikelas_id') ?? '';
+    final idKelas = prefs.getString('id_kelas') ?? '';
+
+    if (nip.isEmpty || idKelas.isEmpty) {
+      setState(() {
+        _errorStudent = 'Data guru tidak lengkap. Silakan login ulang.';
+        _loadingStudent = false;
+      });
+      return;
+    }
+
+    _service = StudentService(nipWalikelas: nip, idKelas: idKelas);
+
+    try {
+      final aspek = await _service!.fetchAspekPenilaian();
+      _buildStudent(aspek);
+    } catch (e) {
+      if (mounted) setState(() { _errorStudent = e.toString(); _loadingStudent = false; });
+    }
+  }
+
+  void _buildStudent(List<dynamic> aspek) {
+    setState(() { _loadingStudent = true; _errorStudent = null; });
+    try {
+      final d = widget.student;
+      final total = int.tryParse(d['points']?.toString() ?? '') ?? 0;
+
+      _student = Student(
+        name: d['name'] ?? 'Unknown',
+        nis: d['nis'] ?? '0',
+        programKeahlian: d['programKeahlian'] ?? d['kelas'] ?? 'Unknown',
+        kelas: d['kelas'] ?? 'Unknown',
+        poinApresiasi: d['poinApresiasi'] ?? 0,
+        poinPelanggaran: (d['poinPelanggaran'] ?? 0).abs(),
+        poinTotal: total,
+        spLevel: DetailPointUtils.resolveSpLevel((d['spLevel'] ?? d['sp_level'])?.toString(), total),
+        phLevel: DetailPointUtils.resolvePhLevel((d['phLevel'] ?? d['ph_level'])?.toString(), total),
+      );
+
+      setState(() => _loadingStudent = false);
+      _fetchHistory(aspek);
+    } catch (e) {
+      setState(() { _errorStudent = 'Gagal memuat detail siswa: $e'; _loadingStudent = false; });
+    }
+  }
+
+  Future<void> _fetchHistory(List<dynamic> aspek) async {
+    final nis = widget.student['nis']?.toString() ?? '';
+    await Future.wait([_fetchViolations(nis, aspek), _fetchAppreciations(nis, aspek)]);
+  }
+
+  Future<void> _fetchViolations(String nis, List<dynamic> aspek) async {
+    setState(() { _loadingViolations = true; _errorViolations = null; });
+    try {
+      final result = await _service!.fetchViolations(nis: nis, aspek: aspek);
+      if (mounted) {
+        setState(() { _violations = result; _loadingViolations = false; });
+        _recalc();
+      }
+    } catch (e) {
+      if (mounted) setState(() { _errorViolations = e.toString(); _loadingViolations = false; });
+    }
+  }
+
+  Future<void> _fetchAppreciations(String nis, List<dynamic> aspek) async {
+    setState(() { _loadingAppreciations = true; _errorAppreciations = null; });
+    try {
+      final result = await _service!.fetchAppreciations(nis: nis, aspek: aspek);
+      if (mounted) {
+        setState(() { _appreciations = result; _loadingAppreciations = false; });
+        _recalc();
+      }
+    } catch (e) {
+      if (mounted) setState(() { _errorAppreciations = e.toString(); _loadingAppreciations = false; });
+    }
+  }
+
+  void _recalc() {
+    setState(() {
+      _accumulation = StudentService.buildAccumulation(_appreciations, _violations);
+    });
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _loadingStudent = true;
+      _loadingViolations = true;
+      _loadingAppreciations = true;
+    });
+    await _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoadingStudent) {
+    if (_loadingStudent) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        backgroundColor: AppColors.surface,
+        body: Center(child: CircularProgressIndicator()),
       );
     }
-
-    if (errorMessageStudent != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                errorMessageStudent!,
-                style: GoogleFonts.poppins(color: Colors.red),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => initializeStudentData(),
-                child: Text('Coba Lagi', style: GoogleFonts.poppins()),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    const backgroundGradient = [Color(0xFF61B8FF), Color(0xFF0083EE)];
-    const shadowColor = Color(0x200083EE);
+    if (_errorStudent != null) return _errorScreen(_errorStudent!);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.surface,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -445,389 +191,28 @@ class DetailScreenState extends State<DetailScreen>
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            double maxWidth = constraints.maxWidth;
-            if (maxWidth > 600) maxWidth = 600;
-
+            final maxW = constraints.maxWidth > 600 ? 600.0 : constraints.maxWidth;
             return Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: FadeTransition(
-                  opacity: fadeAnimation,
-                  child: RefreshIndicator(
-                    onRefresh: refreshData,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Column(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: backgroundGradient,
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: const BorderRadius.only(
-                                bottomLeft: Radius.circular(32),
-                                bottomRight: Radius.circular(32),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: shadowColor,
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                              child: Column(
-                                children: [
-                                  SizedBox(
-                                    height:
-                                        MediaQuery.of(context).padding.top,
-                                  ),
-                                  const SizedBox(height: 32),
-                                  SlideTransition(
-                                    position: slideAnimation,
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(24),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(24),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black
-                                                .withOpacity(0.1),
-                                            blurRadius: 20,
-                                            offset: const Offset(0, 8),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            width: 80,
-                                            height: 80,
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  const Color(0xFFFEDBCC),
-                                              borderRadius:
-                                                  BorderRadius.circular(24),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color:
-                                                      const Color(0xFFEA580C)
-                                                          .withOpacity(0.2),
-                                                  blurRadius: 15,
-                                                  offset:
-                                                      const Offset(0, 5),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                detailedStudent.name[0]
-                                                    .toUpperCase(),
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 32,
-                                                  fontWeight:
-                                                      FontWeight.w800,
-                                                  color: const Color(
-                                                      0xFFEA580C),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          Text(
-                                            detailedStudent.name,
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w700,
-                                              color:
-                                                  const Color(0xFF1F2937),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            '${detailedStudent.kelas} - ${detailedStudent.programKeahlian}',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color:
-                                                  const Color(0xFF374151),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          const SizedBox(height: 16),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: GestureDetector(
-                                                  onTap: () async {
-                                                    showPointPopup(
-                                                      context,
-                                                      detailedStudent.name,
-                                                      detailedStudent.nis,
-                                                      detailedStudent.kelas,
-                                                    );
-                                                    // Auto refresh setelah modal ditutup
-                                                    await Future.delayed(const Duration(milliseconds: 500));
-                                                    refreshData();
-                                                  },
-                                                  child: Container(
-                                                    padding:
-                                                        const EdgeInsets
-                                                            .symmetric(
-                                                      vertical: 14,
-                                                    ),
-                                                    decoration:
-                                                        BoxDecoration(
-                                                      gradient:
-                                                          const LinearGradient(
-                                                        colors: [
-                                                          Color(0xFF61B8FF),
-                                                          Color(0xFF0083EE),
-                                                        ],
-                                                      ),
-                                                      borderRadius:
-                                                          BorderRadius
-                                                              .circular(16),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: const Color(
-                                                                  0xFF0083EE)
-                                                              .withOpacity(
-                                                                  0.3),
-                                                          blurRadius: 8,
-                                                          offset:
-                                                              const Offset(
-                                                                  0, 4),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        const Icon(
-                                                          Icons.star_outline,
-                                                          color: Colors.white,
-                                                          size: 18,
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 8),
-                                                        Text(
-                                                          'Berikan Poin',
-                                                          style: GoogleFonts
-                                                              .poppins(
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600,
-                                                            color:
-                                                                Colors.white,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: GestureDetector(
-                                                  onTap: () async {
-                                                    showBKNotePopup(
-                                                      context,
-                                                      detailedStudent.name,
-                                                      detailedStudent.nis,
-                                                      detailedStudent.kelas,
-                                                    );
-                                                    // Auto refresh setelah modal ditutup
-                                                    await Future.delayed(const Duration(milliseconds: 500));
-                                                    refreshData();
-                                                  },
-                                                  child: Container(
-                                                    padding:
-                                                        const EdgeInsets
-                                                            .symmetric(
-                                                      vertical: 14,
-                                                    ),
-                                                    decoration:
-                                                        BoxDecoration(
-                                                      gradient:
-                                                          const LinearGradient(
-                                                        colors: [
-                                                          Color(0xFFFF6B6D),
-                                                          Color(0xFFEA580C),
-                                                        ],
-                                                      ),
-                                                      borderRadius:
-                                                          BorderRadius
-                                                              .circular(16),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: const Color(
-                                                                  0xFFFF6B6D)
-                                                              .withOpacity(
-                                                                  0.3),
-                                                          blurRadius: 8,
-                                                          offset:
-                                                              const Offset(
-                                                                  0, 4),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        const Icon(
-                                                          Icons
-                                                              .note_add_outlined,
-                                                          color: Colors.white,
-                                                          size: 18,
-                                                        ),
-                                                        const SizedBox(
-                                                            width: 8),
-                                                        Text(
-                                                          'Penanganan',
-                                                          style: GoogleFonts
-                                                              .poppins(
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600,
-                                                            color:
-                                                                Colors.white,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Biodata Siswa',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF1F2937),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  buildBiodataRow(
-                                    'NIS',
-                                    detailedStudent.nis,
-                                    Icons.badge,
-                                  ),
-                                  buildBiodataRow(
-                                    'Program Keahlian',
-                                    detailedStudent.programKeahlian,
-                                    Icons.school,
-                                  ),
-                                  buildBiodataRow(
-                                    'Kelas',
-                                    detailedStudent.kelas,
-                                    Icons.class_,
-                                  ),
-                                  buildBiodataRow(
-                                    'Poin Apresiasi',
-                                    '+${detailedStudent.poinApresiasi}',
-                                    Icons.star,
-                                  ),
-                                  buildBiodataRow(
-                                    'Poin Pelanggaran',
-                                    '-${detailedStudent.poinPelanggaran.abs()}',
-                                    Icons.warning,
-                                  ),
-                                  buildBiodataRow(
-                                    'Poin Total',
-                                    '${detailedStudent.poinTotal > 0 ? '+' : ''}${detailedStudent.poinTotal}',
-                                    Icons.calculate,
-                                  ),
-                                  buildBiodataRow(
-                                    'Status SP',
-                                    detailedStudent.spLevel,
-                                    Icons.report,
-                                  ),
-                                  buildBiodataRow(
-                                    'Status PH',
-                                    detailedStudent.phLevel,
-                                    Icons.emoji_events,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 20),
-                            child: Container(
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  buildTabButton('Pelanggaran', 0),
-                                  buildTabButton('Apresiasi', 1),
-                                  buildTabButton('Akumulasi', 2),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: buildTabContent(),
-                          ),
-                        ],
+                constraints: BoxConstraints(maxWidth: maxW),
+                child: RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(child: _gradientHeader()),
+                      SliverToBoxAdapter(
+                        child: FadeTransition(
+                          opacity: _contentFade,
+                          child: Column(children: [
+                            _biodataCard(),
+                            _tabBar(),
+                            _tabContent(),
+                            const SizedBox(height: 32),
+                          ]),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -838,348 +223,116 @@ class DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget buildBiodataRow(String label, String value, IconData icon) {
+  Widget _gradientHeader() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primaryLight, AppColors.primary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 24, 24, 32),
+        child: FadeTransition(
+          opacity: _headerFade,
+          child: SlideTransition(
+            position: _headerSlide,
+            child: StudentProfileHeader(
+              name: _student.name,
+              kelas: _student.kelas,
+              programKeahlian: _student.programKeahlian,
+              onBeriPoin: () async {
+                 showPointPopup(context, _student.name, _student.nis, _student.kelas);
+                _refresh();
+              },
+              onPenanganan: () async {
+                 showBKNotePopup(context, _student.name, _student.nis, _student.kelas);
+                _refresh();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _biodataCard() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0083EE).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: const Color(0xFF0083EE)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF6B7280),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1F2937),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildTabButton(String text, int index) {
-    bool isActive = selectedTab == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => selectedTab = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 50,
-          decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF0083EE) : Colors.transparent,
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: GoogleFonts.poppins(
-                color: isActive ? Colors.white : const Color(0xFF6B7280),
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget buildTabContent() {
-    switch (selectedTab) {
-      case 0:
-        return buildPelanggaranContent();
-      case 1:
-        return buildApresiasiContent();
-      case 2:
-        return buildAkumulasiContent();
-      default:
-        return buildPelanggaranContent();
-    }
-  }
-
-  Widget buildPelanggaranContent() {
-    final displayed = pelanggaranHistory.length > maxHistoryPreview
-        ? pelanggaranHistory.take(maxHistoryPreview).toList()
-        : pelanggaranHistory;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Histori Poin Pelanggaran',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF1F2937),
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (isLoadingViolations)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(),
-            ),
-          )
-        else if (errorMessageViolations != null)
-          buildEmptyState(errorMessageViolations!, Icons.error)
-        else if (pelanggaranHistory.isEmpty)
-          buildEmptyState('Belum ada riwayat pelanggaran', Icons.warning)
-        else ...[
-          ...displayed.map(
-            (item) => buildHistoryCard(item, isPelanggaran: true),
-          ),
-          if (pelanggaranHistory.length > maxHistoryPreview)
-            buildSeeAllButton(),
-        ],
-      ],
-    );
-  }
-
-  Widget buildApresiasiContent() {
-    final displayed = apresiasiHistory.length > maxHistoryPreview
-        ? apresiasiHistory.take(maxHistoryPreview).toList()
-        : apresiasiHistory;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Histori Poin Apresiasi',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF1F2937),
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (isLoadingAppreciations)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(),
-            ),
-          )
-        else if (errorMessageAppreciations != null)
-          buildEmptyState(errorMessageAppreciations!, Icons.error)
-        else if (apresiasiHistory.isEmpty)
-          buildEmptyState('Belum ada riwayat apresiasi', Icons.star)
-        else ...[
-          ...displayed.map(
-            (item) => buildHistoryCard(item, isPelanggaran: false),
-          ),
-          if (apresiasiHistory.length > maxHistoryPreview) buildSeeAllButton(),
-        ],
-      ],
-    );
-  }
-
-  Widget buildAkumulasiContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Histori Akumulasi Poin',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF1F2937),
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (isLoadingAppreciations || isLoadingViolations)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(),
-            ),
-          )
-        else if (errorMessageAppreciations != null ||
-            errorMessageViolations != null)
-          buildEmptyState(
-            (errorMessageAppreciations ?? errorMessageViolations)!,
-            Icons.error,
-          )
-        else if (akumulasiHistory.isEmpty)
-          buildEmptyState('Belum ada riwayat akumulasi', Icons.calculate)
-        else
-          ...akumulasiHistory.map((item) => buildAkumulasiCard(item)).toList(),
-      ],
-    );
-  }
-
-  Widget buildHistoryCard(dynamic item, {required bool isPelanggaran}) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HistoryScreen(
-              student: Map<String, dynamic>.from(widget.student),
-            ),
-          ),
-        );
-      },
+      padding: const EdgeInsets.all(20),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.card,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: item.color.withOpacity(0.2), width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: item.color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(item.icon, color: item.color, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.type,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1F2937),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.description,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                      Text(
-                        'Kategori: ${item.kategori}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  isPelanggaran ? '-${item.points}' : '+${item.points}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: item.color,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.calendar_today,
-                    size: 16,
-                    color: Color(0xFF6B7280),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${item.date} - ${item.time}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF6B7280),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Text('Biodata Siswa',
+                style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            const SizedBox(height: 16),
+            BiodataRow(label: 'NIS', value: _student.nis, icon: Icons.badge_rounded),
+            BiodataRow(label: 'Program Keahlian', value: _student.programKeahlian, icon: Icons.school_rounded),
+            BiodataRow(label: 'Kelas', value: _student.kelas, icon: Icons.class_rounded),
+            BiodataRow(label: 'Poin Apresiasi', value: '+${_student.poinApresiasi}', icon: Icons.star_rounded),
+            BiodataRow(label: 'Poin Pelanggaran', value: '-${_student.poinPelanggaran.abs()}', icon: Icons.warning_rounded),
+            BiodataRow(label: 'Poin Total', value: DetailPointUtils.signed(_student.poinTotal), icon: Icons.calculate_rounded),
+            BiodataRow(label: 'Status SP', value: _student.spLevel, icon: Icons.report_rounded),
+            BiodataRow(label: 'Status PH', value: _student.phLevel, icon: Icons.emoji_events_rounded),
           ],
         ),
       ),
     );
   }
 
-  Widget buildSeeAllButton() {
+  Widget _tabBar() {
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HistoryScreen(
-                  student: Map<String, dynamic>.from(widget.student),
-                ),
-              ),
-            );
-          },
-          icon: const Icon(Icons.history, color: Color(0xFF0083EE)),
-          label: Text(
-            'Lihat semua riwayat',
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF0083EE),
-            ),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+        ),
+        child: Row(children: [
+          _tabBtn('Pelanggaran', 0),
+          _tabBtn('Apresiasi', 1),
+          _tabBtn('Akumulasi', 2),
+        ]),
+      ),
+    );
+  }
+
+  Widget _tabBtn(String label, int index) {
+    final active = _tab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _tab = index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          height: 50,
+          decoration: BoxDecoration(
+            color: active ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(25),
           ),
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Color(0xFF0083EE)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+          child: Center(
+            child: AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
+              style: GoogleFonts.poppins(
+                color: active ? Colors.white : AppColors.textMuted,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 12,
+              ),
+              child: Text(label),
             ),
           ),
         ),
@@ -1187,259 +340,185 @@ class DetailScreenState extends State<DetailScreen>
     );
   }
 
-  Widget buildAkumulasiCard(AccumulationHistory item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+  Widget _tabContent() {
+    return Padding(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 260),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: SlideTransition(
+            position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(anim),
+            child: child,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.periode,
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1F2937),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.date,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF6B7280),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B6D).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFFF6B6D).withOpacity(0.2),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.trending_down,
-                        color: Color(0xFFFF6B6D),
-                        size: 20,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Pelanggaran',
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                      Text(
-                        '-${item.pelanggaran}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFFFF6B6D),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF10B981).withOpacity(0.2),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.trending_up,
-                        color: Color(0xFF10B981),
-                        size: 20,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Apresiasi',
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                      Text(
-                        '+${item.apresiasi}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF10B981),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0083EE).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF0083EE).withOpacity(0.2),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.calculate,
-                        color: Color(0xFF0083EE),
-                        size: 20,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Total',
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                      Text(
-                        '${item.total > 0 ? '+' : ''}${item.total}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF0083EE),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            height: 8,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                int totalPoints = item.apresiasi + item.pelanggaran;
-                double redFraction =
-                    totalPoints > 0 ? item.pelanggaran / totalPoints : 0;
-                double greenFraction =
-                    totalPoints > 0 ? item.apresiasi / totalPoints : 0;
-
-                return Stack(
-                  children: [
-                    Container(
-                      width: redFraction * constraints.maxWidth,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF6B6D),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        width: greenFraction * constraints.maxWidth,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+        ),
+        child: KeyedSubtree(
+          key: ValueKey(_tab),
+          child: switch (_tab) {
+            0 => _violationsTab(),
+            1 => _appreciationsTab(),
+            2 => _accumulationTab(),
+            _ => _violationsTab(),
+          },
+        ),
       ),
     );
   }
 
-  Widget buildEmptyState(String message, IconData icon) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
-              ),
-              borderRadius: BorderRadius.circular(40),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0083EE).withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+  Widget _violationsTab() {
+    final shown = _violations.take(_maxPreview).toList();
+    return _tabShell(
+      title: 'Histori Poin Pelanggaran',
+      loading: _loadingViolations,
+      error: _errorViolations,
+      emptyMsg: 'Belum ada riwayat pelanggaran',
+      emptyIcon: Icons.warning_rounded,
+      isEmpty: _violations.isEmpty,
+      children: [
+        ...shown.map((v) => HistoryCard(
+              type: v.type, description: v.description, kategori: v.kategori,
+              date: v.date, time: v.time, points: v.points,
+              icon: v.icon, color: v.color, isPelanggaran: true, onTap: _goHistory,
+            )),
+        if (_violations.length > _maxPreview) _seeAllBtn(),
+      ],
+    );
+  }
+
+  Widget _appreciationsTab() {
+    final shown = _appreciations.take(_maxPreview).toList();
+    return _tabShell(
+      title: 'Histori Poin Apresiasi',
+      loading: _loadingAppreciations,
+      error: _errorAppreciations,
+      emptyMsg: 'Belum ada riwayat apresiasi',
+      emptyIcon: Icons.star_rounded,
+      isEmpty: _appreciations.isEmpty,
+      children: [
+        ...shown.map((a) => HistoryCard(
+              type: a.type, description: a.description, kategori: a.kategori,
+              date: a.date, time: a.time, points: a.points,
+              icon: a.icon, color: a.color, isPelanggaran: false, onTap: _goHistory,
+            )),
+        if (_appreciations.length > _maxPreview) _seeAllBtn(),
+      ],
+    );
+  }
+
+  Widget _accumulationTab() {
+    return _tabShell(
+      title: 'Histori Akumulasi Poin',
+      loading: _loadingViolations || _loadingAppreciations,
+      error: _errorViolations ?? _errorAppreciations,
+      emptyMsg: 'Belum ada riwayat akumulasi',
+      emptyIcon: Icons.calculate_rounded,
+      isEmpty: _accumulation == null,
+      children: [
+        if (_accumulation != null) AkumulasiCard(item: _accumulation!),
+      ],
+    );
+  }
+
+  Widget _tabShell({
+    required String title,
+    required bool loading,
+    required String? error,
+    required String emptyMsg,
+    required IconData emptyIcon,
+    required bool isEmpty,
+    required List<Widget> children,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: GoogleFonts.poppins(
+                fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        const SizedBox(height: 14),
+        if (loading)
+          const _Spinner()
+        else if (error != null)
+          EmptyState(message: error, icon: Icons.error_outline_rounded)
+        else if (isEmpty)
+          EmptyState(message: emptyMsg, icon: emptyIcon)
+        else
+          ...children,
+      ],
+    );
+  }
+
+  Widget _seeAllBtn() => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _goHistory,
+            icon: const Icon(Icons.history_rounded, color: AppColors.primary),
+            label: Text('Lihat semua riwayat',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.primary)),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: const BorderSide(color: AppColors.primary),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+      );
+
+  void _goHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => HistoryScreen(student: Map<String, dynamic>.from(widget.student)),
+      ),
+    );
+  }
+
+  Widget _errorScreen(String msg) => Scaffold(
+        backgroundColor: AppColors.surface,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 72, height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(36),
+                  ),
+                  child: const Icon(Icons.error_outline_rounded, color: AppColors.danger, size: 36),
+                ),
+                const SizedBox(height: 20),
+                Text(msg, textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textMuted)),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: _refresh,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text('Coba Lagi', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ],
             ),
-            child: Icon(icon, color: Colors.white, size: 40),
           ),
-          const SizedBox(height: 20),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF6B7280),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      );
+}
+
+class _Spinner extends StatelessWidget {
+  const _Spinner();
+  @override
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator()),
+      );
 }
