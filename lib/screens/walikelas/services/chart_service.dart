@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skoring/config/api.dart';
 import 'package:skoring/models/types/chart.dart';
+import 'package:skoring/screens/walikelas/utils/chart_utils.dart';
 
 class ChartCredentials {
   final String teacherClassId;
@@ -31,12 +32,14 @@ class ChartService {
     required ChartCredentials creds,
   }) async {
     final isApresiasi = chartType == 'apresiasi';
-    final primaryEndpoint = isApresiasi ? 'skoring_penghargaan' : 'skoring_pelanggaran';
+    final primaryEndpoint =
+        isApresiasi ? 'skoring_penghargaan' : 'skoring_pelanggaran';
     final fallbackEndpoint = isApresiasi ? null : 'skoring_2pelanggaran';
 
     Future<http.Response> doRequest(String endpoint) => http.get(
           Uri.parse(
-            '${ApiConfig.baseUrl}/$endpoint?nip=${creds.nipWalikelas}&id_kelas=${creds.teacherClassId}',
+            '${ApiConfig.baseUrl}/$endpoint'
+            '?nip=${creds.nipWalikelas}&id_kelas=${creds.teacherClassId}',
           ),
           headers: {'Accept': 'application/json'},
         );
@@ -61,67 +64,25 @@ class ChartService {
       throw Exception(jsonData['message'] ?? 'Gagal memuat data');
     }
 
-    final filtered = rawList.where((item) => siswaList.any(
-          (s) =>
-              s['nis'].toString() == item['nis'].toString() &&
-              s['id_kelas'].toString() == creds.teacherClassId,
-        ));
+    // Filter to only students in this class
+    final filtered = rawList
+        .where((item) => siswaList.any(
+              (s) =>
+                  s['nis'].toString() == item['nis'].toString() &&
+                  s['id_kelas'].toString() == creds.teacherClassId,
+            ))
+        .map((e) => e as Map<String, dynamic>)
+        .toList();
 
-    final Map<String, double> weekly = {};
-    final Map<String, double> monthly = {};
-    final Map<String, double> yearly = {};
+    // Reuse ChartUtils aggregation — same logic as HomeScreen
+    final aggregated = ChartUtils.aggregateChartData(filtered, selectedPeriod);
 
-    for (final item in filtered) {
-      final raw = (item as Map<String, dynamic>)['created_at'];
-      if (raw == null) continue;
-      final date = DateTime.tryParse(raw.toString());
-      if (date == null) continue;
-
-      final weekKey = '${date.year}-W${((date.day + 6) / 7).ceil().toString().padLeft(2, '0')}';
-      final monthKey = '${date.year}-${date.month.toString().padLeft(2, '0')}';
-      final yearKey = date.year.toString();
-
-      weekly[weekKey] = (weekly[weekKey] ?? 0) + 1;
-      monthly[monthKey] = (monthly[monthKey] ?? 0) + 1;
-      yearly[yearKey] = (yearly[yearKey] ?? 0) + 1;
-    }
-
-    return _buildChartItems(selectedPeriod, weekly, monthly, yearly);
-  }
-
-  static List<ChartDataItem> _buildChartItems(
-    int period,
-    Map<String, double> weekly,
-    Map<String, double> monthly,
-    Map<String, double> yearly,
-  ) {
-    switch (period) {
-      case 0:
-        final sorted = weekly.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-        return sorted.map((e) => ChartDataItem(
-              value: e.value,
-              label: e.key.split('-W')[1],
-              detail: 'Total: ${e.value.toInt()} kasus',
-            )).toList();
-      case 1:
-        final sorted = monthly.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-        return sorted.map((e) => ChartDataItem(
-              value: e.value,
-              label: _monthName(int.parse(e.key.split('-')[1])),
-              detail: 'Total: ${e.value.toInt()} kasus',
-            )).toList();
-      default:
-        final sorted = yearly.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-        return sorted.map((e) => ChartDataItem(
-              value: e.value,
-              label: e.key,
-              detail: 'Total: ${e.value.toInt()} kasus',
-            )).toList();
-    }
-  }
-
-  static String _monthName(int month) {
-    const names = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    return names[month - 1];
+    return aggregated
+        .map((e) => ChartDataItem(
+              label: e['label'] as String,
+              value: (e['value'] as double?) ?? 0.0,
+              detail: 'Total: ${((e['value'] as double?) ?? 0.0).toInt()} kasus',
+            ))
+        .toList();
   }
 }
