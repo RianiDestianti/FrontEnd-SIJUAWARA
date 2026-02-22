@@ -15,13 +15,8 @@ class NoteUtils {
     required String isiCatatan,
     required BuildContext context,
   }) async {
-    if (nis.isEmpty ||
-        judulCatatan.isEmpty ||
-        className.isEmpty ||
-        date.isEmpty ||
-        isiCatatan.isEmpty) {
-      print('Validation failed: Some fields are empty');
-      showErrorSnackBar(context, 'Mohon lengkapi semua field yang diperlukan');
+    if (nis.isEmpty || judulCatatan.isEmpty || className.isEmpty || date.isEmpty || isiCatatan.isEmpty) {
+      _showSnackBar(context, 'Mohon lengkapi semua field yang diperlukan', isError: true);
       return null;
     }
 
@@ -31,447 +26,410 @@ class NoteUtils {
       final idKelas = prefs.getString('id_kelas') ?? '';
 
       if (nip.isEmpty || idKelas.isEmpty) {
-        showErrorSnackBar(
-          context,
-          'Data guru tidak lengkap. Silakan login ulang.',
-        );
+        _showSnackBar(context, 'Data guru tidak lengkap. Silakan login ulang.', isError: true);
         return null;
       }
 
-      final url = Uri.parse(
-        '${ApiConfig.baseUrl}/AddCatatan/$nis?nip=$nip&id_kelas=$idKelas',
-      );
-
-      print('Sending POST request to $url');
-      print(
-        'Request body: ${jsonEncode({'judul_catatan': judulCatatan, 'isi_catatan': isiCatatan})}',
-      );
-
+      final url = Uri.parse('${ApiConfig.baseUrl}/AddCatatan/$nis?nip=$nip&id_kelas=$idKelas');
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'judul_catatan': judulCatatan,
-          'isi_catatan': isiCatatan,
-        }),
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        body: jsonEncode({'judul_catatan': judulCatatan, 'isi_catatan': isiCatatan}),
       );
-
-      print('Response status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          final noteData = Note(
-            studentName: '',
-            className: className,
-            date: date,
-            note: isiCatatan,
-            title: judulCatatan,
-          );
-
-          showSuccessSnackBar(context, 'Penanganan berhasil ditambahkan');
-          return noteData;
+          _showSnackBar(context, 'Penanganan berhasil ditambahkan');
+          return Note(studentName: '', className: className, date: date, note: isiCatatan, title: judulCatatan);
         } else {
-          showErrorSnackBar(
-            context,
-            responseData['message'] ?? 'Gagal menambahkan penanganan',
-          );
+          _showSnackBar(context, responseData['message'] ?? 'Gagal menambahkan penanganan', isError: true);
           return null;
         }
       } else {
         final responseData = jsonDecode(response.body);
-        showErrorSnackBar(
-          context,
-          responseData['message'] ??
-              'Gagal menghubungi server: ${response.statusCode}',
-        );
+        _showSnackBar(context, responseData['message'] ?? 'Gagal menghubungi server: ${response.statusCode}', isError: true);
         return null;
       }
     } catch (e) {
-      print('Error during HTTP request: $e');
-      showErrorSnackBar(context, 'Terjadi kesalahan: $e');
+      _showSnackBar(context, 'Terjadi kesalahan: $e', isError: true);
       return null;
     }
   }
+
+  static void _showSnackBar(BuildContext context, String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(isError ? Icons.error_outline : Icons.check_circle_outline, color: Colors.white, size: 18),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message, style: GoogleFonts.poppins(fontSize: 13))),
+          ],
+        ),
+        backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
 }
 
-void showErrorSnackBar(BuildContext context, String message) {
-  ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
-}
+// ─── Show Helper ─────────────────────────────────────────────────────────────
 
-void showSuccessSnackBar(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), backgroundColor: Colors.green),
+void showBKNotePopup(BuildContext context, String studentName, String nis, String className) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
+    backgroundColor: Colors.transparent,
+    builder: (_) => BKNoteSheet(studentName: studentName, nis: nis, className: className),
   );
 }
 
-class BKNotePopup extends StatefulWidget {
+// ─── Bottom Sheet Widget ──────────────────────────────────────────────────────
+
+class BKNoteSheet extends StatefulWidget {
   final String studentName;
   final String nis;
   final String className;
 
-  const BKNotePopup({
-    Key? key,
-    required this.studentName,
-    required this.nis,
-    required this.className,
-  }) : super(key: key);
+  const BKNoteSheet({Key? key, required this.studentName, required this.nis, required this.className})
+      : super(key: key);
 
   @override
-  State<BKNotePopup> createState() => BKNotePopupState();
+  State<BKNoteSheet> createState() => _BKNoteSheetState();
 }
 
-class BKNotePopupState extends State<BKNotePopup>
-    with TickerProviderStateMixin {
-  late AnimationController animationController;
-  late AnimationController slideController;
-  late Animation<double> scaleAnimation;
-  late Animation<double> fadeAnimation;
-  late Animation<Offset> slideAnimation;
-  late Animation<double> rotateAnimation;
+class _BKNoteSheetState extends State<BKNoteSheet> with SingleTickerProviderStateMixin {
+  late AnimationController _animCtrl;
+  late Animation<double> _fadeAnim;
 
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController classController = TextEditingController();
-  final TextEditingController dateController = TextEditingController();
-  final TextEditingController noteController = TextEditingController();
-  final TextEditingController titleController = TextEditingController();
-  bool isSubmitting = false;
+  final _titleController = TextEditingController();
+  final _noteController = TextEditingController();
+  final _titleFocus = FocusNode();
+  final _noteFocus = FocusNode();
+
+  bool _isSubmitting = false;
+  String? _titleError;
+  String? _noteError;
+
+  String _date = DateTime.now().toString().split(' ')[0];
 
   @override
   void initState() {
     super.initState();
-    initializeAnimations();
-    nameController.text = widget.studentName;
-    classController.text = widget.className;
-    dateController.text = DateTime.now().toString().split(' ')[0];
-  }
-
-  void initializeAnimations() {
-    animationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-    slideController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.elasticOut),
-    );
-    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
-    );
-    slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic),
-    );
-    rotateAnimation = Tween<double>(begin: 0.1, end: 0.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
-    );
-
-    animationController.forward();
+    _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
+    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _animCtrl.forward();
   }
 
   @override
   void dispose() {
-    animationController.dispose();
-    slideController.dispose();
-    nameController.dispose();
-    classController.dispose();
-    dateController.dispose();
-    noteController.dispose();
-    titleController.dispose();
+    _animCtrl.dispose();
+    _titleController.dispose();
+    _noteController.dispose();
+    _titleFocus.dispose();
+    _noteFocus.dispose();
     super.dispose();
   }
 
-  void closeDialog() {
-    animationController.reverse().then((unused) => Navigator.of(context).pop());
+  void _close() {
+    _animCtrl.reverse().then((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
   }
 
-  void submitNote() async {
-    print('Starting note submission...');
-    setState(() => isSubmitting = true);
+  bool _validate() {
+    setState(() {
+      _titleError = _titleController.text.trim().isEmpty ? 'Judul penanganan wajib diisi' : null;
+      _noteError = _noteController.text.trim().isEmpty ? 'Isi catatan wajib diisi' : null;
+    });
+    return _titleError == null && _noteError == null;
+  }
+
+  Future<void> _submit() async {
+    if (!_validate()) return;
+    setState(() => _isSubmitting = true);
     final note = await NoteUtils.submitNote(
       nis: widget.nis,
-      judulCatatan: titleController.text,
-      className: classController.text,
-      date: dateController.text,
-      isiCatatan: noteController.text,
+      judulCatatan: _titleController.text.trim(),
+      className: widget.className,
+      date: _date,
+      isiCatatan: _noteController.text.trim(),
       context: context,
     );
-    print('Submission result: $note');
-    setState(() => isSubmitting = false);
-    if (note != null) {
-      print('Note submitted successfully, closing dialog');
-      closeDialog();
-    } else {
-      print('Note submission failed');
-    }
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    if (note != null) _close();
   }
 
-  Future<void> pickDate() async {
-    final DateTime? pickedDate = await showDatePicker(
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFEF4444)),
-          ),
-          child: child!,
-        );
-      },
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(primary: Color(0xFFEF4444)),
+        ),
+        child: child!,
+      ),
     );
-    if (pickedDate != null) {
-      setState(() {
-        dateController.text = pickedDate.toString().split(' ')[0];
-      });
+    if (picked != null && mounted) {
+      setState(() => _date = picked.toString().split(' ')[0]);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final bottomInset = mq.viewInsets.bottom;
+
     return FadeTransition(
-      opacity: fadeAnimation,
+      opacity: _fadeAnim,
       child: Container(
-        color: Colors.black.withValues(alpha: 0.6),
-        child: Center(
-          child: SlideTransition(
-            position: slideAnimation,
-            child: RotationTransition(
-              turns: rotateAnimation,
-              child: ScaleTransition(
-                scale: scaleAnimation,
-                child: Material(
-                  color: Colors.transparent,
-                  child: NoteDialogContent(
-                    nameController: nameController,
-                    classController: classController,
-                    dateController: dateController,
-                    noteController: noteController,
-                    titleController: titleController,
-                    isSubmitting: isSubmitting,
-                    onClose: closeDialog,
-                    onSubmit: submitNote,
-                    onDateTap: pickDate,
-                  ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE5E7EB),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Header
+            _SheetHeader(onClose: _close),
+
+            // Scrollable body — respects keyboard inset
+            Flexible(
+              child: SingleChildScrollView(
+                 padding: EdgeInsets.fromLTRB(20, 16, 20, bottomInset + 70),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Student info (read-only) ──────────────────
+                    _SectionLabel(label: 'Informasi Siswa', icon: Icons.person_outline_rounded),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: _ReadOnlyTile(
+                            value: widget.studentName,
+                            label: 'Nama Siswa',
+                            icon: Icons.person_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: _ReadOnlyTile(
+                            value: widget.className,
+                            label: 'Kelas',
+                            icon: Icons.class_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ── Detail penanganan ─────────────────────────
+                    _SectionLabel(label: 'Detail Penanganan', icon: Icons.edit_note_rounded),
+                    const SizedBox(height: 8),
+
+                    // Date picker
+                    GestureDetector(
+                      onTap: _pickDate,
+                      child: _ReadOnlyTile(
+                        value: _date,
+                        label: 'Tanggal Penanganan',
+                        icon: Icons.calendar_today_rounded,
+                        trailingIcon: Icons.edit_calendar_rounded,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Title input
+                    _InputField(
+                      controller: _titleController,
+                      focusNode: _titleFocus,
+                      label: 'Judul Penanganan',
+                      hint: 'cth: Perilaku Agresif di Kelas',
+                      icon: Icons.title_rounded,
+                      errorText: _titleError,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => _noteFocus.requestFocus(),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Note input
+                    _InputField(
+                      controller: _noteController,
+                      focusNode: _noteFocus,
+                      label: 'Isi Catatan',
+                      hint: 'Deskripsikan perilaku, kondisi psikologi, atau situasi yang perlu ditangani...',
+                      icon: Icons.notes_rounded,
+                      maxLines: 5,
+                      errorText: _noteError,
+                      textInputAction: TextInputAction.done,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Info banner
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline_rounded, color: Color(0xFFEF4444), size: 16),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Penanganan ini akan diteruskan ke guru BK untuk tindak lanjut konseling.',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12, color: const Color(0xFF991B1B), height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Action buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _isSubmitting ? null : _close,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              side: const BorderSide(color: Color(0xFFE5E7EB)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: Text('Batal',
+                                style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600, color: const Color(0xFF6B7280))),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: _isSubmitting ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              backgroundColor: const Color(0xFFEF4444),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: const Color(0xFFFCA5A5),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation(Colors.white)),
+                                  )
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.send_rounded, size: 16),
+                                      const SizedBox(width: 8),
+                                      Text('Kirim ke BK',
+                                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
-class NoteDialogContent extends StatelessWidget {
-  final TextEditingController nameController;
-  final TextEditingController classController;
-  final TextEditingController dateController;
-  final TextEditingController noteController;
-  final TextEditingController titleController;
-  final bool isSubmitting;
-  final VoidCallback onClose;
-  final VoidCallback onSubmit;
-  final VoidCallback onDateTap;
+// ─── Shared sub-widgets ───────────────────────────────────────────────────────
 
-  const NoteDialogContent({
-    Key? key,
-    required this.nameController,
-    required this.classController,
-    required this.dateController,
-    required this.noteController,
-    required this.titleController,
-    required this.isSubmitting,
-    required this.onClose,
-    required this.onSubmit,
-    required this.onDateTap,
-  }) : super(key: key);
+class _SheetHeader extends StatelessWidget {
+  final VoidCallback onClose;
+  const _SheetHeader({required this.onClose});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      constraints: const BoxConstraints(maxWidth: 420),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HeaderSection(onClose: onClose),
-          FormSection(
-            nameController: nameController,
-            classController: classController,
-            dateController: dateController,
-            noteController: noteController,
-            titleController: titleController,
-            onDateTap: onDateTap,
-          ),
-          ActionButtons(
-            isSubmitting: isSubmitting,
-            onCancel: onClose,
-            onSubmit: onSubmit,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class FormSection extends StatelessWidget {
-  final TextEditingController nameController;
-  final TextEditingController classController;
-  final TextEditingController dateController;
-  final TextEditingController noteController;
-  final TextEditingController titleController;
-  final VoidCallback onDateTap;
-
-  const FormSection({
-    Key? key,
-    required this.nameController,
-    required this.classController,
-    required this.dateController,
-    required this.noteController,
-    required this.titleController,
-    required this.onDateTap,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          CustomTextField(
-            controller: nameController,
-            hint: 'Nama Lengkap',
-            icon: Icons.person_outline,
-            readOnly: true,
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: classController,
-            hint: 'Kelas',
-            icon: Icons.school_outlined,
-            readOnly: true,
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: titleController,
-            hint: 'Judul Penanganan',
-            icon: Icons.title,
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: dateController,
-            hint: 'Tanggal',
-            icon: Icons.calendar_today_outlined,
-            readOnly: true,
-            onTap: onDateTap,
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: noteController,
-            hint: 'Penanganan (perilaku, kondisi psikologi, dll)',
-            icon: Icons.edit_note,
-            maxLines: 4,
-            fillColor: const Color(0xFFFEF2F2),
-            borderColor: const Color(0xFFFECACA),
-          ),
-          const SizedBox(height: 24),
-          const InfoCard(),
-        ],
-      ),
-    );
-  }
-}
-
-class HeaderSection extends StatelessWidget {
-  final VoidCallback onClose;
-
-  const HeaderSection({Key? key, required this.onClose}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(20, 14, 12, 14),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.psychology_outlined,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: const Icon(Icons.psychology_outlined, color: Colors.white, size: 21),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Penanganan',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  'Catat hal penting untuk penanganan',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.8),
-                  ),
-                ),
+                Text('Tambah Penanganan',
+                    style: GoogleFonts.poppins(
+                        fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                Text('Catat penanganan untuk siswa',
+                    style: GoogleFonts.poppins(
+                        fontSize: 12, color: Colors.white.withOpacity(0.85))),
               ],
             ),
           ),
-          GestureDetector(
-            onTap: onClose,
-            child: Container(
-              padding: const EdgeInsets.all(8),
+          IconButton(
+            onPressed: onClose,
+            icon: Container(
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 20),
+              child: const Icon(Icons.close, color: Colors.white, size: 18),
             ),
           ),
         ],
@@ -480,241 +438,158 @@ class HeaderSection extends StatelessWidget {
   }
 }
 
-class CustomTextField extends StatelessWidget {
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  const _SectionLabel({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF9CA3AF)),
+        const SizedBox(width: 6),
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF9CA3AF),
+              letterSpacing: 0.5),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReadOnlyTile extends StatelessWidget {
+  final String value;
+  final String label;
+  final IconData icon;
+  final IconData? trailingIcon;
+
+  const _ReadOnlyTile({
+    required this.value,
+    required this.label,
+    required this.icon,
+    this.trailingIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: const Color(0xFFD1D5DB)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: GoogleFonts.poppins(
+                        fontSize: 10, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w500)),
+                const SizedBox(height: 1),
+                Text(value,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                        fontSize: 13, color: const Color(0xFF374151), fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          if (trailingIcon != null)
+            Icon(trailingIcon, size: 15, color: const Color(0xFFEF4444)),
+        ],
+      ),
+    );
+  }
+}
+
+class _InputField extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode focusNode;
+  final String label;
   final String hint;
   final IconData icon;
-  final bool readOnly;
-  final VoidCallback? onTap;
   final int maxLines;
-  final Color? fillColor;
-  final Color? borderColor;
+  final String? errorText;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
-  const CustomTextField({
-    Key? key,
+  const _InputField({
     required this.controller,
+    required this.focusNode,
+    required this.label,
     required this.hint,
     required this.icon,
-    this.readOnly = false,
-    this.onTap,
     this.maxLines = 1,
-    this.fillColor,
-    this.borderColor,
-  }) : super(key: key);
+    this.errorText,
+    this.textInputAction = TextInputAction.next,
+    this.onSubmitted,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: (fillColor == null ? Colors.black : const Color(0xFFEF4444))
-                .withValues(alpha: 0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        readOnly: readOnly,
-        onTap: onTap,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: GoogleFonts.poppins(
-            fontSize: 14,
-            color: const Color(0xFF9CA3AF),
-          ),
-          prefixIcon: Container(
-            padding: const EdgeInsets.all(12),
-            child: Icon(icon, color: const Color(0xFFEF4444), size: 20),
-          ),
-          filled: true,
-          fillColor: fillColor ?? Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: borderColor ?? const Color(0xFFE5E7EB),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          focusNode: focusNode,
+          maxLines: maxLines,
+          textInputAction: textInputAction,
+          onSubmitted: onSubmitted,
+          style: GoogleFonts.poppins(
+              fontSize: 14, color: const Color(0xFF111827), fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF6B7280)),
+            hintText: hint,
+            hintStyle: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFFD1D5DB)),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 14, right: 10),
+              child: Icon(icon, size: 18, color: const Color(0xFF9CA3AF)),
             ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: borderColor ?? const Color(0xFFE5E7EB),
+            prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+            filled: true,
+            fillColor: errorText != null ? const Color(0xFFFFF1F2) : Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                  color: errorText != null ? const Color(0xFFFCA5A5) : const Color(0xFFE5E7EB)),
             ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                  color: errorText != null ? const Color(0xFFFCA5A5) : const Color(0xFFE5E7EB)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+                horizontal: 16, vertical: maxLines > 1 ? 14 : 0),
+            alignLabelWithHint: maxLines > 1,
           ),
         ),
-        style: GoogleFonts.poppins(
-          fontSize: 14,
-          color: const Color(0xFF374151),
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
-class InfoCard extends StatelessWidget {
-  const InfoCard({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFECACA)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline, color: Color(0xFFEF4444), size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Penanganan ini akan diteruskan ke guru BK untuk tindak lanjut konseling',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: const Color(0xFF991B1B),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+        if (errorText != null) ...[
+          const SizedBox(height: 5),
+          Row(
+            children: [
+              const Icon(Icons.error_outline, size: 13, color: Color(0xFFEF4444)),
+              const SizedBox(width: 4),
+              Text(errorText!,
+                  style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFFEF4444))),
+            ],
           ),
         ],
-      ),
+      ],
     );
   }
-}
-
-class ActionButtons extends StatelessWidget {
-  final bool isSubmitting;
-  final VoidCallback onCancel;
-  final VoidCallback onSubmit;
-
-  const ActionButtons({
-    Key? key,
-    required this.isSubmitting,
-    required this.onCancel,
-    required this.onSubmit,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: isSubmitting ? null : onCancel,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: Text(
-                  'Batal',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF6B7280),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: GestureDetector(
-              onTap: isSubmitting ? null : onSubmit,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child:
-                    isSubmitting
-                        ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                        : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.send,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Kirim ke BK',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-void showBKNotePopup(
-  BuildContext context,
-  String studentName,
-  String nis,
-  String className,
-) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) {
-      return Material(
-        color: Colors.transparent,
-        child: BKNotePopup(
-          studentName: studentName,
-          nis: nis,
-          className: className,
-        ),
-      );
-    },
-  );
 }

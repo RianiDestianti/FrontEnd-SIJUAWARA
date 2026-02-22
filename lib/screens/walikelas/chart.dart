@@ -203,7 +203,7 @@ class _GrafikScreenState extends State<GrafikScreen>
     );
   }
 
-  // ─── Body ──────────────────────────────────────────────────────────────────
+
 
   Widget _body() {
     return FadeTransition(
@@ -218,7 +218,6 @@ class _GrafikScreenState extends State<GrafikScreen>
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
             child: Column(
               children: [
-                // Period + chart type selectors side-by-side on same row
                 Row(
                   children: [
                     Expanded(
