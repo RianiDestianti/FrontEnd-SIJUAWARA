@@ -447,6 +447,9 @@ class LaporanScreenState extends State<LaporanScreen>
                       child: RefreshIndicator(
                         onRefresh: manualRefresh,
                         child: SingleChildScrollView(
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(context).padding.bottom + 20,
+                          ),
                           physics: const AlwaysScrollableScrollPhysics(),
                           child: ConstrainedBox(
                             constraints: BoxConstraints(

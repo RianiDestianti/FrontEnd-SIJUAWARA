@@ -17,7 +17,8 @@ class SiswaScreen extends StatefulWidget {
   State<SiswaScreen> createState() => SiswaScreenState();
 }
 
-class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin {
+class SiswaScreenState extends State<SiswaScreen>
+    with TickerProviderStateMixin {
   int selectedFilter = 0;
   String searchQuery = '';
   late AnimationController animationController;
@@ -152,23 +153,25 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DetailScreen(
-          student: {
-            'name': student.namaSiswa,
-            'nis': student.nis.toString(),
-            'status': student.status,
-            'points': student.points,
-            'absent': 0,
-            'absen': student.nis,
-            'idKelas': student.idKelas,
-            'programKeahlian': selectedKelas?.jurusan.toUpperCase() ?? 'Tidak Diketahui',
-            'kelas': selectedKelas?.namaKelas ?? 'Tidak Diketahui',
-            'poinApresiasi': student.poinApresiasi ?? 0,
-            'poinPelanggaran': student.poinPelanggaran ?? 0,
-            'spLevel': student.spLevelDisplay,
-            'phLevel': student.phLevelDisplay,
-          },
-        ),
+        builder:
+            (context) => DetailScreen(
+              student: {
+                'name': student.namaSiswa,
+                'nis': student.nis.toString(),
+                'status': student.status,
+                'points': student.points,
+                'absent': 0,
+                'absen': student.nis,
+                'idKelas': student.idKelas,
+                'programKeahlian':
+                    selectedKelas?.jurusan.toUpperCase() ?? 'Tidak Diketahui',
+                'kelas': selectedKelas?.namaKelas ?? 'Tidak Diketahui',
+                'poinApresiasi': student.poinApresiasi ?? 0,
+                'poinPelanggaran': student.poinPelanggaran ?? 0,
+                'spLevel': student.spLevelDisplay,
+                'phLevel': student.phLevelDisplay,
+              },
+            ),
       ),
     );
   }
@@ -176,7 +179,8 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
   @override
   Widget build(BuildContext context) {
     final bool isLoading = isLoadingKelas || isLoadingSiswa;
-    final bool hasError = errorMessageKelas != null || errorMessageSiswa != null;
+    final bool hasError =
+        errorMessageKelas != null || errorMessageSiswa != null;
     final filteredStudents = SiswaUtils.filterStudents(
       students: studentsList,
       selectedKelas: selectedKelas,
@@ -197,7 +201,8 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
             color: const Color(0xFFF8FAFC),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final maxWidth = constraints.maxWidth > 600 ? 600.0 : constraints.maxWidth;
+                final maxWidth =
+                    constraints.maxWidth > 600 ? 600.0 : constraints.maxWidth;
                 return Center(
                   child: SizedBox(
                     width: maxWidth,
@@ -206,9 +211,14 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
                       child: RefreshIndicator(
                         onRefresh: refreshData,
                         child: SingleChildScrollView(
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(context).padding.bottom + 20,
+                          ),
                           physics: const AlwaysScrollableScrollPhysics(),
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
                             child: Column(
                               children: [
                                 _buildHeader(isLoading, hasError),
@@ -277,23 +287,39 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const NotifikasiScreen())),
+                      onTap:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotifikasiScreen(),
+                            ),
+                          ),
                       child: Container(
-                        width: 40, height: 40,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.notifications_rounded, color: Colors.white, size: 22),
+                        child: const Icon(
+                          Icons.notifications_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                      onTap:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileScreen(),
+                            ),
+                          ),
                       child: Container(
-                        width: 40, height: 40,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
@@ -305,7 +331,11 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.person_rounded, color: Color(0xFF0083EE), size: 22),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          color: Color(0xFF0083EE),
+                          size: 22,
+                        ),
                       ),
                     ),
                   ],
@@ -318,10 +348,11 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
                 controller: searchController,
                 searchQuery: searchQuery,
                 onChanged: (v) => setState(() => searchQuery = v),
-                onClear: () => setState(() {
-                  searchQuery = '';
-                  searchController.clear();
-                }),
+                onClear:
+                    () => setState(() {
+                      searchQuery = '';
+                      searchController.clear();
+                    }),
               ),
               const SizedBox(height: 20),
               Row(
@@ -360,26 +391,31 @@ class SiswaScreenState extends State<SiswaScreen> with TickerProviderStateMixin 
     required bool hasError,
     required List<Student> filteredStudents,
   }) {
-    if (hasError) return SiswaCardWidgets.buildErrorState(errorMessageKelas ?? errorMessageSiswa);
+    if (hasError)
+      return SiswaCardWidgets.buildErrorState(
+        errorMessageKelas ?? errorMessageSiswa,
+      );
     if (isLoading) return SiswaCardWidgets.buildLoadingState();
     if (filteredStudents.isEmpty && selectedKelas != null) {
       return SiswaCardWidgets.buildEmptyState(
-        onReset: () => setState(() {
-          searchQuery = '';
-          searchController.clear();
-          selectedFilter = 0;
-        }),
+        onReset:
+            () => setState(() {
+              searchQuery = '';
+              searchController.clear();
+              selectedFilter = 0;
+            }),
       );
     }
 
     return Column(
-      children: filteredStudents.map((student) {
-        return SiswaCardWidgets.buildStudentCard(
-          student: student,
-          selectedFilter: selectedFilter,
-          onTap: () => navigateToDetail(student),
-        );
-      }).toList(),
+      children:
+          filteredStudents.map((student) {
+            return SiswaCardWidgets.buildStudentCard(
+              student: student,
+              selectedFilter: selectedFilter,
+              onTap: () => navigateToDetail(student),
+            );
+          }).toList(),
     );
   }
 }

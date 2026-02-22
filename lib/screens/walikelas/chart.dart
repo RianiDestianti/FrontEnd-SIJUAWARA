@@ -215,7 +215,7 @@ class _GrafikScreenState extends State<GrafikScreen>
           color: ChartColors.base(widget.chartType),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
             child: Column(
               children: [
                 // Period + chart type selectors side-by-side on same row
