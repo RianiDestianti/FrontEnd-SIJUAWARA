@@ -1,43 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:skoring/models/types/introduction.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:local_auth/local_auth.dart';
-import 'package:skoring/firebase/tokenfcm.dart';
-import 'package:skoring/config/api.dart';
+import 'package:skoring/widgets/page_widgets.dart';
+import 'package:skoring/widgets/nav_widgets.dart';
+import 'package:skoring/widgets/login_widgets.dart';
 
 class IntroductionScreen extends StatefulWidget {
   const IntroductionScreen({super.key});
 
   @override
-  State<IntroductionScreen> createState() => IntroductionScreenState();
+  State<IntroductionScreen> createState() => _IntroductionScreenState();
 }
 
-class IntroductionScreenState extends State<IntroductionScreen>
+class _IntroductionScreenState extends State<IntroductionScreen>
     with TickerProviderStateMixin {
-  late final AnimationController animationController;
-  late final AnimationController loginController;
-  late final Animation<double> fadeAnimation;
-  late final Animation<Offset> slideAnimation;
-  late final Animation<double> scaleAnimation;
-  late final Animation<Offset> loginSlideAnimation;
-  late final Animation<double> loginFadeAnimation;
+  // ─── Animations ─────────────────────────────────────────────────────────────
+  late final AnimationController _animCtrl;
+  late final AnimationController _loginCtrl;
+  late final Animation<double> _fadeAnim;
+  late final Animation<Offset> _slideAnim;
+  late final Animation<double> _scaleAnim;
+  late final Animation<Offset> _loginSlideAnim;
+  late final Animation<double> _loginFadeAnim;
 
-  final PageController pageController = PageController();
-  int currentPage = 0;
-  bool showLoginOverlay = false;
-  bool isSwipeDetected = false;
-  double swipeStartY = 0;
+  final PageController _pageCtrl = PageController();
+  int _currentPage = 0;
+  bool _showLogin = false;
 
-  final List<PageData> pages = [
+ 
+  double _swipeStartY = 0;
+  bool _swipeDetected = false;
+
+
+  static final _pages = [
     PageData(
       image: 'assets/batang.png',
       title: 'Selamat Datang di Sistem Skoring!',
       description:
-          'Kelola pencatatan, penilaian, hingga laporan dalam satu aplikasi praktis.Nikmati kemudahan mengelola penilaian secara cepat.',
+          'Kelola pencatatan, penilaian, hingga laporan dalam satu aplikasi praktis. '
+          'Nikmati kemudahan mengelola penilaian secara cepat.',
     ),
     PageData(
       image: 'assets/lingkaran.png',
@@ -55,131 +56,120 @@ class IntroductionScreenState extends State<IntroductionScreen>
       image: 'assets/backpack.png',
       title: 'SIJUWARA',
       description:
-          'Geser ke atas untuk masuk ke SIJUWARA (SISTEM JURNAL SISWA AKTIF) dan kelola penilaian siswa dengan mudah!',
+          'Geser ke atas untuk masuk ke SIJUWARA (SISTEM JURNAL SISWA AKTIF) '
+          'dan kelola penilaian siswa dengan mudah!',
     ),
   ];
+
+  bool get _isLastPage => _currentPage == _pages.length - 1;
 
   @override
   void initState() {
     super.initState();
-    initializeAnimations();
-    pageController.addListener(updateCurrentPage);
-    animationController.forward();
+    _initAnimations();
+    _pageCtrl.addListener(_onPageScroll);
+    _animCtrl.forward();
   }
 
-  void initializeAnimations() {
-    animationController = AnimationController(
+  void _initAnimations() {
+    _animCtrl = AnimationController(
+      vsync: this,
       duration: const Duration(milliseconds: 1000),
-      vsync: this,
     );
-
-    loginController = AnimationController(
+    _loginCtrl = AnimationController(
+      vsync: this,
       duration: const Duration(milliseconds: 500),
-      vsync: this,
     );
 
-    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
+    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOut));
+
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutBack));
+
+    _scaleAnim = Tween<double>(begin: 0.8, end: 1.0)
+        .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic));
+
+    _loginSlideAnim =
+        Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _loginCtrl, curve: Curves.easeOutCubic),
     );
 
-    slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOutBack),
-    );
-
-    scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic),
-    );
-
-    loginSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: loginController, curve: Curves.easeOutCubic),
-    );
-
-    loginFadeAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
-      CurvedAnimation(parent: loginController, curve: Curves.easeInOut),
-    );
-  }
-
-  void updateCurrentPage() {
-    setState(() {
-      currentPage = pageController.page?.round() ?? 0;
-    });
+    _loginFadeAnim = Tween<double>(begin: 0.0, end: 0.5)
+        .animate(CurvedAnimation(parent: _loginCtrl, curve: Curves.easeInOut));
   }
 
   @override
   void dispose() {
-    animationController.dispose();
-    loginController.dispose();
-    pageController.dispose();
+    _animCtrl.dispose();
+    _loginCtrl.dispose();
+    _pageCtrl.dispose();
     super.dispose();
   }
 
-  void nextPage() {
-    if (currentPage < pages.length - 1) {
-      pageController.nextPage(
+  // ─── Page navigation ──────────────────────────────────────────────────────────
+
+  void _onPageScroll() =>
+      setState(() => _currentPage = _pageCtrl.page?.round() ?? 0);
+
+  void _nextPage() {
+    if (!_isLastPage) {
+      _pageCtrl.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     }
   }
 
-  void skipToFinalPage() {
-    pageController.animateToPage(
-      pages.length - 1,
+  void _skipToFinal() {
+    _pageCtrl.animateToPage(
+      _pages.length - 1,
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
   }
 
-  void showLogin() {
-    setState(() => showLoginOverlay = true);
-    loginController.forward();
+  // ─── Login overlay ────────────────────────────────────────────────────────────
+
+  void _showLoginOverlay() {
+    setState(() => _showLogin = true);
+    _loginCtrl.forward();
   }
 
-  void hideLogin() {
-    loginController.reverse().then((unused) {
-      setState(() => showLoginOverlay = false);
+  void _hideLoginOverlay() {
+    _loginCtrl.reverse().then((_) {
+      if (mounted) setState(() => _showLogin = false);
     });
   }
 
-  void onPanStart(DragStartDetails details) {
-    swipeStartY = details.globalPosition.dy;
-    isSwipeDetected = false;
+  // ─── Swipe gesture (final page) ───────────────────────────────────────────────
+
+  void _onPanStart(DragStartDetails d) {
+    _swipeStartY = d.globalPosition.dy;
+    _swipeDetected = false;
   }
 
-  void onPanUpdate(DragUpdateDetails details) {
-    // Check if user swiped up at least 50 pixels
-    if (!isSwipeDetected && 
-        swipeStartY - details.globalPosition.dy > 50) {
-      isSwipeDetected = true;
-      showLogin();
+  void _onPanUpdate(DragUpdateDetails d) {
+    if (!_swipeDetected && _swipeStartY - d.globalPosition.dy > 50) {
+      _swipeDetected = true;
+      _showLoginOverlay();
     }
   }
 
-  void onPanEnd(DragEndDetails details) {
-    // Reset for next swipe
-    isSwipeDetected = false;
-  }
+  void _onPanEnd(DragEndDetails _) => _swipeDetected = false;
+
+  // ─── Build ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
-    );
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ));
 
     return Scaffold(
-      backgroundColor: currentPage == pages.length - 1
-          ? const Color(0xFF1E6BB8)
-          : Colors.white,
+      backgroundColor: _isLastPage ? const Color(0xFF1E6BB8) : Colors.white,
       body: SafeArea(
         top: false,
         child: Stack(
@@ -188,911 +178,42 @@ class IntroductionScreenState extends State<IntroductionScreen>
               children: [
                 Expanded(
                   child: PageView.builder(
-                    controller: pageController,
-                    itemCount: pages.length,
-                    itemBuilder: (context, index) => index == pages.length - 1
+                    controller: _pageCtrl,
+                    itemCount: _pages.length,
+                    itemBuilder: (context, i) => i == _pages.length - 1
                         ? FinalPage(
-                            pageData: pages[index],
-                            scaleAnimation: scaleAnimation,
-                            fadeAnimation: fadeAnimation,
-                            onPanStart: onPanStart,
-                            onPanUpdate: onPanUpdate,
-                            onPanEnd: onPanEnd,
+                            pageData: _pages[i],
+                            scaleAnimation: _scaleAnim,
+                            fadeAnimation: _fadeAnim,
+                            onPanStart: _onPanStart,
+                            onPanUpdate: _onPanUpdate,
+                            onPanEnd: _onPanEnd,
                           )
                         : RegularPage(
-                            pageData: pages[index],
-                            fadeAnimation: fadeAnimation,
-                            slideAnimation: slideAnimation,
-                            scaleAnimation: scaleAnimation,
+                            pageData: _pages[i],
+                            fadeAnimation: _fadeAnim,
+                            slideAnimation: _slideAnim,
+                            scaleAnimation: _scaleAnim,
                           ),
                   ),
                 ),
-                if (currentPage != pages.length - 1)
+                if (!_isLastPage)
                   BottomNavigation(
-                    currentPage: currentPage,
-                    pagesLength: pages.length,
-                    onNext: nextPage,
+                    currentPage: _currentPage,
+                    pagesLength: _pages.length,
+                    onNext: _nextPage,
                   ),
               ],
             ),
-            if (currentPage != pages.length - 1)
-              SkipButton(onSkip: skipToFinalPage),
-            if (showLoginOverlay)
+            if (!_isLastPage) SkipButton(onSkip: _skipToFinal),
+            if (_showLogin)
               LoginOverlay(
-                loginController: loginController,
-                loginFadeAnimation: loginFadeAnimation,
-                loginSlideAnimation: loginSlideAnimation,
-                onClose: hideLogin,
-                onLogin: () {},
+                loginController: _loginCtrl,
+                loginFadeAnimation: _loginFadeAnim,
+                loginSlideAnimation: _loginSlideAnim,
+                onClose: _hideLoginOverlay,
               ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class RegularPage extends StatelessWidget {
-  final PageData pageData;
-  final Animation<double> fadeAnimation;
-  final Animation<Offset> slideAnimation;
-  final Animation<double> scaleAnimation;
-
-  const RegularPage({
-    super.key,
-    required this.pageData,
-    required this.fadeAnimation,
-    required this.slideAnimation,
-    required this.scaleAnimation,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWeb = screenWidth > 800;
-
-    return FadeTransition(
-      opacity: fadeAnimation,
-      child: SlideTransition(
-        position: slideAnimation,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(
-                    isWeb ? screenWidth * 0.1 : 24.0,
-                    MediaQuery.of(context).padding.top + 20,
-                    isWeb ? screenWidth * 0.1 : 24.0,
-                    24.0,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(height: screenHeight * 0.05),
-                      ScaleTransition(
-                        scale: scaleAnimation,
-                        child: LayeredImage(
-                          image: pageData.image!,
-                          size: isWeb ? 400 : screenWidth * 0.85,
-                        ),
-                      ),
-                      SizedBox(height: isWeb ? 60 : 40),
-                      Text(
-                        pageData.title,
-                        style: GoogleFonts.poppins(
-                          fontSize: isWeb ? 32 : screenWidth * 0.07,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1F2937),
-                          height: 1.2,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: isWeb ? 24 : 16),
-                      DescriptionBox(
-                        description: pageData.description,
-                        isWeb: isWeb,
-                        screenWidth: screenWidth,
-                      ),
-                      SizedBox(height: screenHeight * 0.05),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class FinalPage extends StatelessWidget {
-  final PageData pageData;
-  final Animation<double> scaleAnimation;
-  final Animation<double> fadeAnimation;
-  final Function(DragStartDetails) onPanStart;
-  final Function(DragUpdateDetails) onPanUpdate;
-  final Function(DragEndDetails) onPanEnd;
-
-  const FinalPage({
-    super.key,
-    required this.pageData,
-    required this.scaleAnimation,
-    required this.fadeAnimation,
-    required this.onPanStart,
-    required this.onPanUpdate,
-    required this.onPanEnd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWeb = screenWidth > 800;
-
-    return GestureDetector(
-      onPanStart: onPanStart,
-      onPanUpdate: onPanUpdate,
-      onPanEnd: onPanEnd,
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.0,
-            colors: [Color(0xFF4A90E2), Color(0xFF1E6BB8), Color(0xFF0F4A8C)],
-            stops: [0.3, 0.7, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isWeb ? screenWidth * 0.1 : 24.0,
-              vertical: 20.0,
-            ),
-            child: Center(
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ScaleTransition(
-                      scale: scaleAnimation,
-                      child: LayeredImage(
-                        image: pageData.image!,
-                        size: isWeb ? 400 : screenWidth * 0.7,
-                      ),
-                    ),
-                    SizedBox(height: isWeb ? 60 : 40),
-                    FadeTransition(
-                      opacity: fadeAnimation,
-                      child: Text(
-                        pageData.title,
-                        style: GoogleFonts.poppins(
-                          fontSize: isWeb ? 36 : 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          height: 1.2,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    SizedBox(height: isWeb ? 32 : 20),
-                    FadeTransition(
-                      opacity: fadeAnimation,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: isWeb ? 600 : double.infinity,
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          pageData.description,
-                          style: GoogleFonts.poppins(
-                            fontSize: isWeb ? 18 : 14,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white.withOpacity(0.8),
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: isWeb ? 60 : 40),
-                    // Swipe up indicator
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.keyboard_arrow_up,
-                          color: Colors.white.withOpacity(0.6),
-                          size: 28,
-                        ),
-                        Transform.translate(
-                          offset: const Offset(0, -8),
-                          child: Icon(
-                            Icons.keyboard_arrow_up,
-                            color: Colors.white.withOpacity(0.9),
-                            size: 32,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Geser ke atas untuk masuk',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class LayeredImage extends StatelessWidget {
-  final String image;
-  final double size;
-
-  const LayeredImage({super.key, required this.image, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.15),
-      ),
-      child: Container(
-        margin: EdgeInsets.all(size * 0.07),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.2),
-        ),
-        child: Container(
-          margin: EdgeInsets.all(size * 0.07),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withOpacity(0.25),
-          ),
-          child: Center(
-            child: Image.asset(
-              image,
-              width: size * 0.6,
-              height: size * 0.6,
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class DescriptionBox extends StatelessWidget {
-  final String description;
-  final bool isWeb;
-  final double screenWidth;
-
-  const DescriptionBox({
-    super.key,
-    required this.description,
-    required this.isWeb,
-    required this.screenWidth,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(maxWidth: isWeb ? 600 : double.infinity),
-      padding: EdgeInsets.symmetric(
-        horizontal: isWeb ? 32 : 20,
-        vertical: isWeb ? 20 : 14,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFF61B8FF).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: const Color(0xFF61B8FF).withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        description,
-        style: GoogleFonts.poppins(
-          fontSize: isWeb ? 18 : 16,
-          fontWeight: FontWeight.w400,
-          color: const Color(0xFF6B7280),
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-}
-
-class BottomNavigation extends StatelessWidget {
-  final int currentPage;
-  final int pagesLength;
-  final VoidCallback onNext;
-
-  const BottomNavigation({
-    super.key,
-    required this.currentPage,
-    required this.pagesLength,
-    required this.onNext,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWeb = screenWidth > 800;
-
-    return Container(
-      padding: EdgeInsets.all(isWeb ? 40.0 : 24.0),
-      constraints: BoxConstraints(maxWidth: isWeb ? 400 : double.infinity),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(pagesLength, (index) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: currentPage == index ? 12 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: currentPage == index
-                      ? const Color(0xFF0083EE)
-                      : const Color(0xFF9CA3AF),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }),
-          ),
-          SizedBox(height: isWeb ? 32 : 24),
-          GradientButton(text: 'Lanjut', onTap: onNext, isWeb: isWeb),
-        ],
-      ),
-    );
-  }
-}
-
-class SkipButton extends StatelessWidget {
-  final VoidCallback onSkip;
-
-  const SkipButton({super.key, required this.onSkip});
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWeb = screenWidth > 800;
-
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + (isWeb ? 24 : 16),
-      right: isWeb ? 40 : 16,
-      child: GestureDetector(
-        onTap: onSkip,
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isWeb ? 20 : 16,
-            vertical: isWeb ? 12 : 8,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: const Color(0xFF61B8FF).withOpacity(0.2),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0083EE).withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Text(
-            'Lewati',
-            style: GoogleFonts.poppins(
-              fontSize: isWeb ? 16 : 14,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF0083EE),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class LoginOverlay extends StatelessWidget {
-  final AnimationController loginController;
-  final Animation<double> loginFadeAnimation;
-  final Animation<Offset> loginSlideAnimation;
-  final VoidCallback onClose;
-  final VoidCallback onLogin;
-
-  const LoginOverlay({
-    super.key,
-    required this.loginController,
-    required this.loginFadeAnimation,
-    required this.loginSlideAnimation,
-    required this.onClose,
-    required this.onLogin,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: loginController,
-      builder: (context, child) {
-        return Stack(
-          children: [
-            FadeTransition(
-              opacity: loginFadeAnimation,
-              child: GestureDetector(
-                onTap: onClose,
-                child: Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-            SlideTransition(
-              position: loginSlideAnimation,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: LoginForm(onClose: onClose, onLogin: onLogin),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class LoginForm extends StatefulWidget {
-  final VoidCallback onClose;
-  final VoidCallback onLogin;
-
-  const LoginForm({super.key, required this.onClose, required this.onLogin});
-
-  @override
-  State<LoginForm> createState() => LoginFormState();
-}
-
-class LoginFormState extends State<LoginForm> {
-  final TextEditingController nipController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  bool isPasswordVisible = false;
-  final LocalAuthentication localAuth = LocalAuthentication();
-  bool canCheckBiometrics = false;
-
-  @override
-  void initState() {
-    super.initState();
-    checkBiometrics();
-  }
-
-  Future<void> checkBiometrics() async {
-    try {
-      final canCheck = await localAuth.canCheckBiometrics;
-      setState(() => canCheckBiometrics = canCheck);
-    } catch (error) {
-      setState(() => canCheckBiometrics = false);
-    }
-  }
-
-  void showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  void handleLogin() async {
-    String nip = nipController.text.trim();
-    String password = passwordController.text.trim();
-
-    if (nip.isEmpty || password.isEmpty) {
-      showSnackBar(context, "Harap isi NIP dan password");
-      return;
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/login'),
-        body: {"nip": nip, "password": password},
-      );
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 && data['status'] == true) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-          'walikelas_id',
-          data['detail']['nip_walikelas']?.toString() ?? '',
-        );
-        await prefs.setString('role', data['role'].toString());
-        await prefs.setString(
-          'name',
-          data['detail']['nama_walikelas'] ?? data['user']['username'],
-        );
-        await prefs.setString('email', data['user']['email'] ?? 'Unknown');
-        await prefs.setString('phone', 'Unknown');
-        await prefs.setString(
-          'joinDate',
-          data['detail']['created_at'] ?? 'Unknown',
-        );
-        await prefs.setString(
-          'id_kelas',
-          data['detail']['id_kelas'] ?? 'Unknown',
-        );
-        await prefs.setString(
-          'jurusan',
-          data['detail']['jurusan'] ?? 'Unknown',
-        );
-        await prefs.setString('biometric_nip', nip);
-        await prefs.setString('biometric_password', password);
-
-        await FcmTokenService.instance.syncToken();
-
-        String role = data['role'].toString();
-        if (!mounted) return;
-
-        if (role == '3') {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/walikelas',
-            (route) => false,
-          );
-        } else if (role == '4') {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/kaprog',
-            (route) => false,
-          );
-        } else {
-          showSnackBar(context, "Role tidak dikenali");
-        }
-      } else {
-        showSnackBar(context, data['message'] ?? 'Gagal masuk');
-      }
-    } catch (e) {
-      if (mounted) {
-        showSnackBar(context, "Terjadi kesalahan: $e");
-      }
-    }
-
-    widget.onLogin();
-  }
-
-  @override
-  void dispose() {
-    nipController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> handleBiometricLogin() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedNip = prefs.getString('biometric_nip') ?? '';
-      final savedPassword = prefs.getString('biometric_password') ?? '';
-
-      if (savedNip.isEmpty || savedPassword.isEmpty) {
-        showSnackBar(
-          context,
-          "Belum ada data login tersimpan. Masuk manual dulu.",
-        );
-        return;
-      }
-
-      final didAuth = await localAuth.authenticate(
-        localizedReason: 'Autentikasi dengan sidik jari untuk login cepat',
-        options: const AuthenticationOptions(biometricOnly: true),
-      );
-
-      if (!didAuth) return;
-
-      nipController.text = savedNip;
-      passwordController.text = savedPassword;
-      handleLogin();
-    } catch (e) {
-      if (mounted) {
-        showSnackBar(context, "Biometrik gagal: $e");
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isWeb = screenWidth > 800;
-
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(
-        maxWidth: isWeb ? 500 : double.infinity,
-        maxHeight: screenHeight * 0.85,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HandleBar(onTap: widget.onClose),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(isWeb ? 32.0 : 24.0),
-              child: Column(
-                children: [
-                  SizedBox(height: isWeb ? 32 : 20),
-                  LoginHeader(isWeb: isWeb),
-                  SizedBox(height: isWeb ? 48 : 40),
-                  LoginTextField(
-                    hintText: 'Masukkan NIP anda',
-                    icon: Icons.person_outline,
-                    controller: nipController,
-                    isWeb: isWeb,
-                  ),
-                  SizedBox(height: isWeb ? 24 : 20),
-                  LoginTextField(
-                    hintText: 'Masukkan password anda',
-                    icon: Icons.lock_outline,
-                    obscureText: !isPasswordVisible,
-                    suffixIcon: isPasswordVisible
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    controller: passwordController,
-                    isWeb: isWeb,
-                    onSuffixIconTap: () {
-                      setState(() {
-                        isPasswordVisible = !isPasswordVisible;
-                      });
-                    },
-                  ),
-                  SizedBox(height: isWeb ? 32 : 24),
-                  if (canCheckBiometrics)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          backgroundColor: const Color(0xFFE0F2FE),
-                          foregroundColor: const Color(0xFF1D4ED8),
-                        ),
-                        icon: const Icon(Icons.fingerprint, size: 20),
-                        label: Text(
-                          'Masuk dengan Sidik Jari',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w700,
-                            fontSize: isWeb ? 15 : 14,
-                          ),
-                        ),
-                        onPressed: handleBiometricLogin,
-                      ),
-                    ),
-                  SizedBox(height: isWeb ? 20 : 16),
-                  GradientButton(
-                    text: 'Masuk',
-                    onTap: handleLogin,
-                    isWeb: isWeb,
-                  ),
-                  SizedBox(height: isWeb ? 24 : 20),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class HandleBar extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const HandleBar({super.key, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Container(
-          width: 50,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class LoginHeader extends StatelessWidget {
-  final bool isWeb;
-
-  const LoginHeader({super.key, required this.isWeb});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(isWeb ? 24.0 : 20.0),
-      child: Row(
-        children: [
-          Container(
-            width: isWeb ? 120 : 100,
-            height: isWeb ? 120 : 100,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Image.asset('assets/smkn.png', fit: BoxFit.contain),
-            ),
-          ),
-          SizedBox(width: isWeb ? 24 : 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Selamat Datang Kembali',
-                  style: GoogleFonts.poppins(
-                    fontSize: isWeb ? 26 : 22,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1F2937),
-                  ),
-                ),
-                SizedBox(height: isWeb ? 12 : 8),
-                Text(
-                  'Yuk, lanjutkan aktivitasmu di SIJUWARA (SISTEM JURNAL SISWA AKTIF)!',
-                  style: GoogleFonts.poppins(
-                    fontSize: isWeb ? 16 : 13,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xFF6B7280),
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class LoginTextField extends StatelessWidget {
-  final String hintText;
-  final IconData icon;
-  final bool obscureText;
-  final IconData? suffixIcon;
-  final TextEditingController? controller;
-  final bool isWeb;
-  final VoidCallback? onSuffixIconTap;
-
-  const LoginTextField({
-    super.key,
-    required this.hintText,
-    required this.icon,
-    this.obscureText = false,
-    this.suffixIcon,
-    this.controller,
-    required this.isWeb,
-    this.onSuffixIconTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: GoogleFonts.poppins(
-            fontSize: isWeb ? 16 : 14,
-            color: Colors.grey[500],
-          ),
-          prefixIcon: Icon(icon, color: Colors.grey[400]),
-          suffixIcon: suffixIcon != null
-              ? GestureDetector(
-                  onTap: onSuffixIconTap,
-                  child: Icon(suffixIcon, color: Colors.grey[400]),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: isWeb ? 20 : 16,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class GradientButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onTap;
-  final bool isWeb;
-
-  const GradientButton({
-    super.key,
-    required this.text,
-    required this.onTap,
-    required this.isWeb,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: isWeb ? 20 : 18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF61B8FF), Color(0xFF0083EE)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0083EE).withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Text(
-          text,
-          style: GoogleFonts.poppins(
-            fontSize: isWeb ? 20 : 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-          textAlign: TextAlign.center,
         ),
       ),
     );

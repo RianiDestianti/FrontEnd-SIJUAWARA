@@ -3,8 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:skoring/models/types/chart.dart';
 import '../utils/chart_colors.dart';
 
-// ─── Statistics Cards ─────────────────────────────────────────────────────────
-
 class StatisticsCards extends StatelessWidget {
   final List<ChartDataItem> data;
   const StatisticsCards({super.key, required this.data});
@@ -166,8 +164,6 @@ class _Selector extends StatelessWidget {
         child: Row(children: children),
       );
 }
-
-// ─── Trend Analysis ───────────────────────────────────────────────────────────
 
 class TrendAnalysis extends StatelessWidget {
   final List<ChartDataItem> data;

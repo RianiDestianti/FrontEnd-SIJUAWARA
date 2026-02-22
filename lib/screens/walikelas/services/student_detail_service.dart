@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:skoring/config/api.dart';
+import 'package:skoring/config/api_client.dart';
 import 'package:skoring/models/api/api_detail.dart';
 
 class StudentService {
@@ -11,11 +10,10 @@ class StudentService {
 
   StudentService({required this.nipWalikelas, required this.idKelas});
 
+  Map<String, String> get _params => {'nip': nipWalikelas, 'id_kelas': idKelas};
+
   Future<List<dynamic>> fetchAspekPenilaian() async {
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/aspekpenilaian?nip=$nipWalikelas&id_kelas=$idKelas'),
-      headers: {'Accept': 'application/json'},
-    );
+    final response = await ApiClient.get('aspekpenilaian', params: _params);
     if (response.statusCode == 200) {
       final json = jsonDecode(utf8.decode(response.bodyBytes));
       if (json['success'] == true) return json['data'] as List<dynamic>;
@@ -28,15 +26,12 @@ class StudentService {
     required String nis,
     required List<dynamic> aspek,
   }) async {
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/skoring_penghargaan?nip=$nipWalikelas&id_kelas=$idKelas'),
-      headers: {'Accept': 'application/json'},
-    );
+    final response = await ApiClient.get('skoring_penghargaan', params: _params);
     if (response.statusCode != 200) {
       throw Exception('Gagal mengambil penilaian (${response.statusCode})');
     }
     final json = jsonDecode(utf8.decode(response.bodyBytes));
-    final List evals = (json['penilaian']?['data'] as List? ?? [])
+    final evals = (json['penilaian']?['data'] as List? ?? [])
         .where((e) => e['nis'].toString() == nis)
         .toList();
     return _toAppreciation(evals, aspek);
@@ -46,21 +41,15 @@ class StudentService {
     required String nis,
     required List<dynamic> aspek,
   }) async {
-    var response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$nipWalikelas&id_kelas=$idKelas'),
-      headers: {'Accept': 'application/json'},
-    );
+    var response = await ApiClient.get('skoring_pelanggaran', params: _params);
     if (response.statusCode != 200) {
-      response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/skoring_2pelanggaran?nip=$nipWalikelas&id_kelas=$idKelas'),
-        headers: {'Accept': 'application/json'},
-      );
+      response = await ApiClient.get('skoring_2pelanggaran', params: _params);
     }
     if (response.statusCode != 200) {
       throw Exception('Gagal mengambil penilaian (${response.statusCode})');
     }
     final json = jsonDecode(utf8.decode(response.bodyBytes));
-    final List evals = (json['penilaian']?['data'] as List? ?? [])
+    final evals = (json['penilaian']?['data'] as List? ?? [])
         .where((e) => e['nis'].toString() == nis)
         .toList();
     return _toViolation(evals, aspek);

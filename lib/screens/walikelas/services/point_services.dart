@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skoring/config/api.dart';
+import 'package:skoring/config/api_client.dart';
 import 'package:skoring/models/types/point.dart';
 
 class PointService {
@@ -19,7 +18,8 @@ class PointService {
     required int points,
     required BuildContext context,
   }) async {
-    if (idPenilaian.isEmpty || nis.isEmpty || idAspekPenilaian.isEmpty || date.isEmpty || category.isEmpty) {
+    if (idPenilaian.isEmpty || nis.isEmpty || idAspekPenilaian.isEmpty ||
+        date.isEmpty || category.isEmpty) {
       if (context.mounted) PointSnackBar.error(context, 'Mohon lengkapi semua field yang diperlukan');
       return null;
     }
@@ -35,18 +35,17 @@ class PointService {
       }
 
       final endpoint = type == 'Apresiasi'
-          ? '${ApiConfig.baseUrl}/skoring_penghargaan?nip=$nip&id_kelas=$idKelas'
-          : '${ApiConfig.baseUrl}/skoring_pelanggaran?nip=$nip&id_kelas=$idKelas';
+          ? 'skoring_penghargaan'
+          : 'skoring_pelanggaran';
 
-      final response = await http.post(
-        Uri.parse(endpoint),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-        body: jsonEncode({
+      final response = await ApiClient.postJson(endpoint,
+        params: {'nip': nip, 'id_kelas': idKelas},
+        body: {
           'id_penilaian': idPenilaian,
           'nis': nis,
           'id_aspekpenilaian': idAspekPenilaian,
           'nip_walikelas': nip,
-        }),
+        },
       );
 
       if (response.statusCode == 201) {
@@ -57,29 +56,17 @@ class PointService {
             PointSnackBar.success(context, 'Poin $type berhasil ditambahkan untuk $studentName');
           }
           return Point(
-            type: type,
-            studentName: studentName,
-            nis: nis,
-            className: '',
-            date: date,
-            description: description,
-            category: category,
-            points: points,
-            idPenilaian: idPenilaian,
+            type: type, studentName: studentName, nis: nis, className: '',
+            date: date, description: description, category: category,
+            points: points, idPenilaian: idPenilaian,
           );
         } else {
           if (context.mounted) PointSnackBar.error(context, responseData['message'] ?? 'Gagal menambahkan poin');
           return null;
         }
       } else {
-        try {
-          final errorData = jsonDecode(response.body);
-          if (context.mounted) {
-            PointSnackBar.error(context, errorData['message'] ?? 'Gagal menghubungi server: ${response.statusCode}');
-          }
-        } catch (_) {
-          if (context.mounted) PointSnackBar.error(context, 'Gagal menghubungi server: ${response.statusCode}');
-        }
+        final errorMsg = _parseErrorMessage(response.body, response.statusCode);
+        if (context.mounted) PointSnackBar.error(context, errorMsg);
         return null;
       }
     } catch (e) {
@@ -93,12 +80,14 @@ class PointService {
     final nip = prefs.getString('walikelas_id') ?? '';
     final idKelas = prefs.getString('id_kelas') ?? '';
 
-    if (nip.isEmpty || idKelas.isEmpty) throw Exception('Data guru tidak lengkap. Silakan login ulang.');
+    if (nip.isEmpty || idKelas.isEmpty) {
+      throw Exception('Data guru tidak lengkap. Silakan login ulang.');
+    }
 
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/aspekpenilaian?nip=$nip&id_kelas=$idKelas'),
-      headers: {'Accept': 'application/json'},
-    );
+    final response = await ApiClient.get('aspekpenilaian', params: {
+      'nip': nip,
+      'id_kelas': idKelas,
+    });
 
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
@@ -107,20 +96,26 @@ class PointService {
     }
     throw Exception('Gagal mengambil data aspek penilaian');
   }
+
+  static String _parseErrorMessage(String body, int statusCode) {
+    try {
+      final errorData = jsonDecode(body);
+      return errorData['message'] ?? 'Gagal menghubungi server: $statusCode';
+    } catch (_) {
+      return 'Gagal menghubungi server: $statusCode';
+    }
+  }
 }
 
 class PointSnackBar {
   static void error(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(
-        children: [
-          const Icon(Icons.error_outline, color: Colors.white, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(message, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
-          ),
-        ],
-      ),
+      content: Row(children: [
+        const Icon(Icons.error_outline, color: Colors.white, size: 20),
+        const SizedBox(width: 12),
+        Expanded(child: Text(message,
+            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500))),
+      ]),
       backgroundColor: const Color(0xFFEF4444),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -130,15 +125,12 @@ class PointSnackBar {
 
   static void success(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(
-        children: [
-          const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(message, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
-          ),
-        ],
-      ),
+      content: Row(children: [
+        const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+        const SizedBox(width: 12),
+        Expanded(child: Text(message,
+            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500))),
+      ]),
       backgroundColor: const Color(0xFF10B981),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

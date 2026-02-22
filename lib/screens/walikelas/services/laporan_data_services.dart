@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skoring/config/api.dart';
+import 'package:skoring/config/api_client.dart';
 import 'package:skoring/models/api/api_report.dart';
 import 'package:skoring/widgets/faq.dart';
 
@@ -15,15 +14,13 @@ class LaporanDataService {
   }
 
   static Future<List<Kelas>> fetchKelas() async {
-    final response = await http
-        .get(Uri.parse('${ApiConfig.baseUrl}/kelas'))
-        .timeout(const Duration(seconds: 10));
-
+    final response = await ApiClient.get('kelas');
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
       if (jsonData['success']) {
-        final List<dynamic> data = jsonData['data'];
-        return data.map((json) => Kelas.fromJson(json)).toList();
+        return (jsonData['data'] as List<dynamic>)
+            .map((j) => Kelas.fromJson(j))
+            .toList();
       }
       throw Exception(jsonData['message']);
     }
@@ -34,18 +31,16 @@ class LaporanDataService {
     required String walikelasId,
     required String idKelas,
   }) async {
-    final uri = Uri.parse(
-      '${ApiConfig.baseUrl}/siswa?nip=$walikelasId&id_kelas=$idKelas',
-    );
-    final response = await http
-        .get(uri, headers: {'Accept': 'application/json'})
-        .timeout(const Duration(seconds: 10));
-
+    final response = await ApiClient.get('siswa', params: {
+      'nip': walikelasId,
+      'id_kelas': idKelas,
+    });
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(utf8.decode(response.bodyBytes));
       if (jsonData['success']) {
-        final List<dynamic> data = jsonData['data'];
-        return data.map((json) => Student.fromJson(json, const [])).toList();
+        return (jsonData['data'] as List<dynamic>)
+            .map((j) => Student.fromJson(j, const []))
+            .toList();
       }
       throw Exception(jsonData['message']);
     }
@@ -53,20 +48,14 @@ class LaporanDataService {
   }
 
   static Future<Map<String, dynamic>> fetchAspekPenilaian() async {
-    final response = await http
-        .get(Uri.parse('${ApiConfig.baseUrl}/aspekpenilaian'))
-        .timeout(const Duration(seconds: 10));
-
+    final response = await ApiClient.get('aspekpenilaian');
     if (response.statusCode == 200) {
       final jsonData = jsonDecode(response.body);
       if (jsonData['success']) {
-        final List<dynamic> data = jsonData['data'];
-        final Map<String, dynamic> aspekMap = {};
-        for (var item in data) {
-          final key = item['id_aspekpenilaian']?.toString() ?? '';
-          aspekMap[key] = item;
-        }
-        return aspekMap;
+        return {
+          for (var item in jsonData['data'] as List<dynamic>)
+            (item['id_aspekpenilaian']?.toString() ?? ''): item,
+        };
       }
       throw Exception(jsonData['message']);
     }
@@ -75,11 +64,10 @@ class LaporanDataService {
 
   static Future<Map<String, FAQItem>> fetchFaqData() async {
     final aspekMap = await fetchAspekPenilaian();
-    final Map<String, FAQItem> faqData = {};
-    for (var entry in aspekMap.entries) {
-      faqData[entry.key] = FAQItem.fromJson(entry.value);
-    }
-    return faqData;
+    return {
+      for (var entry in aspekMap.entries)
+        entry.key: FAQItem.fromJson(entry.value),
+    };
   }
 
   static Future<List<StudentScore>> fetchStudentScores({
@@ -89,31 +77,25 @@ class LaporanDataService {
     required Map<String, dynamic> aspekPenilaianData,
   }) async {
     if (nis.isEmpty) return [];
+    final params = {'nis': nis, 'nip': walikelasId, 'id_kelas': idKelas};
     final List<StudentScore> scores = [];
 
     try {
-      final penghargaanResponse = await http
-          .get(Uri.parse(
-            '${ApiConfig.baseUrl}/skoring_penghargaan?nis=$nis&nip=$walikelasId&id_kelas=$idKelas',
-          ))
-          .timeout(const Duration(seconds: 10));
-
-      if (penghargaanResponse.statusCode == 200) {
-        final jsonData = jsonDecode(penghargaanResponse.body);
-        if (jsonData['penilaian']['data'].isNotEmpty) {
-          final appreciationsResponse = await http
-              .get(Uri.parse('${ApiConfig.baseUrl}/Penghargaan'))
-              .timeout(const Duration(seconds: 10));
-
-          if (appreciationsResponse.statusCode == 200) {
-            final appreciationsData = jsonDecode(appreciationsResponse.body);
-            if (appreciationsData['success']) {
-              final List<dynamic> appreciations = appreciationsData['data'];
-              final List<dynamic> studentEvaluations = jsonData['penilaian']['data']
-                  .where((eval) => eval['nis'].toString() == nis)
+      // ── Apresiasi ───────────────────────────────────────────────────────────
+      final apresiasiRes = await ApiClient.get('skoring_penghargaan', params: params);
+      if (apresiasiRes.statusCode == 200) {
+        final apresiasiJson = jsonDecode(apresiasiRes.body);
+        if ((apresiasiJson['penilaian']['data'] as List).isNotEmpty) {
+          final penghargaanRes = await ApiClient.get('Penghargaan');
+          if (penghargaanRes.statusCode == 200) {
+            final penghargaanData = jsonDecode(penghargaanRes.body);
+            if (penghargaanData['success']) {
+              final appreciations = penghargaanData['data'] as List<dynamic>;
+              final evals = (apresiasiJson['penilaian']['data'] as List)
+                  .where((e) => e['nis'].toString() == nis)
                   .toList();
 
-              for (var eval in studentEvaluations) {
+              for (var eval in evals) {
                 final aspek = aspekPenilaianData[eval['id_aspekpenilaian']?.toString()];
                 if (aspek == null || aspek['jenis_poin']?.toString() != 'Apresiasi') continue;
 
@@ -121,12 +103,9 @@ class LaporanDataService {
                   if (eval['created_at'] == null || a['tanggal_penghargaan'] == null) return false;
                   try {
                     return DateTime.parse(a['tanggal_penghargaan']).isAtSameMomentAs(
-                          DateTime.parse(eval['created_at'].substring(0, 10)),
-                        ) ||
+                          DateTime.parse(eval['created_at'].substring(0, 10))) ||
                         a['alasan'].toLowerCase().contains(aspek['uraian'].toLowerCase());
-                  } catch (_) {
-                    return false;
-                  }
+                  } catch (_) { return false; }
                 }, orElse: () => null);
 
                 if (appreciation != null) {
@@ -143,28 +122,21 @@ class LaporanDataService {
         }
       }
 
-      final peringatanResponse = await http
-          .get(Uri.parse(
-            '${ApiConfig.baseUrl}/skoring_pelanggaran?nis=$nis&nip=$walikelasId&id_kelas=$idKelas',
-          ))
-          .timeout(const Duration(seconds: 10));
-
-      if (peringatanResponse.statusCode == 200) {
-        final jsonData = jsonDecode(peringatanResponse.body);
-        if (jsonData['penilaian']['data'].isNotEmpty) {
-          final violationsResponse = await http
-              .get(Uri.parse('${ApiConfig.baseUrl}/peringatan'))
-              .timeout(const Duration(seconds: 10));
-
-          if (violationsResponse.statusCode == 200) {
-            final violationsData = jsonDecode(violationsResponse.body);
-            if (violationsData['success']) {
-              final List<dynamic> violations = violationsData['data'];
-              final List<dynamic> studentEvaluations = jsonData['penilaian']['data']
-                  .where((eval) => eval['nis'].toString() == nis)
+      // ── Pelanggaran ─────────────────────────────────────────────────────────
+      final pelanggaranRes = await ApiClient.get('skoring_pelanggaran', params: params);
+      if (pelanggaranRes.statusCode == 200) {
+        final pelanggaranJson = jsonDecode(pelanggaranRes.body);
+        if ((pelanggaranJson['penilaian']['data'] as List).isNotEmpty) {
+          final peringatanRes = await ApiClient.get('peringatan');
+          if (peringatanRes.statusCode == 200) {
+            final peringatanData = jsonDecode(peringatanRes.body);
+            if (peringatanData['success']) {
+              final violations = peringatanData['data'] as List<dynamic>;
+              final evals = (pelanggaranJson['penilaian']['data'] as List)
+                  .where((e) => e['nis'].toString() == nis)
                   .toList();
 
-              for (var eval in studentEvaluations) {
+              for (var eval in evals) {
                 final aspek = aspekPenilaianData[eval['id_aspekpenilaian']?.toString()];
                 if (aspek == null || aspek['jenis_poin']?.toString() != 'Pelanggaran') continue;
 
@@ -172,12 +144,9 @@ class LaporanDataService {
                   if (eval['created_at'] == null || v['tanggal_sp'] == null) return false;
                   try {
                     return DateTime.parse(v['tanggal_sp']).isAtSameMomentAs(
-                          DateTime.parse(eval['created_at'].substring(0, 10)),
-                        ) ||
+                          DateTime.parse(eval['created_at'].substring(0, 10))) ||
                         v['alasan'].toLowerCase().contains(aspek['uraian'].toLowerCase());
-                  } catch (_) {
-                    return false;
-                  }
+                  } catch (_) { return false; }
                 }, orElse: () => null);
 
                 if (violation != null) {
